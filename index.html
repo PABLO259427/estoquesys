@@ -1,0 +1,2597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EstoqueSys - Sistema de Controle de Estoque</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e3c72;
+            --primary-light: #2a5298;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            color: var(--dark);
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .logo {
+            padding: 30px 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .logo p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            font-weight: 300;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            margin: 4px 15px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .nav-link i {
+            margin-right: 12px;
+            width: 24px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 30px;
+            max-width: calc(100% - 280px);
+        }
+
+        .header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h2 {
+            color: var(--primary);
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #666;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: var(--shadow);
+        }
+
+        /* Cards */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--primary);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 18px;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            color: var(--primary);
+        }
+
+        .card-success .card-icon { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); color: var(--success); }
+        .card-success::before { background: var(--success); }
+
+        .card-warning .card-icon { background: linear-gradient(135deg, #fff3e0, #ffe0b2); color: #f57c00; }
+        .card-warning::before { background: var(--warning); }
+
+        .card-danger .card-icon { background: linear-gradient(135deg, #ffebee, #ffcdd2); color: var(--danger); }
+        .card-danger::before { background: var(--danger); }
+
+        .card h3 {
+            font-size: 2.2rem;
+            margin-bottom: 6px;
+            color: var(--dark);
+            font-weight: 700;
+        }
+
+        .card p {
+            color: #666;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Forms */
+        .form-container {
+            background: white;
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+
+        .form-container h3 {
+            margin-bottom: 25px;
+            color: var(--primary);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(30,60,114,0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 22px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            box-shadow: 0 4px 15px rgba(30,60,114,0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30,60,114,0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #34ce57);
+            color: white;
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #e4606d);
+            color: white;
+            box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Tables */
+        .table-container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .table-title {
+            font-size: 1.4rem;
+            color: var(--primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box input {
+            padding: 12px 20px 12px 45px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            width: 320px;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 18px;
+            color: #999;
+            font-size: 1rem;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            width: 350px;
+            box-shadow: 0 0 0 4px rgba(30,60,114,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 700;
+            color: var(--dark);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #e9ecef;
+            color: #555;
+        }
+
+        tbody tr {
+            transition: all 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Badges */
+        .badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+        .badge-secondary { background: #e2e3e5; color: #383d41; }
+
+        /* Action Buttons */
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .btn-view {
+            background: #e3f2fd;
+            color: var(--primary);
+        }
+
+        .btn-view:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .btn-delete {
+            background: #ffebee;
+            color: var(--danger);
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Movimentação clicável */
+        .movimentacao-row {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .movimentacao-row:hover {
+            background: #e3f2fd !important;
+            transform: scale(1.01);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlide 0.3s ease;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+
+        @keyframes modalSlide {
+            from { opacity: 0; transform: translateY(-50px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 30px;
+            border-bottom: 2px solid #f0f0f0;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #999;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .close-modal:hover {
+            background: #ffebee;
+            color: var(--danger);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 18px 24px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.4s ease;
+            font-weight: 500;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 5px solid var(--success);
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 5px solid var(--danger);
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 5px solid var(--warning);
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-item {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .info-item label {
+            display: block;
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-item strong {
+            font-size: 1.2rem;
+            color: var(--dark);
+            font-weight: 700;
+        }
+
+        /* Itens List */
+        .itens-list {
+            margin-top: 25px;
+        }
+
+        .item-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .item-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transform: translateX(5px);
+        }
+
+        .item-info h5 {
+            color: var(--primary);
+            margin-bottom: 6px;
+            font-size: 1.1rem;
+        }
+
+        .item-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .item-qtd {
+            text-align: right;
+        }
+
+        .item-qtd .qtd {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .item-qtd .unidade {
+            color: #999;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        /* Search Results Dropdown */
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+            display: none;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .search-item {
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .search-item:hover {
+            background: #f8f9fa;
+            padding-left: 25px;
+        }
+
+        .search-item strong {
+            color: var(--primary);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .search-item small {
+            color: #666;
+        }
+
+        /* Temp Items List */
+        .temp-items {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 25px;
+        }
+
+        .temp-items h4 {
+            margin-bottom: 20px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Print */
+        @media print {
+            .sidebar, .btn, .action-btns, .no-print, .search-box {
+                display: none !important;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 0;
+            }
+            .modal-content {
+                box-shadow: none;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: relative;
+                height: auto;
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+            }
+            .container {
+                flex-direction: column;
+            }
+            .search-box input {
+                width: 100%;
+            }
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        /* Status indicators */
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-active { background: var(--success); box-shadow: 0 0 0 3px rgba(40,167,69,0.3); }
+        .status-inactive { background: var(--danger); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                <h1><i class="fas fa-warehouse"></i> EstoqueSys</h1>
+                <p>Gestão Inteligente de Materiais</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link active" onclick="showSection('dashboard')">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('materiais')">
+                        <i class="fas fa-boxes"></i>
+                        <span>Materiais</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('peps')">
+                        <i class="fas fa-project-diagram"></i>
+                        <span>PEPs</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('entrada-fornecedor')">
+                        <i class="fas fa-truck-loading"></i>
+                        <span>Entrada por Fornecedor</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('entrada-devolucao')">
+                        <i class="fas fa-undo-alt"></i>
+                        <span>Entrada por Devolução</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('saida-pep')">
+                        <i class="fas fa-dolly"></i>
+                        <span>Saída por PEP</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('estoque-total')">
+                        <i class="fas fa-box"></i>
+                        <span>Estoque Total</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showSection('consulta-pep')">
+                        <i class="fas fa-search"></i>
+                        <span>Consulta por PEP</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div id="alertContainer"></div>
+
+            <!-- DASHBOARD -->
+            <section id="dashboard" class="section active">
+                <div class="header">
+                    <h2><i class="fas fa-chart-line"></i> Dashboard</h2>
+                    <div class="user-info">
+                        <span id="currentDate"></span>
+                        <div class="user-avatar">AD</div>
+                    </div>
+                </div>
+
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-boxes"></i></div>
+                        <h3 id="totalMateriais">0</h3>
+                        <p>Total de Materiais</p>
+                    </div>
+                    <div class="card card-success">
+                        <div class="card-icon"><i class="fas fa-check-circle"></i></div>
+                        <h3 id="totalPEPs">0</h3>
+                        <p>PEPs Ativos</p>
+                    </div>
+                    <div class="card card-warning">
+                        <div class="card-icon"><i class="fas fa-exchange-alt"></i></div>
+                        <h3 id="totalMovimentacoes">0</h3>
+                        <p>Movimentações Hoje</p>
+                    </div>
+                    <div class="card card-danger">
+                        <div class="card-icon"><i class="fas fa-dollar-sign"></i></div>
+                        <h3 id="valorTotalEstoque">R$ 0,00</h3>
+                        <p>Valor Total em Estoque</p>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title"><i class="fas fa-history"></i> Últimas Movimentações</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Tipo</th>
+                                <th>Documento</th>
+                                <th>Responsável</th>
+                                <th>Itens</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ultimasMovimentacoes">
+                            <tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><br>Nenhuma movimentação registrada</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- MATERIAIS -->
+            <section id="materiais" class="section">
+                <div class="header">
+                    <h2><i class="fas fa-boxes"></i> Cadastro de Materiais</h2>
+                </div>
+
+                <div class="form-container">
+                    <h3><i class="fas fa-plus-circle"></i> Novo Material</h3>
+                    <form id="formMaterial" onsubmit="salvarMaterial(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Código *</label>
+                                <input type="text" id="matCodigo" required placeholder="Ex: MAT001">
+                            </div>
+                            <div class="form-group">
+                                <label>Descrição *</label>
+                                <input type="text" id="matDescricao" required placeholder="Descrição completa do material">
+                            </div>
+                            <div class="form-group">
+                                <label>Unidade *</label>
+                                <select id="matUnidade" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="UN">Unidade (UN)</option>
+                                    <option value="KG">Quilograma (KG)</option>
+                                    <option value="MT">Metro (MT)</option>
+                                    <option value="LT">Litro (LT)</option>
+                                    <option value="PC">Peça (PC)</option>
+                                    <option value="CX">Caixa (CX)</option>
+                                    <option value="RL">Rolo (RL)</option>
+                                    <option value="SC">Saco (SC)</option>
+                                    <option value="M3">Metro Cúbico (M3)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Saldo Inicial</label>
+                                <input type="number" id="matSaldo" min="0" step="0.01" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Custo Unitário (R$)</label>
+                                <input type="number" id="matCusto" min="0" step="0.01" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Localização</label>
+                                <input type="text" id="matLocalizacao" placeholder="Ex: Prateleira A-12">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Material
+                        </button>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title"><i class="fas fa-list"></i> Materiais Cadastrados</h3>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchMateriais" placeholder="Buscar material..." onkeyup="filtrarTabela('searchMateriais', 'listaMateriais')">
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descrição</th>
+                                <th>Unidade</th>
+                                <th>Saldo</th>
+                                <th>Custo Unit.</th>
+                                <th>Localização</th>
+                                <th width="80">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaMateriais">
+                            <tr><td colspan="7" class="empty-state"><i class="fas fa-box-open"></i><br>Nenhum material cadastrado</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PEPS -->
+            <section id="peps" class="section">
+                <div class="header">
+                    <h2><i class="fas fa-project-diagram"></i> Cadastro de PEPs</h2>
+                </div>
+
+                <div class="form-container">
+                    <h3><i class="fas fa-plus-circle"></i> Novo PEP</h3>
+                    <form id="formPEP" onsubmit="salvarPEP(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Código do PEP *</label>
+                                <input type="text" id="pepCodigo" required placeholder="Ex: PEP-2024-001">
+                            </div>
+                            <div class="form-group">
+                                <label>Descrição *</label>
+                                <input type="text" id="pepDescricao" required placeholder="Descrição do projeto/obra">
+                            </div>
+                            <div class="form-group">
+                                <label>Cliente</label>
+                                <input type="text" id="pepCliente" placeholder="Nome do cliente">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Data Início</label>
+                                <input type="date" id="pepDataInicio">
+                            </div>
+                            <div class="form-group">
+                                <label>Data Término Prevista</label>
+                                <input type="date" id="pepDataFim">
+                            </div>
+                            <div class="form-group">
+                                <label>Responsável</label>
+                                <input type="text" id="pepResponsavel" placeholder="Nome do responsável técnico">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar PEP
+                        </button>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title"><i class="fas fa-list"></i> PEPs Cadastrados</h3>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchPEPs" placeholder="Buscar PEP..." onkeyup="filtrarTabela('searchPEPs', 'listaPEPs')">
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descrição</th>
+                                <th>Cliente</th>
+                                <th>Responsável</th>
+                                <th>Status</th>
+                                <th width="80">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaPEPs">
+                            <tr><td colspan="6" class="empty-state"><i class="fas fa-folder-open"></i><br>Nenhum PEP cadastrado</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ENTRADA POR FORNECEDOR -->
+            <section id="entrada-fornecedor" class="section">
+                <div class="header">
+                    <h2><i class="fas fa-truck-loading"></i> Entrada por Fornecedor</h2>
+                </div>
+
+                <div class="form-container">
+                    <h3><i class="fas fa-plus-circle"></i> Nova Entrada</h3>
+                    <form id="formEntradaFornecedor" onsubmit="salvarEntradaFornecedor(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Número NF *</label>
+                                <input type="text" id="entFornNF" required placeholder="Número da nota fiscal">
+                            </div>
+                            <div class="form-group">
+                                <label>Fornecedor *</label>
+                                <input type="text" id="entFornFornecedor" required placeholder="Nome do fornecedor">
+                            </div>
+                            <div class="form-group">
+                                <label>Data Entrada *</label>
+                                <input type="datetime-local" id="entFornData" required>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0;">
+                            <h4 style="margin-bottom: 20px; color: var(--primary);"><i class="fas fa-box"></i> Adicionar Itens</h4>
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 2; position: relative;">
+                                    <label>Material *</label>
+                                    <div class="search-box" style="width: 100%;">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" id="entFornMaterialSearch" placeholder="Buscar por código ou descrição..." 
+                                               onkeyup="buscarMaterial(this.value, 'entForn')" autocomplete="off" style="width: 100%;">
+                                    </div>
+                                    <div class="search-results" id="entFornResults"></div>
+                                    <input type="hidden" id="entFornMaterial">
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantidade *</label>
+                                    <input type="number" id="entFornQtd" min="0.01" step="0.01" placeholder="0,00">
+                                </div>
+                                <div class="form-group">
+                                    <label>Valor Unitário (R$)</label>
+                                    <input type="number" id="entFornValor" min="0" step="0.01" placeholder="0,00">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="adicionarItem('fornecedor')">
+                                <i class="fas fa-plus"></i> Adicionar Item à Lista
+                            </button>
+                        </div>
+
+                        <div id="itensFornecedorContainer" style="display: none;" class="temp-items">
+                            <h4><i class="fas fa-list-check"></i> Itens da Entrada</h4>
+                            <div id="listaItensFornecedor"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Observações</label>
+                            <textarea id="entFornObs" rows="3" placeholder="Observações adicionais sobre esta entrada..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 16px;">
+                            <i class="fas fa-save"></i> Finalizar Entrada
+                        </button>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title"><i class="fas fa-history"></i> Últimas Entradas</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>NF</th>
+                                <th>Fornecedor</th>
+                                <th>Itens</th>
+                                <th>Valor Total</th>
+                                <th>Usuário</th>
+                                <th width="80">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaEntradasFornecedor">
+                            <tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><br>Nenhuma entrada registrada</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ENTRADA POR DEVOLUÇÃO -->
+            <section id="entrada-devolucao" class="section">
+                <div class="header">
+                    <h2><i class="fas fa-undo-alt"></i> Entrada por Devolução</h2>
+                </div>
+
+                <div class="form-container">
+                    <h3><i class="fas fa-plus-circle"></i> Nova Devolução</h3>
+                    <form id="formEntradaDevolucao" onsubmit="salvarEntradaDevolucao(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>PEP de Origem *</label>
+                                <select id="entDevPEP" required>
+                                    <option value="">Selecione o PEP...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Data Devolução *</label>
+                                <input type="datetime-local" id="entDevData" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Motivo *</label>
+                                <select id="entDevMotivo" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="sobra">Sobra de Material</option>
+                                    <option value="errado">Material Errado</option>
+                                    <option value="defeito">Material com Defeito</option>
+                                    <option value="nao_utilizado">Não Utilizado</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0;">
+                            <h4 style="margin-bottom: 20px; color: var(--primary);"><i class="fas fa-box"></i> Adicionar Itens</h4>
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 2; position: relative;">
+                                    <label>Material *</label>
+                                    <div class="search-box" style="width: 100%;">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" id="entDevMaterialSearch" placeholder="Buscar por código ou descrição..." 
+                                               onkeyup="buscarMaterial(this.value, 'entDev')" autocomplete="off" style="width: 100%;">
+                                    </div>
+                                    <div class="search-results" id="entDevResults"></div>
+                                    <input type="hidden" id="entDevMaterial">
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantidade *</label>
+                                    <input type="number" id="entDevQtd" min="0.01" step="0.01" placeholder="0,00">
+                                </div>
+                                <div class="form-group">
+                                    <label>Estado</label>
+                                    <select id="entDevEstado">
+                                        <option value="novo">Novo</option>
+                                        <option value="usado">Usado</option>
+                                        <option value="danificado">Danificado</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="adicionarItem('devolucao')">
+                                <i class="fas fa-plus"></i> Adicionar Item à Lista
+                            </button>
+                        </div>
+
+                        <div id="itensDevolucaoContainer" style="display: none;" class="temp-items">
+                            <h4><i class="fas fa-list-check"></i> Itens da Devolução</h4>
+                            <div id="listaItensDevolucao"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Observações</label>
+                            <textarea id="entDevObs" rows="3" placeholder="Observações adicionais..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 16px;">
+                            <i class="fas fa-save"></i> Finalizar Devolução
+                        </button>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title"><i class="fas fa-history"></i> Últimas Devoluções</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>PEP Origem</th>
+                                <th>Motivo</th>
+                                <th>Itens</th>
+                                <th>Usuário</th>
+                                <th width="80">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaEntradasDevolucao">
+                            <tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><br>Nenhuma devolução registrada</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SAÍDA POR PEP -->
+            <section id="saida-pep" class="section">
+                <div class="header">
+                    <h2><i class="fas fa-dolly"></i> Saída por PEP</h2>
+                </div>
+
+                <div class="form-container">
+                    <h3><i class="fas fa-plus-circle"></i> Nova Saída</h3>
+                    <form id="formSaidaPEP" onsubmit="salvarSaidaPEP(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>PEP Destino *</label>
+                                <select id="saidaPEPDestino" required>
+                                    <option value="">Selecione o PEP...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Data Saída *</label>
+                                <input type="datetime-local" id="saidaData" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Responsável *</label>
+                                <input type="text" id="saidaResponsavel" required placeholder="Nome do responsável">
+                            </div>
+                        </div>
+
+                        <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0;">
+                            <h4 style="margin-bottom: 20px; color: var(--primary);"><i class="fas fa-box"></i> Adicionar Itens</h4>
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 2; position: relative;">
+                                    <label>Material *</label>
+                                    <div class="search-box" style="width: 100%;">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" id="saidaMaterialSearch" placeholder="Buscar por código ou descrição..." 
+                                               onkeyup="buscarMaterial(this.value, 'saida')" autocomplete="off" style="width: 100%;">
+                                    </div>
+                                    <div class="search-results" id="saidaResults"></div>
+                                    <input type="hidden" id="saidaMaterial">
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantidade *</label>
+                                    <input type="number" id="saidaQtd" min="0.01" step="0.01" placeholder="0,00">
+                                </div>
+                                <div class="form-group">
+                                    <label>Saldo Disp.</label>
+                                    <input type="text" id="saidaSaldoDisp" readonly style="background: #e9ecef; font-weight: 600;">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="adicionarItem('saida')">
+                                <i class="fas fa-plus"></i> Adicionar Item à Lista
+                            </button>
+                        </div>
+
+                        <div id="itensSaidaContainer" style="display: none;" class="temp-items">
+                            <h4><i class="fas fa-list-check"></i> Itens da Saída</h4>
+                            <div id="listaItensSaida"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Observações</label>
+                            <textarea id="saidaObs" rows="3" placeholder="Observações adicionais..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 16px;">
+                            <i class="fas fa-save"></i> Finalizar Saída
+                        </button>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title"><i class="fas fa-history"></i> Últimas Saídas</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>PEP Destino</th>
+                                <th>Responsável</th>
+                                <th>Itens</th>
+                                <th>Usuário</th>
+                                <th width="80">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaSaidas">
+                            <tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><br>Nenhuma saída registrada</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ESTOQUE TOTAL -->
+            <section id="estoque-total" class="section">
+                <div class="header">
+                    <h2><i class="fas fa-box"></i> Estoque Total</h2>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title"><i class="fas fa-clipboard-list"></i> Posição de Estoque</h3>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchEstoque" placeholder="Buscar material..." onkeyup="filtrarTabela('searchEstoque', 'listaEstoque')">
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descrição</th>
+                                <th>Unidade</th>
+                                <th>Saldo Atual</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaEstoque">
+                            <tr><td colspan="4" class="empty-state"><i class="fas fa-box-open"></i><br>Nenhum material em estoque</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- CONSULTA POR PEP -->
+            <section id="consulta-pep" class="section">
+                <div class="header">
+                    <h2><i class="fas fa-search"></i> Consulta por PEP</h2>
+                </div>
+
+                <div class="form-container">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1; position: relative;">
+                            <label><i class="fas fa-search"></i> Buscar PEP</label>
+                            <div class="search-box" style="width: 100%;">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="consultaPEPSearch" placeholder="Digite código ou descrição do PEP..." 
+                                       onkeyup="buscarPEP(this.value)" autocomplete="off" style="width: 100%;">
+                            </div>
+                            <div class="search-results" id="consultaPEPResults"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="consultaPEPDetalhes" style="display: none;">
+                    <div class="cards-grid" style="margin-bottom: 30px;">
+                        <div class="card">
+                            <h4 style="color: var(--primary); margin-bottom: 10px;"><i class="fas fa-hashtag"></i> Código</h4>
+                            <h3 id="consultaPEPCodigo" style="font-size: 1.5rem;">-</h3>
+                        </div>
+                        <div class="card card-success">
+                            <h4 style="color: var(--success); margin-bottom: 10px;"><i class="fas fa-user"></i> Cliente</h4>
+                            <h3 id="consultaPEPCliente" style="font-size: 1.3rem;">-</h3>
+                        </div>
+                        <div class="card card-warning">
+                            <h4 style="color: #f57c00; margin-bottom: 10px;"><i class="fas fa-user-tie"></i> Responsável</h4>
+                            <h3 id="consultaPEPResponsavel" style="font-size: 1.3rem;">-</h3>
+                        </div>
+                        <div class="card card-info">
+                            <h4 style="color: var(--info); margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Status</h4>
+                            <h3 id="consultaPEPStatus" style="font-size: 1.3rem;">-</h3>
+                        </div>
+                    </div>
+
+                    <div class="table-container" style="margin-bottom: 30px;">
+                        <div class="table-header">
+                            <h3 class="table-title"><i class="fas fa-boxes"></i> Materiais Alocados neste PEP</h3>
+                            <button class="btn btn-primary no-print" onclick="exportarConsultaPEP()">
+                                <i class="fas fa-file-export"></i> Exportar CSV
+                            </button>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código Material</th>
+                                    <th>Descrição</th>
+                                    <th>Qtd. Entregue</th>
+                                    <th>Qtd. Devolvida</th>
+                                    <th>Saldo em PEP</th>
+                                    <th>Última Mov.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="consultaPEPMateriais">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3 class="table-title"><i class="fas fa-history"></i> Histórico de Movimentações</h3>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>Material</th>
+                                    <th>Quantidade</th>
+                                    <th>Usuário</th>
+                                </tr>
+                            </thead>
+                            <tbody id="consultaPEPHistorico">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal de Detalhes da Movimentação -->
+    <div id="modalMovimentacao" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-info-circle"></i> Detalhes da Movimentação</h3>
+                <button class="close-modal" onclick="fecharModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Conteúdo dinâmico -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // DADOS DO SISTEMA (Simulando Banco de Dados)
+        // ==========================================
+        let dados = {
+            materiais: [],
+            peps: [],
+            movimentacoes: [],
+            entradasFornecedor: [],
+            entradasDevolucao: [],
+            saidas: []
+        };
+
+        // Variáveis temporárias para formulários
+        let tempItens = {
+            fornecedor: [],
+            devolucao: [],
+            saida: []
+        };
+
+        let movimentacaoAtual = null;
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Definir data atual nos campos de data
+            const agora = new Date();
+            const dataLocal = agora.toISOString().slice(0, 16);
+            
+            ['entFornData', 'entDevData', 'saidaData'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = dataLocal;
+            });
+
+            // Data no header
+            document.getElementById('currentDate').textContent = agora.toLocaleDateString('pt-BR', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            // Carregar dados de exemplo (opcional - remover em produção)
+            carregarDadosExemplo();
+            
+            // Atualizar interface
+            atualizarTudo();
+        });
+
+        function carregarDadosExemplo() {
+            // Materiais de exemplo
+            dados.materiais = [
+                {id: 1, codigo: 'MAT001', descricao: 'Cimento Portland 50kg', unidade: 'SC', saldo: 1000, custo: 35.00, localizacao: 'A-01'},
+                {id: 2, codigo: 'MAT002', descricao: 'Areia Média Lavada', unidade: 'M3', saldo: 500, custo: 80.00, localizacao: 'A-02'},
+                {id: 3, codigo: 'MAT003', descricao: 'Brita 1 (19mm)', unidade: 'M3', saldo: 300, custo: 95.00, localizacao: 'A-03'},
+                {id: 4, codigo: 'MAT004', descricao: 'Tubo PVC Marrom 100mm', unidade: 'UN', saldo: 200, custo: 45.00, localizacao: 'B-01'},
+                {id: 5, codigo: 'MAT005', descricao: 'Fio Elétrico 2,5mm Rolo', unidade: 'RL', saldo: 150, custo: 120.00, localizacao: 'B-02'}
+            ];
+
+            // PEPs de exemplo
+            dados.peps = [
+                {id: 1, codigo: 'PEP-2024-001', descricao: 'Construção Edifício Alpha', cliente: 'Empresa ABC Ltda', responsavel: 'João Silva', status: 'ativo', dataInicio: '2024-01-15', dataFim: '2024-12-30'},
+                {id: 2, codigo: 'PEP-2024-002', descricao: 'Reforma Shopping Center', cliente: 'Shopping XYZ', responsavel: 'Maria Santos', status: 'ativo', dataInicio: '2024-02-01', dataFim: '2024-08-15'},
+                {id: 3, codigo: 'PEP-2024-003', descricao: 'Instalação Industrial', cliente: 'Indústria 123', responsavel: 'Pedro Costa', status: 'ativo', dataInicio: '2024-03-10', dataFim: '2024-11-20'}
+            ];
+
+            // Criar algumas movimentações de exemplo
+            const entradaExemplo = {
+                id: Date.now(),
+                tipo: 'entrada_fornecedor',
+                data: new Date(Date.now() - 86400000).toISOString(),
+                documento: 'NF-001234',
+                nf: 'NF-001234',
+                fornecedor: 'Fornecedor XYZ',
+                itens: [
+                    {material: dados.materiais[0], qtd: 100, valor: 3500},
+                    {material: dados.materiais[1], qtd: 50, valor: 4000}
+                ],
+                usuario: 'Admin'
+            };
+
+            const saidaExemplo = {
+                id: Date.now() + 1,
+                tipo: 'saida_pep',
+                data: new Date().toISOString(),
+                documento: 'PEP-2024-001',
+                pep: dados.peps[0],
+                responsavel: 'João Silva',
+                itens: [
+                    {material: dados.materiais[0], qtd: 20},
+                    {material: dados.materiais[2], qtd: 10}
+                ],
+                usuario: 'Admin'
+            };
+
+            dados.entradasFornecedor.push(entradaExemplo);
+            dados.saidas.push(saidaExemplo);
+            dados.movimentacoes.push(entradaExemplo, saidaExemplo);
+        }
+
+        // ==========================================
+        // NAVEGAÇÃO
+        // ==========================================
+        function showSection(sectionId) {
+            // Esconder todas as seções
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            
+            // Mostrar seção selecionada
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Atualizar menu
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            event.target.closest('.nav-link').classList.add('active');
+
+            // Atualizar dados específicos
+            if (sectionId === 'dashboard') atualizarDashboard();
+            if (sectionId === 'estoque-total') atualizarEstoque();
+            if (sectionId === 'consulta-pep') {
+                atualizarSelects();
+                document.getElementById('consultaPEPDetalhes').style.display = 'none';
+            }
+        }
+
+        // ==========================================
+        // ALERTAS
+        // ==========================================
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            
+            const icons = { success: 'check-circle', danger: 'exclamation-circle', warning: 'exclamation-triangle' };
+            alert.innerHTML = `<i class="fas fa-${icons[type]}"></i> ${message}`;
+            
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // ==========================================
+        // DASHBOARD
+        // ==========================================
+        function atualizarDashboard() {
+            document.getElementById('totalMateriais').textContent = dados.materiais.length;
+            document.getElementById('totalPEPs').textContent = dados.peps.filter(p => p.status === 'ativo').length;
+            
+            const hoje = new Date().toDateString();
+            const movsHoje = dados.movimentacoes.filter(m => new Date(m.data).toDateString() === hoje).length;
+            document.getElementById('totalMovimentacoes').textContent = movsHoje;
+            
+            const valorTotal = dados.materiais.reduce((acc, m) => acc + (m.saldo * m.custo), 0);
+            document.getElementById('valorTotalEstoque').textContent = 
+                'R$ ' + valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+            atualizarUltimasMovimentacoes();
+        }
+
+        function atualizarUltimasMovimentacoes() {
+            const tbody = document.getElementById('ultimasMovimentacoes');
+            const movs = [...dados.movimentacoes].sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 10);
+            
+            if (movs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><br>Nenhuma movimentação registrada</td></tr>';
+                return;
+            }
+
+            const tipos = {
+                'entrada_fornecedor': { text: 'Entrada Fornecedor', class: 'badge-success' },
+                'entrada_devolucao': { text: 'Devolução', class: 'badge-warning' },
+                'saida_pep': { text: 'Saída PEP', class: 'badge-danger' }
+            };
+
+            tbody.innerHTML = movs.map(mov => {
+                const tipo = tipos[mov.tipo] || { text: mov.tipo, class: 'badge-info' };
+                return `
+                    <tr class="movimentacao-row" onclick="abrirModalMovimentacao(${mov.id})">
+                        <td>${new Date(mov.data).toLocaleString('pt-BR')}</td>
+                        <td><span class="badge ${tipo.class}">${tipo.text}</span></td>
+                        <td>${mov.documento || '-'}</td>
+                        <td>${mov.usuario || 'Admin'}</td>
+                        <td>${mov.itens ? mov.itens.length : 0} item(s)</td>
+                        <td><span class="badge badge-success"><i class="fas fa-check"></i> Concluído</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // MODAL DE MOVIMENTAÇÃO
+        // ==========================================
+        function abrirModalMovimentacao(id) {
+            movimentacaoAtual = dados.movimentacoes.find(m => m.id === id);
+            if (!movimentacaoAtual) return;
+
+            const modal = document.getElementById('modalMovimentacao');
+            const body = document.getElementById('modalBody');
+
+            const tipos = {
+                'entrada_fornecedor': 'Entrada por Fornecedor',
+                'entrada_devolucao': 'Entrada por Devolução',
+                'saida_pep': 'Saída por PEP'
+            };
+
+            let html = `
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Tipo de Movimentação</label>
+                        <strong>${tipos[movimentacaoAtual.tipo] || movimentacaoAtual.tipo}</strong>
+                    </div>
+                    <div class="info-item">
+                        <label>Data e Hora</label>
+                        <strong>${new Date(movimentacaoAtual.data).toLocaleString('pt-BR')}</strong>
+                    </div>
+                    <div class="info-item">
+                        <label>Documento</label>
+                        <strong>${movimentacaoAtual.documento || '-'}</strong>
+                    </div>
+                    <div class="info-item">
+                        <label>Usuário</label>
+                        <strong>${movimentacaoAtual.usuario || 'Admin'}</strong>
+                    </div>
+                </div>
+                
+                <h4 style="margin: 25px 0 20px; color: var(--primary);">
+                    <i class="fas fa-boxes"></i> Materiais Movimentados
+                </h4>
+                <div class="itens-list">
+            `;
+
+            if (movimentacaoAtual.itens && movimentacaoAtual.itens.length > 0) {
+                movimentacaoAtual.itens.forEach(item => {
+                    const valor = item.valor ? `<p>Valor: R$ ${item.valor.toFixed(2)}</p>` : '';
+                    html += `
+                        <div class="item-card">
+                            <div class="item-info">
+                                <h5>${item.material.codigo} - ${item.material.descricao}</h5>
+                                <p>Unidade: ${item.material.unidade}</p>
+                                ${valor}
+                            </div>
+                            <div class="item-qtd">
+                                <div class="qtd">${item.qtd}</div>
+                                <div class="unidade">${item.material.unidade}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            html += `</div>
+                <div style="margin-top: 30px; text-align: right;" class="no-print">
+                    <button class="btn btn-primary" onclick="exportarMovimentacao()">
+                        <i class="fas fa-file-export"></i> Exportar para CSV
+                    </button>
+                </div>
+            `;
+
+            body.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function fecharModal() {
+            document.getElementById('modalMovimentacao').classList.remove('active');
+            movimentacaoAtual = null;
+        }
+
+        function exportarMovimentacao() {
+            if (!movimentacaoAtual) return;
+            
+            let csv = 'Código,Descrição,Unidade,Quantidade,Valor Unitário\n';
+            
+            movimentacaoAtual.itens.forEach(item => {
+                csv += `"${item.material.codigo}","${item.material.descricao}","${item.material.unidade}",${item.qtd},${item.valor || 0}\n`;
+            });
+            
+            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `movimentacao_${movimentacaoAtual.id}_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            
+            showAlert('Arquivo CSV exportado com sucesso!');
+        }
+
+        // ==========================================
+        // MATERIAIS
+        // ==========================================
+        function salvarMaterial(event) {
+            event.preventDefault();
+            
+            const material = {
+                id: Date.now(),
+                codigo: document.getElementById('matCodigo').value.toUpperCase(),
+                descricao: document.getElementById('matDescricao').value,
+                unidade: document.getElementById('matUnidade').value,
+                saldo: parseFloat(document.getElementById('matSaldo').value) || 0,
+                custo: parseFloat(document.getElementById('matCusto').value) || 0,
+                localizacao: document.getElementById('matLocalizacao').value
+            };
+            
+            dados.materiais.push(material);
+            atualizarListaMateriais();
+            document.getElementById('formMaterial').reset();
+            showAlert('Material cadastrado com sucesso!');
+        }
+
+        function atualizarListaMateriais() {
+            const tbody = document.getElementById('listaMateriais');
+            
+            if (dados.materiais.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fas fa-box-open"></i><br>Nenhum material cadastrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = dados.materiais.map(mat => `
+                <tr>
+                    <td><strong>${mat.codigo}</strong></td>
+                    <td>${mat.descricao}</td>
+                    <td>${mat.unidade}</td>
+                    <td>${mat.saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td>R$ ${mat.custo.toFixed(2)}</td>
+                    <td>${mat.localizacao || '-'}</td>
+                    <td>
+                        <button class="btn-icon btn-delete" onclick="excluirMaterial(${mat.id})" title="Excluir material">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function excluirMaterial(id) {
+            if (!confirm('Tem certeza que deseja excluir este material permanentemente?')) return;
+            
+            dados.materiais = dados.materiais.filter(m => m.id !== id);
+            atualizarListaMateriais();
+            atualizarDashboard();
+            showAlert('Material excluído com sucesso!');
+        }
+
+        // ==========================================
+        // PEPS
+        // ==========================================
+        function salvarPEP(event) {
+            event.preventDefault();
+            
+            const pep = {
+                id: Date.now(),
+                codigo: document.getElementById('pepCodigo').value.toUpperCase(),
+                descricao: document.getElementById('pepDescricao').value,
+                cliente: document.getElementById('pepCliente').value,
+                responsavel: document.getElementById('pepResponsavel').value,
+                dataInicio: document.getElementById('pepDataInicio').value,
+                dataFim: document.getElementById('pepDataFim').value,
+                status: 'ativo'
+            };
+            
+            dados.peps.push(pep);
+            atualizarListaPEPs();
+            atualizarSelects();
+            document.getElementById('formPEP').reset();
+            showAlert('PEP cadastrado com sucesso!');
+        }
+
+        function atualizarListaPEPs() {
+            const tbody = document.getElementById('listaPEPs');
+            
+            if (dados.peps.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-folder-open"></i><br>Nenhum PEP cadastrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = dados.peps.map(pep => `
+                <tr>
+                    <td><strong>${pep.codigo}</strong></td>
+                    <td>${pep.descricao}</td>
+                    <td>${pep.cliente || '-'}</td>
+                    <td>${pep.responsavel || '-'}</td>
+                    <td><span class="badge badge-success"><span class="status-dot status-active"></span>Ativo</span></td>
+                    <td>
+                        <button class="btn-icon btn-delete" onclick="excluirPEP(${pep.id})" title="Excluir PEP">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function excluirPEP(id) {
+            if (!confirm('Tem certeza que deseja excluir este PEP permanentemente?')) return;
+            
+            dados.peps = dados.peps.filter(p => p.id !== id);
+            atualizarListaPEPs();
+            atualizarSelects();
+            showAlert('PEP excluído com sucesso!');
+        }
+
+        function atualizarSelects() {
+            const selects = ['entDevPEP', 'saidaPEPDestino'];
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (!select) return;
+                
+                const valorAtual = select.value;
+                select.innerHTML = '<option value="">Selecione o PEP...</option>';
+                
+                dados.peps.filter(p => p.status === 'ativo').forEach(pep => {
+                    select.innerHTML += `<option value="${pep.id}">${pep.codigo} - ${pep.descricao}</option>`;
+                });
+                
+                select.value = valorAtual;
+            });
+        }
+
+        // ==========================================
+        // BUSCA DE MATERIAIS (LUPA)
+        // ==========================================
+        function buscarMaterial(termo, contexto) {
+            const results = document.getElementById(contexto + 'Results');
+            
+            if (termo.length < 2) {
+                results.classList.remove('active');
+                return;
+            }
+            
+            const filtrados = dados.materiais.filter(m => 
+                m.codigo.toLowerCase().includes(termo.toLowerCase()) ||
+                m.descricao.toLowerCase().includes(termo.toLowerCase())
+            );
+            
+            if (filtrados.length === 0) {
+                results.innerHTML = '<div class="search-item">Nenhum material encontrado</div>';
+                results.classList.add('active');
+                return;
+            }
+            
+            results.innerHTML = filtrados.map(mat => `
+                <div class="search-item" onclick="selecionarMaterial(${mat.id}, '${contexto}')">
+                    <strong>${mat.codigo}</strong>
+                    <small>${mat.descricao} (Disp: ${mat.saldo} ${mat.unidade})</small>
+                </div>
+            `).join('');
+            
+            results.classList.add('active');
+        }
+
+        function selecionarMaterial(id, contexto) {
+            const mat = dados.materiais.find(m => m.id === id);
+            if (!mat) return;
+            
+            document.getElementById(contexto + 'Material').value = mat.id;
+            document.getElementById(contexto + 'MaterialSearch').value = `${mat.codigo} - ${mat.descricao}`;
+            document.getElementById(contexto + 'Results').classList.remove('active');
+            
+            // Se for saída, mostrar saldo disponível
+            if (contexto === 'saida') {
+                document.getElementById('saidaSaldoDisp').value = `${mat.saldo} ${mat.unidade}`;
+            }
+        }
+
+        // Fechar resultados ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-box') && !e.target.closest('.search-results')) {
+                document.querySelectorAll('.search-results').forEach(el => el.classList.remove('active'));
+            }
+        });
+
+        // ==========================================
+        // ADICIONAR ITENS TEMPORÁRIOS
+        // ==========================================
+        function adicionarItem(tipo) {
+            const prefix = tipo === 'fornecedor' ? 'entForn' : tipo === 'devolucao' ? 'entDev' : 'saida';
+            const matId = document.getElementById(prefix + 'Material').value;
+            const qtd = parseFloat(document.getElementById(prefix + 'Qtd').value);
+            
+            if (!matId || !qtd || qtd <= 0) {
+                showAlert('Selecione o material e informe uma quantidade válida!', 'warning');
+                return;
+            }
+            
+            const mat = dados.materiais.find(m => m.id == matId);
+            
+            // Validar saldo para saídas
+            if (tipo === 'saida' && qtd > mat.saldo) {
+                showAlert(`Quantidade maior que o saldo disponível (${mat.saldo} ${mat.unidade})!`, 'danger');
+                return;
+            }
+            
+            const item = {
+                material: mat,
+                qtd: qtd,
+                id: Date.now()
+            };
+            
+            // Adicionar campos específicos
+            if (tipo === 'fornecedor') {
+                item.valor = parseFloat(document.getElementById('entFornValor').value) || 0;
+            } else if (tipo === 'devolucao') {
+                item.estado = document.getElementById('entDevEstado').value;
+            }
+            
+            tempItens[tipo].push(item);
+            atualizarListaTempItens(tipo);
+            
+            // Limpar campos
+            document.getElementById(prefix + 'Material').value = '';
+            document.getElementById(prefix + 'MaterialSearch').value = '';
+            document.getElementById(prefix + 'Qtd').value = '';
+            if (tipo === 'fornecedor') document.getElementById('entFornValor').value = '';
+            if (tipo === 'saida') document.getElementById('saidaSaldoDisp').value = '';
+        }
+
+        function atualizarListaTempItens(tipo) {
+            const container = document.getElementById('itens' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Container');
+            const lista = document.getElementById('listaItens' + tipo.charAt(0).toUpperCase() + tipo.slice(1));
+            
+            if (tempItens[tipo].length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            lista.innerHTML = tempItens[tipo].map((item, idx) => {
+                let extraInfo = '';
+                if (tipo === 'fornecedor' && item.valor) {
+                    extraInfo = `<p>Valor unitário: R$ ${item.valor.toFixed(2)}</p>`;
+                } else if (tipo === 'devolucao') {
+                    extraInfo = `<p>Estado: ${item.estado}</p>`;
+                }
+                
+                return `
+                    <div class="item-card">
+                        <div class="item-info">
+                            <h5>${item.material.codigo} - ${item.material.descricao}</h5>
+                            ${extraInfo}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div class="item-qtd">
+                                <div class="qtd">${item.qtd}</div>
+                                <div class="unidade">${item.material.unidade}</div>
+                            </div>
+                            <button class="btn-icon btn-delete" onclick="removerItemTemp('${tipo}', ${idx})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function removerItemTemp(tipo, idx) {
+            tempItens[tipo].splice(idx, 1);
+            atualizarListaTempItens(tipo);
+        }
+
+        // ==========================================
+        // ENTRADA POR FORNECEDOR
+        // ==========================================
+        function salvarEntradaFornecedor(event) {
+            event.preventDefault();
+            
+            if (tempItens.fornecedor.length === 0) {
+                showAlert('Adicione pelo menos um item à entrada!', 'warning');
+                return;
+            }
+            
+            const entrada = {
+                id: Date.now(),
+                tipo: 'entrada_fornecedor',
+                data: document.getElementById('entFornData').value,
+                documento: document.getElementById('entFornNF').value,
+                nf: document.getElementById('entFornNF').value,
+                fornecedor: document.getElementById('entFornFornecedor').value,
+                itens: [...tempItens.fornecedor],
+                usuario: 'Admin',
+                observacoes: document.getElementById('entFornObs').value
+            };
+            
+            // Atualizar saldos
+            entrada.itens.forEach(item => {
+                const mat = dados.materiais.find(m => m.id === item.material.id);
+                if (mat) mat.saldo += item.qtd;
+            });
+            
+            dados.entradasFornecedor.push(entrada);
+            dados.movimentacoes.push(entrada);
+            
+            tempItens.fornecedor = [];
+            atualizarListaTempItens('fornecedor');
+            atualizarEntradasFornecedor();
+            atualizarDashboard();
+            atualizarEstoque();
+            document.getElementById('formEntradaFornecedor').reset();
+            
+            // Resetar data
+            document.getElementById('entFornData').value = new Date().toISOString().slice(0, 16);
+            
+            showAlert('Entrada por fornecedor registrada com sucesso!');
+        }
+
+        function atualizarEntradasFornecedor() {
+            const tbody = document.getElementById('listaEntradasFornecedor');
+            const entradas = [...dados.entradasFornecedor].sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            if (entradas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><br>Nenhuma entrada registrada</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = entradas.map(ent => {
+                const valorTotal = ent.itens.reduce((acc, item) => acc + ((item.valor || 0) * item.qtd), 0);
+                return `
+                    <tr>
+                        <td>${new Date(ent.data).toLocaleString('pt-BR')}</td>
+                        <td><strong>${ent.nf}</strong></td>
+                        <td>${ent.fornecedor}</td>
+                        <td>${ent.itens.length} item(s)</td>
+                        <td>R$ ${valorTotal.toFixed(2)}</td>
+                        <td>${ent.usuario}</td>
+                        <td>
+                            <button class="btn-icon btn-delete" onclick="excluirEntradaFornecedor(${ent.id})" title="Excluir entrada">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function excluirEntradaFornecedor(id) {
+            if (!confirm('Tem certeza que deseja excluir esta entrada? O estoque será revertido.')) return;
+            
+            const entrada = dados.entradasFornecedor.find(e => e.id === id);
+            if (entrada) {
+                entrada.itens.forEach(item => {
+                    const mat = dados.materiais.find(m => m.id === item.material.id);
+                    if (mat) mat.saldo -= item.qtd;
+                });
+            }
+            
+            dados.entradasFornecedor = dados.entradasFornecedor.filter(e => e.id !== id);
+            dados.movimentacoes = dados.movimentacoes.filter(m => m.id !== id);
+            
+            atualizarEntradasFornecedor();
+            atualizarDashboard();
+            atualizarEstoque();
+            showAlert('Entrada excluída e estoque revertido com sucesso!');
+        }
+
+        // ==========================================
+        // ENTRADA POR DEVOLUÇÃO
+        // ==========================================
+        function salvarEntradaDevolucao(event) {
+            event.preventDefault();
+            
+            if (tempItens.devolucao.length === 0) {
+                showAlert('Adicione pelo menos um item à devolução!', 'warning');
+                return;
+            }
+            
+            const pepId = document.getElementById('entDevPEP').value;
+            const pep = dados.peps.find(p => p.id == pepId);
+            
+            const entrada = {
+                id: Date.now(),
+                tipo: 'entrada_devolucao',
+                data: document.getElementById('entDevData').value,
+                documento: pep.codigo,
+                pep: pep,
+                motivo: document.getElementById('entDevMotivo').value,
+                itens: [...tempItens.devolucao],
+                usuario: 'Admin',
+                observacoes: document.getElementById('entDevObs').value
+            };
+            
+            // Atualizar saldos
+            entrada.itens.forEach(item => {
+                const mat = dados.materiais.find(m => m.id === item.material.id);
+                if (mat) mat.saldo += item.qtd;
+            });
+            
+            dados.entradasDevolucao.push(entrada);
+            dados.movimentacoes.push(entrada);
+            
+            tempItens.devolucao = [];
+            atualizarListaTempItens('devolucao');
+            atualizarEntradasDevolucao();
+            atualizarDashboard();
+            atualizarEstoque();
+            document.getElementById('formEntradaDevolucao').reset();
+            document.getElementById('entDevData').value = new Date().toISOString().slice(0, 16);
+            
+            showAlert('Devolução registrada com sucesso!');
+        }
+
+        function atualizarEntradasDevolucao() {
+            const tbody = document.getElementById('listaEntradasDevolucao');
+            const entradas = [...dados.entradasDevolucao].sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            if (entradas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><br>Nenhuma devolução registrada</td></tr>';
+                return;
+            }
+
+            const motivos = {
+                'sobra': 'Sobra de Material',
+                'errado': 'Material Errado',
+                'defeito': 'Material com Defeito',
+                'nao_utilizado': 'Não Utilizado',
+                'outro': 'Outro'
+            };
+
+            tbody.innerHTML = entradas.map(ent => `
+                <tr>
+                    <td>${new Date(ent.data).toLocaleString('pt-BR')}</td>
+                    <td><strong>${ent.pep.codigo}</strong></td>
+                    <td>${motivos[ent.motivo] || ent.motivo}</td>
+                    <td>${ent.itens.length} item(s)</td>
+                    <td>${ent.usuario}</td>
+                    <td>
+                        <button class="btn-icon btn-delete" onclick="excluirEntradaDevolucao(${ent.id})" title="Excluir devolução">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function excluirEntradaDevolucao(id) {
+            if (!confirm('Tem certeza que deseja excluir esta devolução? O estoque será revertido.')) return;
+            
+            const entrada = dados.entradasDevolucao.find(e => e.id === id);
+            if (entrada) {
+                entrada.itens.forEach(item => {
+                    const mat = dados.materiais.find(m => m.id === item.material.id);
+                    if (mat) mat.saldo -= item.qtd;
+                });
+            }
+            
+            dados.entradasDevolucao = dados.entradasDevolucao.filter(e => e.id !== id);
+            dados.movimentacoes = dados.movimentacoes.filter(m => m.id !== id);
+            
+            atualizarEntradasDevolucao();
+            atualizarDashboard();
+            atualizarEstoque();
+            showAlert('Devolução excluída e estoque revertido com sucesso!');
+        }
+
+        // ==========================================
+        // SAÍDA POR PEP
+        // ==========================================
+        function salvarSaidaPEP(event) {
+            event.preventDefault();
+            
+            if (tempItens.saida.length === 0) {
+                showAlert('Adicione pelo menos um item à saída!', 'warning');
+                return;
+            }
+            
+            const pepId = document.getElementById('saidaPEPDestino').value;
+            const pep = dados.peps.find(p => p.id == pepId);
+            
+            const saida = {
+                id: Date.now(),
+                tipo: 'saida_pep',
+                data: document.getElementById('saidaData').value,
+                documento: pep.codigo,
+                pep: pep,
+                responsavel: document.getElementById('saidaResponsavel').value,
+                itens: [...tempItens.saida],
+                usuario: 'Admin',
+                observacoes: document.getElementById('saidaObs').value
+            };
+            
+            // Atualizar saldos
+            saida.itens.forEach(item => {
+                const mat = dados.materiais.find(m => m.id === item.material.id);
+                if (mat) mat.saldo -= item.qtd;
+            });
+            
+            dados.saidas.push(saida);
+            dados.movimentacoes.push(saida);
+            
+            tempItens.saida = [];
+            atualizarListaTempItens('saida');
+            atualizarSaidas();
+            atualizarDashboard();
+            atualizarEstoque();
+            document.getElementById('formSaidaPEP').reset();
+            document.getElementById('saidaData').value = new Date().toISOString().slice(0, 16);
+            
+            showAlert('Saída por PEP registrada com sucesso!');
+        }
+
+        function atualizarSaidas() {
+            const tbody = document.getElementById('listaSaidas');
+            const saidas = [...dados.saidas].sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            if (saidas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><br>Nenhuma saída registrada</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = saidas.map(saida => `
+                <tr>
+                    <td>${new Date(saida.data).toLocaleString('pt-BR')}</td>
+                    <td><strong>${saida.pep.codigo}</strong></td>
+                    <td>${saida.responsavel}</td>
+                    <td>${saida.itens.length} item(s)</td>
+                    <td>${saida.usuario}</td>
+                    <td>
+                        <button class="btn-icon btn-delete" onclick="excluirSaida(${saida.id})" title="Excluir saída">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function excluirSaida(id) {
+            if (!confirm('Tem certeza que deseja excluir esta saída? O estoque será revertido.')) return;
+            
+            const saida = dados.saidas.find(s => s.id === id);
+            if (saida) {
+                saida.itens.forEach(item => {
+                    const mat = dados.materiais.find(m => m.id === item.material.id);
+                    if (mat) mat.saldo += item.qtd;
+                });
+            }
+            
+            dados.saidas = dados.saidas.filter(s => s.id !== id);
+            dados.movimentacoes = dados.movimentacoes.filter(m => m.id !== id);
+            
+            atualizarSaidas();
+            atualizarDashboard();
+            atualizarEstoque();
+            showAlert('Saída excluída e estoque revertido com sucesso!');
+        }
+
+        // ==========================================
+        // ESTOQUE TOTAL
+        // ==========================================
+        function atualizarEstoque() {
+            const tbody = document.getElementById('listaEstoque');
+            
+            if (dados.materiais.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fas fa-box-open"></i><br>Nenhum material em estoque</td></tr>';
+                return;
+            }
+
+            // Ordenar por código
+            const materiaisOrdenados = [...dados.materiais].sort((a, b) => a.codigo.localeCompare(b.codigo));
+            
+            tbody.innerHTML = materiaisOrdenados.map(mat => `
+                <tr>
+                    <td><strong>${mat.codigo}</strong></td>
+                    <td>${mat.descricao}</td>
+                    <td>${mat.unidade}</td>
+                    <td><strong style="color: ${mat.saldo > 0 ? 'var(--success)' : 'var(--danger)'}">${mat.saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></td>
+                </tr>
+            `).join('');
+        }
+
+        // ==========================================
+        // CONSULTA POR PEP
+        // ==========================================
+        function buscarPEP(termo) {
+            const results = document.getElementById('consultaPEPResults');
+            
+            if (termo.length < 2) {
+                results.classList.remove('active');
+                return;
+            }
+            
+            const filtrados = dados.peps.filter(p => 
+                p.codigo.toLowerCase().includes(termo.toLowerCase()) ||
+                p.descricao.toLowerCase().includes(termo.toLowerCase())
+            );
+            
+            if (filtrados.length === 0) {
+                results.innerHTML = '<div class="search-item">Nenhum PEP encontrado</div>';
+                results.classList.add('active');
+                return;
+            }
+            
+            results.innerHTML = filtrados.map(pep => `
+                <div class="search-item" onclick="carregarDetalhesPEP(${pep.id})">
+                    <strong>${pep.codigo}</strong>
+                    <small>${pep.descricao}</small>
+                </div>
+            `).join('');
+            
+            results.classList.add('active');
+        }
+
+        function carregarDetalhesPEP(pepId) {
+            document.getElementById('consultaPEPResults').classList.remove('active');
+            const pep = dados.peps.find(p => p.id === pepId);
+            
+            if (!pep) return;
+            
+            document.getElementById('consultaPEPDetalhes').style.display = 'block';
+            document.getElementById('consultaPEPCodigo').textContent = pep.codigo;
+            document.getElementById('consultaPEPCliente').textContent = pep.cliente || 'Não informado';
+            document.getElementById('consultaPEPResponsavel').textContent = pep.responsavel || 'Não informado';
+            document.getElementById('consultaPEPStatus').innerHTML = `<span class="badge badge-success"><span class="status-dot status-active"></span>Ativo</span>`;
+            
+            // Calcular materiais alocados
+            const materiaisMap = {};
+            
+            // Saídas (entregues ao PEP)
+            dados.saidas.filter(s => s.pep.id === pepId).forEach(saida => {
+                saida.itens.forEach(item => {
+                    if (!materiaisMap[item.material.id]) {
+                        materiaisMap[item.material.id] = {
+                            material: item.material,
+                            entregue: 0,
+                            devolvido: 0,
+                            ultimaMov: saida.data
+                        };
+                    }
+                    materiaisMap[item.material.id].entregue += item.qtd;
+                    if (new Date(saida.data) > new Date(materiaisMap[item.material.id].ultimaMov)) {
+                        materiaisMap[item.material.id].ultimaMov = saida.data;
+                    }
+                });
+            });
+            
+            // Devoluções (retornaram do PEP)
+            dados.entradasDevolucao.filter(d => d.pep.id === pepId).forEach(dev => {
+                dev.itens.forEach(item => {
+                    if (!materiaisMap[item.material.id]) {
+                        materiaisMap[item.material.id] = {
+                            material: item.material,
+                            entregue: 0,
+                            devolvido: 0,
+                            ultimaMov: dev.data
+                        };
+                    }
+                    materiaisMap[item.material.id].devolvido += item.qtd;
+                    if (new Date(dev.data) > new Date(materiaisMap[item.material.id].ultimaMov)) {
+                        materiaisMap[item.material.id].ultimaMov = dev.data;
+                    }
+                });
+            });
+            
+            // Preencher tabela de materiais
+            const tbodyMats = document.getElementById('consultaPEPMateriais');
+            const materiaisList = Object.values(materiaisMap).filter(m => (m.entregue - m.devolvido) > 0);
+            
+            if (materiaisList.length === 0) {
+                tbodyMats.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-box-open"></i><br>Nenhum material alocado neste PEP</td></tr>';
+            } else {
+                tbodyMats.innerHTML = materiaisList.map(item => {
+                    const saldo = item.entregue - item.devolvido;
+                    return `
+                        <tr>
+                            <td><strong>${item.material.codigo}</strong></td>
+                            <td>${item.material.descricao}</td>
+                            <td>${item.entregue.toFixed(2)}</td>
+                            <td>${item.devolvido.toFixed(2)}</td>
+                            <td><strong style="color: var(--primary)">${saldo.toFixed(2)}</strong></td>
+                            <td>${new Date(item.ultimaMov).toLocaleDateString('pt-BR')}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
+            // Preencher histórico
+            const tbodyHist = document.getElementById('consultaPEPHistorico');
+            const historico = [];
+            
+            dados.saidas.filter(s => s.pep.id === pepId).forEach(s => {
+                s.itens.forEach(item => {
+                    historico.push({
+                        data: s.data,
+                        tipo: 'Entrega',
+                        tipoClass: 'badge-danger',
+                        material: item.material,
+                        qtd: item.qtd,
+                        usuario: s.usuario
+                    });
+                });
+            });
+            
+            dados.entradasDevolucao.filter(d => d.pep.id === pepId).forEach(d => {
+                d.itens.forEach(item => {
+                    historico.push({
+                        data: d.data,
+                        tipo: 'Devolução',
+                        tipoClass: 'badge-warning',
+                        material: item.material,
+                        qtd: item.qtd,
+                        usuario: d.usuario
+                    });
+                });
+            });
+            
+            historico.sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            if (historico.length === 0) {
+                tbodyHist.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-history"></i><br>Sem histórico de movimentações</td></tr>';
+            } else {
+                tbodyHist.innerHTML = historico.map(h => `
+                    <tr>
+                        <td>${new Date(h.data).toLocaleString('pt-BR')}</td>
+                        <td><span class="badge ${h.tipoClass}">${h.tipo}</span></td>
+                        <td>${h.material.codigo} - ${h.material.descricao}</td>
+                        <td><strong>${h.qtd}</strong> ${h.material.unidade}</td>
+                        <td>${h.usuario}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Scroll para os detalhes
+            document.getElementById('consultaPEPDetalhes').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function exportarConsultaPEP() {
+            const pepCodigo = document.getElementById('consultaPEPCodigo').textContent;
+            let csv = 'Código Material,Descrição,Qtd. Entregue,Qtd. Devolvida,Saldo em PEP\n';
+            
+            const rows = document.querySelectorAll('#consultaPEPMateriais tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 5) {
+                    csv += `"${cells[0].textContent}","${cells[1].textContent}",${cells[2].textContent},${cells[3].textContent},${cells[4].textContent}\n`;
+                }
+            });
+            
+            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `PEP_${pepCodigo}_materiais_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            
+            showAlert('Relatório exportado com sucesso!');
+        }
+
+        // ==========================================
+        // FUNÇÕES UTILITÁRIAS
+        // ==========================================
+        function filtrarTabela(inputId, tbodyId) {
+            const termo = document.getElementById(inputId).value.toLowerCase();
+            const tbody = document.getElementById(tbodyId);
+            const rows = tbody.getElementsByTagName('tr');
+            
+            Array.from(rows).forEach(row => {
+                if (row.querySelector('.empty-state')) return; // Ignorar estado vazio
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(termo) ? '' : 'none';
+            });
+        }
+
+        function atualizarTudo() {
+            atualizarDashboard();
+            atualizarListaMateriais();
+            atualizarListaPEPs();
+            atualizarSelects();
+            atualizarEntradasFornecedor();
+            atualizarEntradasDevolucao();
+            atualizarSaidas();
+            atualizarEstoque();
+        }
+
+        // Fechar modal ao clicar fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalMovimentacao');
+            if (event.target === modal) {
+                fecharModal();
+            }
+        }
+    </script>
+</body>
+</html>
