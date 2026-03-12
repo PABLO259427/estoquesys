@@ -1,200 +1,100 @@
-<script>
-// ==========================================
-// DADOS DO SISTEMA
-// ==========================================
-let dados = {
-    materiais: [],
-    peps: [],
-    movimentacoes: [],
-    entradasFornecedor: [],
-    entradasDevolucao: [],
-    saidas: []
-};
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste LocalStorage - EstoqueSys</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; }
+        button { padding: 12px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
+        #status { margin: 20px 0; padding: 15px; border-radius: 8px; background: #f0f0f0; }
+        pre { background: #eee; padding: 15px; overflow: auto; max-height: 300px; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Salvamento (LocalStorage)</h1>
+    <p>Objetivo: ver se salva e carrega ao fechar/reabrir o navegador</p>
 
-// Variáveis temporárias para formulários
-let tempItens = {
-    fornecedor: [],
-    devolucao: [],
-    saida: []
-};
+    <div>
+        <input type="text" id="novoItem" placeholder="Digite algo (ex: MAT-TESTE)" style="padding: 10px; width: 300px;">
+        <button onclick="adicionarE salvar()">Adicionar + Salvar</button>
+    </div>
 
-let movimentacaoAtual = null;
+    <button onclick="mostrarDados()">Mostrar dados atuais</button>
+    <button onclick="forcarSalvar()">Forçar salvamento agora</button>
+    <button onclick="limparTudo()">Limpar localStorage e recarregar</button>
 
-// ==========================================
-// PERSISTÊNCIA COM LOCALSTORAGE
-// ==========================================
-const STORAGE_KEY = 'EstoqueSysDados_v1';
+    <div id="status">Status: aguardando ação...</div>
+    <pre id="saida"></pre>
 
-function carregarDadosSalvos() {
-    const salvo = localStorage.getItem(STORAGE_KEY);
-    if (salvo) {
-        try {
-            const parsed = JSON.parse(salvo);
-            // Garantir que as estruturas existam mesmo se o JSON estiver incompleto
-            dados.materiais = Array.isArray(parsed.materiais) ? parsed.materiais : [];
-            dados.peps = Array.isArray(parsed.peps) ? parsed.peps : [];
-            dados.movimentacoes = Array.isArray(parsed.movimentacoes) ? parsed.movimentacoes : [];
-            dados.entradasFornecedor = Array.isArray(parsed.entradasFornecedor) ? parsed.entradasFornecedor : [];
-            dados.entradasDevolucao = Array.isArray(parsed.entradasDevolucao) ? parsed.entradasDevolucao : [];
-            dados.saidas = Array.isArray(parsed.saidas) ? parsed.saidas : [];
-            console.log('Dados carregados do localStorage com sucesso');
-        } catch (e) {
-            console.error('Erro ao carregar dados salvos:', e);
-            showAlert('Erro ao carregar dados salvos. Iniciando com estoque vazio.', 'warning');
+    <script>
+        let listaTeste = [];
+
+        const CHAVE = 'TesteEstoqueSys_Pablo_v2026';
+
+        function carregar() {
+            const salvo = localStorage.getItem(CHAVE);
+            if (salvo) {
+                try {
+                    listaTeste = JSON.parse(salvo);
+                    atualizarStatus(`Carregado ${listaTeste.length} item(s)`);
+                } catch (e) {
+                    atualizarStatus('Erro ao carregar: ' + e.message, 'erro');
+                }
+            } else {
+                atualizarStatus('Nenhum dado salvo ainda');
+            }
+            mostrarDados();
         }
-    }
-}
 
-function salvarDados() {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
-        console.log('Dados salvos no localStorage');
-    } catch (e) {
-        console.error('Erro ao salvar dados:', e);
-        if (e.name === 'QuotaExceededError') {
-            showAlert('Limite de armazenamento do navegador atingido! Tente limpar dados antigos ou usar outro navegador.', 'danger');
+        function salvar() {
+            try {
+                localStorage.setItem(CHAVE, JSON.stringify(listaTeste));
+                atualizarStatus(`Salvo com sucesso! (${listaTeste.length} itens)`);
+            } catch (e) {
+                atualizarStatus('ERRO ao salvar: ' + e.message + ' — Veja console F12', 'erro');
+                console.error(e);
+            }
         }
-    }
-}
 
-// ==========================================
-// INICIALIZAÇÃO
-// ==========================================
-document.addEventListener('DOMContentLoaded', function() {
-    // 1. Carregar dados salvos PRIMEIRO
-    carregarDadosSalvos();
+        function adicionarE salvar() {
+            const valor = document.getElementById('novoItem').value.trim();
+            if (!valor) {
+                alert('Digite algo!');
+                return;
+            }
+            listaTeste.push({ id: Date.now(), texto: valor, data: new Date().toLocaleString() });
+            document.getElementById('novoItem').value = '';
+            salvar();
+            mostrarDados();
+        }
 
-    // 2. Definir data atual nos campos
-    const agora = new Date();
-    const dataLocal = agora.toISOString().slice(0, 16);
-    
-    ['entFornData', 'entDevData', 'saidaData'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = dataLocal;
-    });
+        function mostrarDados() {
+            const pre = document.getElementById('saida');
+            pre.textContent = JSON.stringify(listaTeste, null, 2) || '[] (vazio)';
+        }
 
-    // 3. Data no header
-    document.getElementById('currentDate').textContent = agora.toLocaleDateString('pt-BR', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
+        function forcarSalvar() {
+            salvar();
+        }
 
-    // 4. Atualizar toda a interface com os dados carregados
-    atualizarTudo();
-});
+        function limparTudo() {
+            if (confirm('Limpar tudo mesmo?')) {
+                localStorage.removeItem(CHAVE);
+                listaTeste = [];
+                location.reload();
+            }
+        }
 
-// ==========================================
-// ... (mantenha todas as suas funções existentes abaixo: showSection, showAlert, atualizarDashboard, etc.)
-// ==========================================
+        function atualizarStatus(msg, tipo = 'normal') {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.style.background = tipo === 'erro' ? '#ffebee' : '#e8f5e9';
+            el.style.color = tipo === 'erro' ? '#c62828' : '#2e7d32';
+        }
 
-// Agora vamos adicionar salvarDados() no final de TODAS as funções que alteram 'dados'
-
-// MATERIAIS
-function salvarMaterial(event) {
-    event.preventDefault();
-    
-    const codigo = document.getElementById('matCodigo').value.trim().toUpperCase();
-    if (dados.materiais.some(m => m.codigo === codigo)) {
-        showAlert('Já existe um material com este código!', 'danger');
-        return;
-    }
-    
-    const material = {
-        id: Date.now(),
-        codigo: codigo,
-        descricao: document.getElementById('matDescricao').value,
-        unidade: document.getElementById('matUnidade').value,
-        saldo: parseFloat(document.getElementById('matSaldo').value) || 0,
-        custo: parseFloat(document.getElementById('matCusto').value) || 0,
-        localizacao: document.getElementById('matLocalizacao').value
-    };
-    
-    dados.materiais.push(material);
-    atualizarListaMateriais();
-    atualizarEstoque();
-    atualizarDashboard();
-    salvarDados();  // ← SALVA AQUI
-    document.getElementById('formMaterial').reset();
-    showAlert('Material cadastrado com sucesso!');
-}
-
-function excluirMaterial(id) {
-    if (!confirm('Tem certeza que deseja excluir este material permanentemente?')) return;
-    
-    dados.materiais = dados.materiais.filter(m => m.id !== id);
-    atualizarListaMateriais();
-    atualizarEstoque();
-    atualizarDashboard();
-    salvarDados();  // ← SALVA AQUI
-    showAlert('Material excluído com sucesso!');
-}
-
-// PEPS (faça o mesmo)
-function salvarPEP(event) {
-    event.preventDefault();
-    // ... seu código atual ...
-    dados.peps.push(pep);
-    atualizarListaPEPs();
-    atualizarSelects();
-    salvarDados();  // ← SALVA
-    document.getElementById('formPEP').reset();
-    showAlert('PEP cadastrado com sucesso!');
-}
-
-function excluirPEP(id) {
-    // ... seu código atual ...
-    dados.peps = dados.peps.filter(p => p.id !== id);
-    atualizarListaPEPs();
-    atualizarSelects();
-    salvarDados();  // ← SALVA
-    showAlert('PEP excluído com sucesso!');
-}
-
-// ENTRADA FORNECEDOR
-function salvarEntradaFornecedor(event) {
-    event.preventDefault();
-    if (tempItens.fornecedor.length === 0) {
-        showAlert('Adicione pelo menos um item à entrada!', 'warning');
-        return;
-    }
-    // ... seu código atual ...
-    dados.entradasFornecedor.push(entrada);
-    dados.movimentacoes.push(entrada);
-    tempItens.fornecedor = [];
-    atualizarListaTempItens('fornecedor');
-    atualizarEntradasFornecedor();
-    atualizarDashboard();
-    atualizarEstoque();
-    salvarDados();  // ← SALVA
-    document.getElementById('formEntradaFornecedor').reset();
-    showAlert('Entrada por fornecedor registrada com sucesso!');
-}
-
-function excluirEntradaFornecedor(id) {
-    // ... seu código atual ...
-    dados.entradasFornecedor = dados.entradasFornecedor.filter(e => e.id !== id);
-    dados.movimentacoes = dados.movimentacoes.filter(m => m.id !== id);
-    atualizarEntradasFornecedor();
-    atualizarDashboard();
-    atualizarEstoque();
-    salvarDados();  // ← SALVA
-    showAlert('Entrada excluída e estoque revertido!');
-}
-
-// Faça exatamente o mesmo para:
-// - salvarEntradaDevolucao()
-// - excluirEntradaDevolucao()
-// - salvarSaidaPEP()
-// - excluirSaida()
-
-// No final do arquivo, mantenha sua função atualizarTudo() como está
-function atualizarTudo() {
-    atualizarDashboard();
-    atualizarListaMateriais();
-    atualizarListaPEPs();
-    atualizarSelects();
-    atualizarEntradasFornecedor();
-    atualizarEntradasDevolucao();
-    atualizarSaidas();
-    atualizarEstoque();
-}
-</script>
+        // Inicia carregando
+        carregar();
+    </script>
+</body>
+</html>
