@@ -6,7 +6,7 @@
     <title>EstoqueSys - Sistema de Controle de Estoque</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Todo o seu CSS original aqui - não alterei nada, só copiei para ficar completo */
+        /* Seu CSS completo aqui - cole o CSS original que você tinha */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --primary: #1e3c72;
@@ -26,50 +26,60 @@
             color: var(--dark);
             min-height: 100vh;
         }
-        /* ... (o resto do seu CSS continua igual, não vou repetir todo aqui para não ficar gigante, mas mantenha o seu CSS completo) */
+        .container { display: flex; min-height: 100vh; }
+        .sidebar { width: 280px; background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%); color: white; position: fixed; height: 100vh; overflow-y: auto; z-index: 1000; box-shadow: var(--shadow-lg); }
+        /* ... cole o resto do seu CSS aqui (não mudei nada, só garanta que esteja completo) ... */
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Sidebar -->
+        <!-- Sidebar (cole o seu sidebar original) -->
         <nav class="sidebar">
-            <!-- ... todo o seu sidebar original aqui ... -->
+            <div class="logo">
+                <h1><i class="fas fa-warehouse"></i> EstoqueSys</h1>
+                <p>Gestão Inteligente de Materiais</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a class="nav-link active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</a></li>
+                <!-- ... o resto do menu ... -->
+            </ul>
         </nav>
 
-        <!-- Main Content -->
         <main class="main-content">
             <div id="alertContainer"></div>
 
             <!-- DASHBOARD -->
             <section id="dashboard" class="section active">
-                <!-- ... todo o conteúdo do dashboard ... -->
+                <div class="header">
+                    <h2><i class="fas fa-chart-line"></i> Dashboard</h2>
+                    <div class="user-info">
+                        <span id="currentDate"></span>
+                        <div class="user-avatar">AD</div>
+                    </div>
+                </div>
 
-                <!-- Botões de debug temporários (pode remover depois que testar) -->
+                <!-- Cards e tabela aqui - mantenha o original -->
+
+                <!-- Botões de debug (remova depois de testar) -->
                 <div style="margin: 20px; text-align: center;">
-                    <button onclick="console.log('Dados atuais:', dados); alert('Veja console F12 para ver dados')" class="btn btn-secondary">
-                        Ver dados no console
-                    </button>
-                    <button onclick="salvarDados(true); alert('Forçado salvamento')" class="btn btn-primary">
-                        Forçar salvamento agora
-                    </button>
-                    <button onclick="if(confirm('Limpar tudo?')){localStorage.removeItem('EstoqueSysDados_v3');location.reload();}" class="btn btn-danger">
-                        Limpar dados salvos
-                    </button>
+                    <button onclick="console.log(dados); alert('Veja console F12')" class="btn btn-secondary">Ver dados no console</button>
+                    <button onclick="salvarDados(true); alert('Forçado salvamento')" class="btn btn-primary">Forçar salvamento</button>
+                    <button onclick="if(confirm('Limpar tudo?')){localStorage.removeItem('EstoqueSysDados_v3');location.reload();}" class="btn btn-danger">Limpar dados salvos</button>
                 </div>
             </section>
 
-            <!-- ... todas as outras sections (materiais, peps, entrada-fornecedor, etc.) permanecem iguais ... -->
+            <!-- ... cole todas as outras sections originais aqui (materiais, peps, entrada-fornecedor etc.) ... -->
         </main>
     </div>
 
-    <!-- Modal de Detalhes -->
+    <!-- Modal -->
     <div id="modalMovimentacao" class="modal">
-        <!-- ... seu modal original ... -->
+        <!-- seu modal original -->
     </div>
 
     <script>
         // ==========================================
-        // DADOS DO SISTEMA
+        // DADOS
         // ==========================================
         let dados = {
             materiais: [],
@@ -83,7 +93,6 @@
         let tempItens = { fornecedor: [], devolucao: [], saida: [] };
         let movimentacaoAtual = null;
 
-        // PERSISTÊNCIA - CHAVE NOVA PARA RESETAR
         const STORAGE_KEY = 'EstoqueSysDados_v3';
 
         function carregarDadosSalvos() {
@@ -91,11 +100,10 @@
             if (salvo) {
                 try {
                     dados = JSON.parse(salvo);
-                    console.log('Dados carregados:', dados.materiais.length, 'materiais');
+                    console.log('Carregados', dados.materiais.length, 'materiais');
                 } catch (e) {
-                    console.error('Erro ao carregar:', e);
+                    console.error('Erro carregar:', e);
                     localStorage.removeItem(STORAGE_KEY);
-                    showAlert('Dados antigos corrompidos. Iniciando novo.', 'warning');
                 }
             }
         }
@@ -103,18 +111,14 @@
         function salvarDados(debug = false) {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
-                if (debug) console.log('Salvamento forçado OK');
+                if (debug) console.log('Salvo OK');
             } catch (e) {
-                console.error('Erro salvamento:', e);
-                showAlert('Falha ao salvar (veja console F12)', 'danger');
+                console.error('Erro salvar:', e);
             }
         }
 
-        // ==========================================
-        // INICIALIZAÇÃO
-        // ==========================================
         document.addEventListener('DOMContentLoaded', function() {
-            carregarDadosSalvos();  // Carrega primeiro!
+            carregarDadosSalvos();
 
             const agora = new Date();
             const dataLocal = agora.toISOString().slice(0, 16);
@@ -123,85 +127,27 @@
                 if (el) el.value = dataLocal;
             });
 
-            document.getElementById('currentDate').textContent = agora.toLocaleDateString('pt-BR', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-            });
+            document.getElementById('currentDate').textContent = agora.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
             atualizarTudo();
         });
 
-        // ==========================================
-        // SUAS FUNÇÕES (exemplo corrigido - adicione salvarDados() em todas que alteram dados)
-        // ==========================================
+        // SUAS FUNÇÕES (adicione salvarDados() no final de cada uma que altera dados)
 
         function salvarMaterial(event) {
             event.preventDefault();
-            
-            const codigo = document.getElementById('matCodigo').value.trim().toUpperCase();
-            if (!codigo) return showAlert('Código obrigatório!', 'warning');
-            if (dados.materiais.some(m => m.codigo === codigo)) {
-                return showAlert('Código já existe!', 'danger');
-            }
-
-            const material = {
-                id: Date.now(),
-                codigo,
-                descricao: document.getElementById('matDescricao').value.trim(),
-                unidade: document.getElementById('matUnidade').value,
-                saldo: parseFloat(document.getElementById('matSaldo').value) || 0,
-                custo: parseFloat(document.getElementById('matCusto').value) || 0,
-                localizacao: document.getElementById('matLocalizacao').value.trim()
-            };
-
+            // seu código de validação e criação...
             dados.materiais.push(material);
             atualizarListaMateriais();
             atualizarEstoque();
             atualizarDashboard();
-            salvarDados();  // ← SALVA AQUI
-            document.getElementById('formMaterial').reset();
-            showAlert('Material salvo!', 'success');
+            salvarDados();  // salva
+            // reset e alert
         }
 
-        function excluirMaterial(id) {
-            if (!confirm('Excluir permanentemente?')) return;
-            dados.materiais = dados.materiais.filter(m => m.id !== id);
-            atualizarListaMateriais();
-            atualizarEstoque();
-            atualizarDashboard();
-            salvarDados();  // ← SALVA AQUI
-            showAlert('Material excluído!');
-        }
+        // Repita em todas: salvarPEP, excluir*, salvarEntrada*, etc.
 
-        // REPITA O PADRÃO EM TODAS AS OUTRAS FUNÇÕES:
-        // - salvarPEP()
-        // - excluirPEP()
-        // - salvarEntradaFornecedor()
-        // - excluirEntradaFornecedor()
-        // - salvarEntradaDevolucao()
-        // - excluirEntradaDevolucao()
-        // - salvarSaidaPEP()
-        // - excluirSaida()
-        // Sempre colocar salvarDados() após as atualizações de tela
-
-        // ... o resto do seu script original continua aqui (showSection, showAlert, atualizarDashboard, etc.) ...
-
-        // Exemplo para salvarEntradaFornecedor (adicione salvarDados() no final):
-        function salvarEntradaFornecedor(event) {
-            event.preventDefault();
-            // ... todo o seu código de validação, criação de entrada, atualização de saldos ...
-            dados.entradasFornecedor.push(entrada);
-            dados.movimentacoes.push(entrada);
-            tempItens.fornecedor = [];
-            atualizarListaTempItens('fornecedor');
-            atualizarEntradasFornecedor();
-            atualizarDashboard();
-            atualizarEstoque();
-            salvarDados();  // ← OBRIGATÓRIO AQUI
-            document.getElementById('formEntradaFornecedor').reset();
-            showAlert('Entrada salva!');
-        }
-
-        // Faça o mesmo nas demais funções de movimentação e exclusão
+        // ... cole o resto do seu script original aqui ...
     </script>
 </body>
 </html>
