@@ -349,10 +349,28 @@
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Material</label>
-                                <select id="entryMaterial" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                                    <option value="">Selecione o material</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-search text-blue-500 mr-1"></i> Material
+                                </label>
+                                <div class="pep-search-wrapper" id="entryMaterialWrapper">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input
+                                        type="text"
+                                        id="entryMaterialSearch"
+                                        class="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Digite código ou descrição do material..."
+                                        oninput="filterMaterialDropdown('entryMaterial')"
+                                        onfocus="showMaterialDropdown('entryMaterial')"
+                                        autocomplete="off"
+                                    >
+                                    <button type="button" class="clear-btn" onclick="clearMaterialSearch('entryMaterial')" title="Limpar">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <div id="entryMaterialDropdown" class="pep-dropdown hidden"></div>
+                                </div>
+                                <!-- Campo oculto que guarda o valor selecionado -->
+                                <input type="hidden" id="entryMaterial" name="entryMaterial">
+                                <p class="mt-1 text-xs text-gray-500" id="entryMaterialSelected"></p>
                             </div>
                             
                             <div class="grid grid-cols-2 gap-4">
@@ -796,6 +814,99 @@
 
         // Limpa o campo de pesquisa de PEP
         function clearPepSearch(fieldId) {
+            const searchInput = document.getElementById(fieldId + 'Search');
+            const hiddenInput = document.getElementById(fieldId);
+            const selectedLabel = document.getElementById(fieldId + 'Selected');
+            const dropdown = document.getElementById(fieldId + 'Dropdown');
+
+            searchInput.value = '';
+            hiddenInput.value = '';
+            if (selectedLabel) selectedLabel.textContent = '';
+            dropdown.classList.add('hidden');
+        }
+
+        // ============================================================
+        // SISTEMA DE LUPA DE PESQUISA DE MATERIAL
+        // ============================================================
+
+        // Retorna lista de materiais disponíveis
+        function getAvailableMaterials() {
+            return data.materials.map(m => ({
+                id: m.id,
+                code: m.code,
+                description: m.description,
+                unit: m.unit,
+                stock: getMaterialStock(m.id)
+            }));
+        }
+
+        // Exibe o dropdown de Material ao focar no campo
+        function showMaterialDropdown(fieldId) {
+            const searchInput = document.getElementById(fieldId + 'Search');
+            const dropdown = document.getElementById(fieldId + 'Dropdown');
+            const materials = getAvailableMaterials();
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            renderMaterialDropdown(fieldId, materials, query);
+            dropdown.classList.remove('hidden');
+        }
+
+        // Filtra o dropdown de Material conforme o usuário digita
+        function filterMaterialDropdown(fieldId) {
+            const searchInput = document.getElementById(fieldId + 'Search');
+            const dropdown = document.getElementById(fieldId + 'Dropdown');
+            const query = searchInput.value.trim().toLowerCase();
+            const materials = getAvailableMaterials();
+
+            renderMaterialDropdown(fieldId, materials, query);
+            dropdown.classList.remove('hidden');
+        }
+
+        // Renderiza os itens do dropdown de Material
+        function renderMaterialDropdown(fieldId, materials, query) {
+            const dropdown = document.getElementById(fieldId + 'Dropdown');
+            const currentValue = document.getElementById(fieldId).value;
+            const filtered = query
+                ? materials.filter(m => 
+                    m.code.toLowerCase().includes(query) || 
+                    m.description.toLowerCase().includes(query)
+                  )
+                : materials;
+
+            dropdown.innerHTML = '';
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="pep-dropdown-empty">Nenhum material encontrado</div>';
+            } else {
+                filtered.forEach(material => {
+                    const isSelected = material.id === currentValue;
+                    const div = document.createElement('div');
+                    div.className = 'pep-dropdown-item' + (isSelected ? ' selected' : '');
+                    div.innerHTML = `<i class="fas fa-box text-blue-400 mr-2"></i><strong>${material.code}</strong> - ${material.description} (Disp: ${material.stock} ${material.unit})`;
+                    div.onclick = () => selectMaterial(fieldId, material.id, material.code, material.description);
+                    dropdown.appendChild(div);
+                });
+            }
+        }
+
+        // Seleciona um Material do dropdown
+        function selectMaterial(fieldId, materialId, materialCode, materialDesc) {
+            const searchInput = document.getElementById(fieldId + 'Search');
+            const hiddenInput = document.getElementById(fieldId);
+            const selectedLabel = document.getElementById(fieldId + 'Selected');
+            const dropdown = document.getElementById(fieldId + 'Dropdown');
+
+            searchInput.value = materialCode + ' - ' + materialDesc;
+            hiddenInput.value = materialId;
+            if (selectedLabel) {
+                selectedLabel.textContent = 'Material selecionado: ' + materialCode + ' - ' + materialDesc;
+            }
+            dropdown.classList.add('hidden');
+            saveData(); // Salva imediatamente
+        }
+
+        // Limpa o campo de pesquisa de Material
+        function clearMaterialSearch(fieldId) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const hiddenInput = document.getElementById(fieldId);
             const selectedLabel = document.getElementById(fieldId + 'Selected');
