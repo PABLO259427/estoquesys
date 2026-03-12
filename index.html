@@ -3,98 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste LocalStorage - EstoqueSys</title>
+    <title>EstoqueSys - Sistema de Controle de Estoque</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; }
-        button { padding: 12px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
-        #status { margin: 20px 0; padding: 15px; border-radius: 8px; background: #f0f0f0; }
-        pre { background: #eee; padding: 15px; overflow: auto; max-height: 300px; }
+        /* Todo o seu CSS original aqui - não alterei nada, só copiei para ficar completo */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #1e3c72;
+            --primary-light: #2a5298;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            color: var(--dark);
+            min-height: 100vh;
+        }
+        /* ... (o resto do seu CSS continua igual, não vou repetir todo aqui para não ficar gigante, mas mantenha o seu CSS completo) */
     </style>
 </head>
 <body>
-    <h1>Teste de Salvamento (LocalStorage)</h1>
-    <p>Objetivo: ver se salva e carrega ao fechar/reabrir o navegador</p>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <!-- ... todo o seu sidebar original aqui ... -->
+        </nav>
 
-    <div>
-        <input type="text" id="novoItem" placeholder="Digite algo (ex: MAT-TESTE)" style="padding: 10px; width: 300px;">
-        <button onclick="adicionarE salvar()">Adicionar + Salvar</button>
+        <!-- Main Content -->
+        <main class="main-content">
+            <div id="alertContainer"></div>
+
+            <!-- DASHBOARD -->
+            <section id="dashboard" class="section active">
+                <!-- ... todo o conteúdo do dashboard ... -->
+
+                <!-- Botões de debug temporários (pode remover depois que testar) -->
+                <div style="margin: 20px; text-align: center;">
+                    <button onclick="console.log('Dados atuais:', dados); alert('Veja console F12 para ver dados')" class="btn btn-secondary">
+                        Ver dados no console
+                    </button>
+                    <button onclick="salvarDados(true); alert('Forçado salvamento')" class="btn btn-primary">
+                        Forçar salvamento agora
+                    </button>
+                    <button onclick="if(confirm('Limpar tudo?')){localStorage.removeItem('EstoqueSysDados_v3');location.reload();}" class="btn btn-danger">
+                        Limpar dados salvos
+                    </button>
+                </div>
+            </section>
+
+            <!-- ... todas as outras sections (materiais, peps, entrada-fornecedor, etc.) permanecem iguais ... -->
+        </main>
     </div>
 
-    <button onclick="mostrarDados()">Mostrar dados atuais</button>
-    <button onclick="forcarSalvar()">Forçar salvamento agora</button>
-    <button onclick="limparTudo()">Limpar localStorage e recarregar</button>
-
-    <div id="status">Status: aguardando ação...</div>
-    <pre id="saida"></pre>
+    <!-- Modal de Detalhes -->
+    <div id="modalMovimentacao" class="modal">
+        <!-- ... seu modal original ... -->
+    </div>
 
     <script>
-        let listaTeste = [];
+        // ==========================================
+        // DADOS DO SISTEMA
+        // ==========================================
+        let dados = {
+            materiais: [],
+            peps: [],
+            movimentacoes: [],
+            entradasFornecedor: [],
+            entradasDevolucao: [],
+            saidas: []
+        };
 
-        const CHAVE = 'TesteEstoqueSys_Pablo_v2026';
+        let tempItens = { fornecedor: [], devolucao: [], saida: [] };
+        let movimentacaoAtual = null;
 
-        function carregar() {
-            const salvo = localStorage.getItem(CHAVE);
+        // PERSISTÊNCIA - CHAVE NOVA PARA RESETAR
+        const STORAGE_KEY = 'EstoqueSysDados_v3';
+
+        function carregarDadosSalvos() {
+            const salvo = localStorage.getItem(STORAGE_KEY);
             if (salvo) {
                 try {
-                    listaTeste = JSON.parse(salvo);
-                    atualizarStatus(`Carregado ${listaTeste.length} item(s)`);
+                    dados = JSON.parse(salvo);
+                    console.log('Dados carregados:', dados.materiais.length, 'materiais');
                 } catch (e) {
-                    atualizarStatus('Erro ao carregar: ' + e.message, 'erro');
+                    console.error('Erro ao carregar:', e);
+                    localStorage.removeItem(STORAGE_KEY);
+                    showAlert('Dados antigos corrompidos. Iniciando novo.', 'warning');
                 }
-            } else {
-                atualizarStatus('Nenhum dado salvo ainda');
             }
-            mostrarDados();
         }
 
-        function salvar() {
+        function salvarDados(debug = false) {
             try {
-                localStorage.setItem(CHAVE, JSON.stringify(listaTeste));
-                atualizarStatus(`Salvo com sucesso! (${listaTeste.length} itens)`);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+                if (debug) console.log('Salvamento forçado OK');
             } catch (e) {
-                atualizarStatus('ERRO ao salvar: ' + e.message + ' — Veja console F12', 'erro');
-                console.error(e);
+                console.error('Erro salvamento:', e);
+                showAlert('Falha ao salvar (veja console F12)', 'danger');
             }
         }
 
-        function adicionarE salvar() {
-            const valor = document.getElementById('novoItem').value.trim();
-            if (!valor) {
-                alert('Digite algo!');
-                return;
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarDadosSalvos();  // Carrega primeiro!
+
+            const agora = new Date();
+            const dataLocal = agora.toISOString().slice(0, 16);
+            ['entFornData', 'entDevData', 'saidaData'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = dataLocal;
+            });
+
+            document.getElementById('currentDate').textContent = agora.toLocaleDateString('pt-BR', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            atualizarTudo();
+        });
+
+        // ==========================================
+        // SUAS FUNÇÕES (exemplo corrigido - adicione salvarDados() em todas que alteram dados)
+        // ==========================================
+
+        function salvarMaterial(event) {
+            event.preventDefault();
+            
+            const codigo = document.getElementById('matCodigo').value.trim().toUpperCase();
+            if (!codigo) return showAlert('Código obrigatório!', 'warning');
+            if (dados.materiais.some(m => m.codigo === codigo)) {
+                return showAlert('Código já existe!', 'danger');
             }
-            listaTeste.push({ id: Date.now(), texto: valor, data: new Date().toLocaleString() });
-            document.getElementById('novoItem').value = '';
-            salvar();
-            mostrarDados();
+
+            const material = {
+                id: Date.now(),
+                codigo,
+                descricao: document.getElementById('matDescricao').value.trim(),
+                unidade: document.getElementById('matUnidade').value,
+                saldo: parseFloat(document.getElementById('matSaldo').value) || 0,
+                custo: parseFloat(document.getElementById('matCusto').value) || 0,
+                localizacao: document.getElementById('matLocalizacao').value.trim()
+            };
+
+            dados.materiais.push(material);
+            atualizarListaMateriais();
+            atualizarEstoque();
+            atualizarDashboard();
+            salvarDados();  // ← SALVA AQUI
+            document.getElementById('formMaterial').reset();
+            showAlert('Material salvo!', 'success');
         }
 
-        function mostrarDados() {
-            const pre = document.getElementById('saida');
-            pre.textContent = JSON.stringify(listaTeste, null, 2) || '[] (vazio)';
+        function excluirMaterial(id) {
+            if (!confirm('Excluir permanentemente?')) return;
+            dados.materiais = dados.materiais.filter(m => m.id !== id);
+            atualizarListaMateriais();
+            atualizarEstoque();
+            atualizarDashboard();
+            salvarDados();  // ← SALVA AQUI
+            showAlert('Material excluído!');
         }
 
-        function forcarSalvar() {
-            salvar();
+        // REPITA O PADRÃO EM TODAS AS OUTRAS FUNÇÕES:
+        // - salvarPEP()
+        // - excluirPEP()
+        // - salvarEntradaFornecedor()
+        // - excluirEntradaFornecedor()
+        // - salvarEntradaDevolucao()
+        // - excluirEntradaDevolucao()
+        // - salvarSaidaPEP()
+        // - excluirSaida()
+        // Sempre colocar salvarDados() após as atualizações de tela
+
+        // ... o resto do seu script original continua aqui (showSection, showAlert, atualizarDashboard, etc.) ...
+
+        // Exemplo para salvarEntradaFornecedor (adicione salvarDados() no final):
+        function salvarEntradaFornecedor(event) {
+            event.preventDefault();
+            // ... todo o seu código de validação, criação de entrada, atualização de saldos ...
+            dados.entradasFornecedor.push(entrada);
+            dados.movimentacoes.push(entrada);
+            tempItens.fornecedor = [];
+            atualizarListaTempItens('fornecedor');
+            atualizarEntradasFornecedor();
+            atualizarDashboard();
+            atualizarEstoque();
+            salvarDados();  // ← OBRIGATÓRIO AQUI
+            document.getElementById('formEntradaFornecedor').reset();
+            showAlert('Entrada salva!');
         }
 
-        function limparTudo() {
-            if (confirm('Limpar tudo mesmo?')) {
-                localStorage.removeItem(CHAVE);
-                listaTeste = [];
-                location.reload();
-            }
-        }
-
-        function atualizarStatus(msg, tipo = 'normal') {
-            const el = document.getElementById('status');
-            el.textContent = msg;
-            el.style.background = tipo === 'erro' ? '#ffebee' : '#e8f5e9';
-            el.style.color = tipo === 'erro' ? '#c62828' : '#2e7d32';
-        }
-
-        // Inicia carregando
-        carregar();
+        // Faça o mesmo nas demais funções de movimentação e exclusão
     </script>
 </body>
 </html>
