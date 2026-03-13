@@ -608,8 +608,8 @@
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-gray-50 border-b border-gray-200">
-                                    <th class="p-4 text-sm font-semibold text-gray-600">Material</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Código</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600">Material</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Estoque</th>
                                 </tr>
                             </thead>
@@ -1526,8 +1526,8 @@
                 
                 const row = `
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="p-4 text-sm font-medium text-gray-900">${m.description}</td>
                         <td class="p-4 text-sm text-gray-600">${m.code}</td>
+                        <td class="p-4 text-sm font-medium text-gray-900">${m.description}</td>
                         <td class="p-4 text-sm font-semibold text-gray-800">${totalStock} ${m.unit}</td>
                     </tr>
                 `;
@@ -2207,11 +2207,11 @@
             let content = `<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:left}th{background-color:#f0f0f0;font-weight:bold}h1{color:#333}</style></head><body>`;
             content += `<h1>Lista de Estoque</h1>`;
             content += `<p><strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}</p>`;
-            content += `<table><thead><tr><th>Material</th><th>Código</th><th>Quantidade</th><th>Unidade</th></tr></thead><tbody>`;
+            content += `<table><thead><tr><th>Código</th><th>Material</th><th>Quantidade</th><th>Unidade</th></tr></thead><tbody>`;
             
             materials.forEach(m => {
                 const stock = getMaterialStock(m.id);
-                content += `<tr><td>${m.description}</td><td>${m.code}</td><td>${stock}</td><td>${m.unit}</td></tr>`;
+                content += `<tr><td>${m.code}</td><td>${m.description}</td><td>${stock}</td><td>${m.unit}</td></tr>`;
             });
             
             content += `</tbody></table></body></html>`;
