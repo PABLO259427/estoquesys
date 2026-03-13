@@ -1151,6 +1151,10 @@
             if (tabName === 'stock') updateStockTable();
             if (tabName === 'history') updateHistoryTable();
             if (tabName === 'dashboard') updateDashboard();
+            if (tabName === 'historypep') {
+                const pep = document.getElementById('historyPepSearch').value;
+                if (pep) updateHistoryPepTable(pep);
+            }
         }
 
         // ============================================================
