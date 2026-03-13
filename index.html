@@ -611,9 +611,7 @@
                                     <th class="p-4 text-sm font-semibold text-gray-600">Material</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Código</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Estoque Geral</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600">Alocado em PEPs</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Disponível</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600">Detalhamento por PEP</th>
                                 </tr>
                             </thead>
                             <tbody id="stockTable" class="divide-y divide-gray-100">
@@ -685,6 +683,17 @@
                     <div id="historyPepContent" class="hidden">
                         <div class="mb-4">
                             <h3 class="text-lg font-bold text-gray-800 mb-2">PEP: <span id="selectedHistoryPep" class="text-blue-600"></span></h3>
+                        </div>
+                        
+                        <div class="mb-4 flex gap-3 flex-wrap items-center">
+                            <select id="historyPepTypeFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" onchange="updateHistoryPepTable(document.getElementById('historyPepSearch').value)">
+                                <option value="">Todos os Tipos</option>
+                                <option value="exit">Apenas Saidas</option>
+                                <option value="entry">Apenas Entradas/Devolucoes</option>
+                            </select>
+                            <button onclick="exportHistoryPepList()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm font-medium">
+                                <i class="fas fa-file-word"></i> Exportar Lista do PEP
+                            </button>
                         </div>
                         
                         <div class="overflow-x-auto max-h-96 overflow-y-auto custom-scrollbar">
@@ -1514,7 +1523,6 @@
             const tbody = document.getElementById('stockTable');
             tbody.innerHTML = '';
             
-            const filterPep = document.getElementById('stockFilterPep').value;
             const searchText = (document.getElementById('stockSearch').value || '').toLowerCase();
             
             data.materials.forEach(m => {
@@ -1526,23 +1534,12 @@
                 const allocated = getAllocatedStock(m.id);
                 const available = totalStock - allocated;
                 
-                let pepDetail = '';
-                Object.keys(data.pepAllocations).forEach(pep => {
-                    if (filterPep && pep !== filterPep) return;
-                    if (data.pepAllocations[pep][m.id]) {
-                        pepDetail += `<span class="inline-block px-2 py-1 mr-1 mb-1 bg-purple-100 text-purple-800 text-xs rounded">${pep}: ${data.pepAllocations[pep][m.id]} ${m.unit}</span>`;
-                    }
-                });
-                if (!pepDetail) pepDetail = '<span class="text-gray-400 text-sm">Não alocado</span>';
-                
                 const row = `
                     <tr class="hover:bg-gray-50 transition">
                         <td class="p-4 text-sm font-medium text-gray-900">${m.description}</td>
                         <td class="p-4 text-sm text-gray-600">${m.code}</td>
                         <td class="p-4 text-sm font-semibold text-gray-800">${totalStock} ${m.unit}</td>
-                        <td class="p-4 text-sm text-purple-600 font-medium">${allocated} ${m.unit}</td>
                         <td class="p-4 text-sm text-green-600 font-medium">${available} ${m.unit}</td>
-                        <td class="p-4 text-sm">${pepDetail}</td>
                     </tr>
                 `;
                 tbody.innerHTML += row;
@@ -2048,11 +2045,16 @@
         function updateHistoryPepTable(pep) {
             const tbody = document.getElementById('historyPepTable');
             tbody.innerHTML = '';
+            const typeFilter = document.getElementById('historyPepTypeFilter').value;
 
             // Filter movements for this PEP (saidas e devolucoes)
             const movements = data.movements.filter(m => {
-                if (m.type === 'exit' && m.pep === pep) return true;  // Saidas para o PEP
-                if (m.type === 'entry' && m.subType === 'return' && m.pep === pep) return true;  // Devolucoes do PEP
+                if (typeFilter === 'exit' && m.type === 'exit' && m.pep === pep) return true;  // Apenas Saidas
+                if (typeFilter === 'entry' && m.type === 'entry' && m.subType === 'return' && m.pep === pep) return true;  // Apenas Devolucoes
+                if (typeFilter === '' && m.pep === pep) {  // Todos os tipos
+                    if (m.type === 'exit') return true;
+                    if (m.type === 'entry' && m.subType === 'return') return true;
+                }
                 return false;
             }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -2119,6 +2121,81 @@
             updateAllViews();
             updateHistoryPepTable(pep);
             showNotification('Registro apagado com sucesso!', 'success');
+        }
+
+        function exportHistoryPepList() {
+            const pep = document.getElementById('historyPepSearch').value;
+            const typeFilter = document.getElementById('historyPepTypeFilter').value;
+            
+            if (!pep) {
+                showNotification('Selecione um PEP primeiro!', 'error');
+                return;
+            }
+
+            // Coletar movimentos do PEP com filtro de tipo
+            const movements = data.movements.filter(m => {
+                if (typeFilter === 'exit' && m.type === 'exit' && m.pep === pep) return true;
+                if (typeFilter === 'entry' && m.type === 'entry' && m.subType === 'return' && m.pep === pep) return true;
+                if (typeFilter === '' && m.pep === pep) {
+                    if (m.type === 'exit') return true;
+                    if (m.type === 'entry' && m.subType === 'return') return true;
+                }
+                return false;
+            }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (movements.length === 0) {
+                showNotification('Nenhum registro para exportar!', 'error');
+                return;
+            }
+
+            // Gerar conteúdo do Word
+            let content = `<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:left}th{background-color:#f0f0f0;font-weight:bold}h1{color:#333}h2{color:#666;margin-top:20px}</style></head><body>`;
+            content += `<h1>Lista de Materiais - PEP: ${pep}</h1>`;
+            content += `<p><strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}</p>`;
+            
+            if (typeFilter === '' || typeFilter === 'exit') {
+                const saidas = movements.filter(m => m.type === 'exit');
+                if (saidas.length > 0) {
+                    content += `<h2>Saídas de Material</h2>`;
+                    content += `<table><thead><tr><th>Data/Hora</th><th>Material</th><th>Código</th><th>Quantidade</th><th>Unidade</th><th>Observação</th></tr></thead><tbody>`;
+                    saidas.forEach(m => {
+                        const mat = data.materials.find(mat => mat.id === m.materialId);
+                        const date = new Date(m.date);
+                        const dateStr = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR');
+                        content += `<tr><td>${dateStr}</td><td>${mat ? mat.description : 'N/A'}</td><td>${mat ? mat.code : 'N/A'}</td><td>${m.quantity}</td><td>${mat ? mat.unit : ''}</td><td>${m.obs || '-'}</td></tr>`;
+                    });
+                    content += `</tbody></table>`;
+                }
+            }
+            
+            if (typeFilter === '' || typeFilter === 'entry') {
+                const entradas = movements.filter(m => m.type === 'entry');
+                if (entradas.length > 0) {
+                    content += `<h2>Entradas/Devoluções de Material</h2>`;
+                    content += `<table><thead><tr><th>Data/Hora</th><th>Material</th><th>Código</th><th>Quantidade</th><th>Unidade</th><th>Observação</th></tr></thead><tbody>`;
+                    entradas.forEach(m => {
+                        const mat = data.materials.find(mat => mat.id === m.materialId);
+                        const date = new Date(m.date);
+                        const dateStr = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR');
+                        content += `<tr><td>${dateStr}</td><td>${mat ? mat.description : 'N/A'}</td><td>${mat ? mat.code : 'N/A'}</td><td>${m.quantity}</td><td>${mat ? mat.unit : ''}</td><td>${m.obs || '-'}</td></tr>`;
+                    });
+                    content += `</tbody></table>`;
+                }
+            }
+            
+            content += `</body></html>`;
+
+            // Criar arquivo e fazer download
+            const blob = new Blob([content], { type: 'application/msword' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Lista_PEP_${pep}_${new Date().toISOString().split('T')[0]}.doc`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showNotification('Lista do PEP exportada com sucesso!', 'success');
         }
     </script>
 </body>
