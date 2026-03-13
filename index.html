@@ -1933,12 +1933,62 @@
         // ============================================================
         function showNotification(message, type) {
             const div = document.createElement('div');
-            div.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white font-medium z-50 animate-fade-in ${
-                type === 'success' ? 'bg-green-600' : 'bg-red-600'
-            }`;
-            div.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>${message}`;
+            
+            div.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 16px 24px;
+                background-color: ${type === 'success' ? '#10b981' : '#ef4444'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                font-weight: 600;
+                z-index: 9999;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                animation: slideIn 0.4s ease-out;
+                font-family: 'Inter', sans-serif;
+            `;
+            
+            div.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>${message}`;
             document.body.appendChild(div);
-            setTimeout(() => div.remove(), 3000);
+            
+            setTimeout(() => {
+                div.style.animation = 'slideOut 0.4s ease-out';
+                setTimeout(() => div.remove(), 400);
+            }, 3000);
+        }
+        
+        // Adicionar animacoes CSS para as notificacoes se nao existirem
+        if (!document.getElementById('notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
         }
 
         function viewPepDetails(pep) {
