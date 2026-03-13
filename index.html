@@ -594,13 +594,13 @@
 
                 <!-- Stock Tab -->
                 <div id="content-stock" class="tab-content hidden animate-fade-in">
-                    <div class="mb-6">
-                        <h2 class="text-xl font-bold text-gray-800 mb-4">Posição de Estoque por PEP</h2>
-                        <div class="flex gap-4 mb-4">
-                            <select id="stockFilterPep" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="filterStockByPep()">
-                                <option value="">Todos os PEPs</option>
-                            </select>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">Posição de Estoque</h2>
+                        <div class="flex gap-2 flex-wrap">
                             <input type="text" id="stockSearch" placeholder="Buscar material..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onkeyup="filterStock()">
+                            <button onclick="exportStockList()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm font-medium">
+                                <i class="fas fa-file-word"></i> Exportar Estoque
+                            </button>
                         </div>
                     </div>
                     
@@ -610,21 +610,13 @@
                                 <tr class="bg-gray-50 border-b border-gray-200">
                                     <th class="p-4 text-sm font-semibold text-gray-600">Material</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Código</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600">Estoque Geral</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600">Disponível</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600">Estoque</th>
                                 </tr>
                             </thead>
                             <tbody id="stockTable" class="divide-y divide-gray-100">
                                 <!-- Stock data will be populated here -->
                             </tbody>
                         </table>
-                    </div>
-                    
-                    <div class="mt-8">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">Resumo por PEP</h3>
-                        <div id="pepSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <!-- PEP cards will be populated here -->
-                        </div>
                     </div>
                 </div>
 
@@ -1531,15 +1523,12 @@
                 }
                 
                 const totalStock = getMaterialStock(m.id);
-                const allocated = getAllocatedStock(m.id);
-                const available = totalStock - allocated;
                 
                 const row = `
                     <tr class="hover:bg-gray-50 transition">
                         <td class="p-4 text-sm font-medium text-gray-900">${m.description}</td>
                         <td class="p-4 text-sm text-gray-600">${m.code}</td>
                         <td class="p-4 text-sm font-semibold text-gray-800">${totalStock} ${m.unit}</td>
-                        <td class="p-4 text-sm text-green-600 font-medium">${available} ${m.unit}</td>
                     </tr>
                 `;
                 tbody.innerHTML += row;
@@ -2196,6 +2185,48 @@
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
             showNotification('Lista do PEP exportada com sucesso!', 'success');
+        }
+
+        function exportStockList() {
+            const searchText = (document.getElementById('stockSearch').value || '').toLowerCase();
+            
+            // Filtrar materiais conforme a busca
+            const materials = data.materials.filter(m => {
+                if (searchText && !m.description.toLowerCase().includes(searchText) && !m.code.toLowerCase().includes(searchText)) {
+                    return false;
+                }
+                return true;
+            });
+
+            if (materials.length === 0) {
+                showNotification('Nenhum material para exportar!', 'error');
+                return;
+            }
+
+            // Gerar conteúdo do Word
+            let content = `<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:left}th{background-color:#f0f0f0;font-weight:bold}h1{color:#333}</style></head><body>`;
+            content += `<h1>Lista de Estoque</h1>`;
+            content += `<p><strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}</p>`;
+            content += `<table><thead><tr><th>Material</th><th>Código</th><th>Quantidade</th><th>Unidade</th></tr></thead><tbody>`;
+            
+            materials.forEach(m => {
+                const stock = getMaterialStock(m.id);
+                content += `<tr><td>${m.description}</td><td>${m.code}</td><td>${stock}</td><td>${m.unit}</td></tr>`;
+            });
+            
+            content += `</tbody></table></body></html>`;
+
+            // Criar arquivo e fazer download
+            const blob = new Blob([content], { type: 'application/msword' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Estoque_${new Date().toISOString().split('T')[0]}.doc`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showNotification('Estoque exportado com sucesso!', 'success');
         }
     </script>
 </body>
