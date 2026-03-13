@@ -146,6 +146,21 @@
             color: #9ca3af;
             font-style: italic;
         }
+
+        /* Botão lixeira no histórico */
+        .btn-delete-history {
+            color: #ef4444;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .btn-delete-history:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -162,9 +177,12 @@
                         <p class="text-sm text-gray-600">Gestão de materiais por Projeto de Engenharia</p>
                     </div>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex gap-3 flex-wrap justify-center">
                     <button onclick="exportData()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <i class="fas fa-download"></i> Exportar Dados
+                        <i class="fas fa-download"></i> Exportar JSON
+                    </button>
+                    <button onclick="exportToWord()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm font-medium">
+                        <i class="fas fa-file-word"></i> Exportar Word
                     </button>
                     <button onclick="document.getElementById('importFile').click()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center gap-2 text-sm font-medium text-gray-700">
                         <i class="fas fa-upload"></i> Importar
@@ -246,7 +264,7 @@
                         <i class="fas fa-undo mr-2"></i>Devolução PEP
                     </button>
                     <button onclick="switchTab('stock')" id="tab-stock" class="tab-btn px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800 transition whitespace-nowrap">
-                        <i class="fas fa-warehouse mr-2"></i>Estoque & PEPs
+                        <i class="fas fa-warehouse mr-2"></i>Posição de Estoque
                     </button>
                     <button onclick="switchTab('history')" id="tab-history" class="tab-btn px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800 transition whitespace-nowrap">
                         <i class="fas fa-history mr-2"></i>Histórico
@@ -410,7 +428,7 @@
                             <!-- Campo PEP Destino com LUPA - Saída por PEP -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    <i class="fas fa-search text-red-500 mr-1"></i> PEP de Origem / Destino
+                                    <i class="fas fa-search text-red-500 mr-1"></i> PEP de Destino
                                 </label>
                                 <div class="pep-search-wrapper" id="exitPepWrapper">
                                     <i class="fas fa-search search-icon"></i>
@@ -428,16 +446,33 @@
                                     </button>
                                     <div id="exitPepDropdown" class="pep-dropdown hidden"></div>
                                 </div>
-                                <!-- Campo oculto que guarda o valor selecionado -->
                                 <input type="hidden" id="exitPep" name="exitPep">
                                 <p class="mt-1 text-xs text-gray-500" id="exitPepSelected"></p>
                             </div>
-                            
+
+                            <!-- Campo Material com LUPA - Saída por PEP -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Material</label>
-                                <select id="exitMaterial" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required onchange="updateAvailableStock()">
-                                    <option value="">Selecione o material</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-search text-blue-500 mr-1"></i> Material
+                                </label>
+                                <div class="pep-search-wrapper" id="exitMaterialWrapper">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input
+                                        type="text"
+                                        id="exitMaterialSearch"
+                                        class="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Digite código ou descrição do material..."
+                                        oninput="filterMaterialDropdown('exitMaterial')"
+                                        onfocus="showMaterialDropdown('exitMaterial')"
+                                        autocomplete="off"
+                                    >
+                                    <button type="button" class="clear-btn" onclick="clearMaterialSearch('exitMaterial')" title="Limpar">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <div id="exitMaterialDropdown" class="pep-dropdown hidden"></div>
+                                </div>
+                                <input type="hidden" id="exitMaterial" name="exitMaterial">
+                                <p class="mt-1 text-xs text-gray-500" id="exitMaterialSelected"></p>
                                 <p class="mt-1 text-sm text-gray-600">Estoque disponível: <span id="availableStock" class="font-semibold text-blue-600">0</span></p>
                             </div>
                             
@@ -469,23 +504,60 @@
                     </div>
                 </div>
 
-                <!-- Return Tab -->
+                <!-- Return Tab — Devolução de Material por PEP com LUPA -->
                 <div id="content-return" class="tab-content hidden animate-fade-in">
                     <div class="max-w-2xl mx-auto">
                         <h2 class="text-xl font-bold text-gray-800 mb-6">Devolução de Material por PEP</h2>
                         <form id="returnForm" class="space-y-4 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+
+                            <!-- Campo PEP de Origem com LUPA na aba Devolução -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">PEP de Origem</label>
-                                <select id="returnPep" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required onchange="loadPepMaterials()">
-                                    <option value="">Selecione o PEP</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-search text-purple-500 mr-1"></i> PEP de Origem
+                                </label>
+                                <div class="pep-search-wrapper" id="returnPepWrapper">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input
+                                        type="text"
+                                        id="returnPepSearch"
+                                        class="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        placeholder="Digite para pesquisar o PEP..."
+                                        oninput="filterPepDropdown('returnPep')"
+                                        onfocus="showPepDropdown('returnPep')"
+                                        autocomplete="off"
+                                    >
+                                    <button type="button" class="clear-btn" onclick="clearReturnPep()" title="Limpar">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <div id="returnPepDropdown" class="pep-dropdown hidden"></div>
+                                </div>
+                                <input type="hidden" id="returnPep" name="returnPep">
+                                <p class="mt-1 text-xs text-gray-500" id="returnPepSelected"></p>
                             </div>
-                            
+
+                            <!-- Campo Material com LUPA na aba Devolução -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Material</label>
-                                <select id="returnMaterial" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required onchange="updatePepStock()">
-                                    <option value="">Selecione o material</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-search text-blue-500 mr-1"></i> Material
+                                </label>
+                                <div class="pep-search-wrapper" id="returnMaterialWrapper">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input
+                                        type="text"
+                                        id="returnMaterialSearch"
+                                        class="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Digite código ou descrição do material..."
+                                        oninput="filterReturnMaterialDropdown()"
+                                        onfocus="showReturnMaterialDropdown()"
+                                        autocomplete="off"
+                                    >
+                                    <button type="button" class="clear-btn" onclick="clearReturnMaterial()" title="Limpar">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <div id="returnMaterialDropdown" class="pep-dropdown hidden"></div>
+                                </div>
+                                <input type="hidden" id="returnMaterial" name="returnMaterial">
+                                <p class="mt-1 text-xs text-gray-500" id="returnMaterialSelected"></p>
                                 <p class="mt-1 text-sm text-gray-600">Quantidade alocada neste PEP: <span id="pepAllocatedStock" class="font-semibold text-purple-600">0</span></p>
                             </div>
                             
@@ -555,11 +627,11 @@
                     </div>
                 </div>
 
-                <!-- History Tab -->
+                <!-- History Tab — com coluna de Lixeira para apagar registros -->
                 <div id="content-history" class="tab-content hidden animate-fade-in">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Histórico de Movimentações</h2>
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 flex-wrap">
                             <input type="date" id="historyDateFrom" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             <input type="date" id="historyDateTo" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             <button onclick="filterHistory()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
@@ -579,6 +651,7 @@
                                     <th class="p-3 text-sm font-semibold text-gray-600">PEP/Fornecedor</th>
                                     <th class="p-3 text-sm font-semibold text-gray-600">Responsável</th>
                                     <th class="p-3 text-sm font-semibold text-gray-600">Saldo Após</th>
+                                    <th class="p-3 text-sm font-semibold text-gray-600 text-center">Apagar</th>
                                 </tr>
                             </thead>
                             <tbody id="historyTable" class="divide-y divide-gray-100">
@@ -658,6 +731,18 @@
                 if (!e.target.closest('#exitPepWrapper')) {
                     document.getElementById('exitPepDropdown').classList.add('hidden');
                 }
+                if (!e.target.closest('#returnPepWrapper')) {
+                    document.getElementById('returnPepDropdown').classList.add('hidden');
+                }
+                if (!e.target.closest('#returnMaterialWrapper')) {
+                    document.getElementById('returnMaterialDropdown').classList.add('hidden');
+                }
+                if (!e.target.closest('#entryMaterialWrapper')) {
+                    document.getElementById('entryMaterialDropdown').classList.add('hidden');
+                }
+                if (!e.target.closest('#exitMaterialWrapper')) {
+                    document.getElementById('exitMaterialDropdown').classList.add('hidden');
+                }
             });
         });
 
@@ -667,7 +752,6 @@
                 const saved = localStorage.getItem('pepStockData');
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    // Garante estrutura mínima
                     data.materials = parsed.materials || [];
                     data.movements = parsed.movements || [];
                     data.pepAllocations = parsed.pepAllocations || {};
@@ -678,11 +762,10 @@
             }
         }
 
-        // Salva dados no localStorage — chamado após TODA operação que modifica dados
+        // Salva dados no localStorage
         function saveData() {
             try {
                 localStorage.setItem('pepStockData', JSON.stringify(data));
-                // Backup adicional com timestamp para segurança
                 localStorage.setItem('pepStockData_backup', JSON.stringify({
                     data: data,
                     savedAt: new Date().toISOString()
@@ -700,49 +783,36 @@
             updateStockTable();
             updateHistoryTable();
             updatePepSummary();
-            updatePepSearchDropdowns(); // Atualiza os dropdowns das lupas
         }
 
         // ============================================================
         // SISTEMA DE LUPA DE PESQUISA DE PEP
         // ============================================================
 
-        // Retorna lista de PEPs disponíveis
         function getAvailablePeps() {
             return Object.keys(data.pepAllocations).sort();
         }
 
-        // Atualiza os dropdowns das lupas de PEP
-        function updatePepSearchDropdowns() {
-            // Não precisa fazer nada aqui — os dropdowns são gerados dinamicamente
-        }
-
-        // Exibe o dropdown de PEP ao focar no campo
         function showPepDropdown(fieldId) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const dropdown = document.getElementById(fieldId + 'Dropdown');
             const peps = getAvailablePeps();
             const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
             renderPepDropdown(fieldId, peps, query);
             dropdown.classList.remove('hidden');
         }
 
-        // Filtra o dropdown conforme o usuário digita
         function filterPepDropdown(fieldId) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const dropdown = document.getElementById(fieldId + 'Dropdown');
             const query = searchInput.value.trim().toLowerCase();
             const peps = getAvailablePeps();
-
             renderPepDropdown(fieldId, peps, query);
             dropdown.classList.remove('hidden');
 
-            // Se o campo de saída por PEP não encontrou nada mas tem texto, permite criar novo PEP
             if (fieldId === 'exitPep' && query.length > 0) {
                 const exactMatch = peps.some(p => p.toLowerCase() === query);
                 if (!exactMatch) {
-                    // Atualiza o valor oculto com o texto digitado (novo PEP)
                     document.getElementById('exitPep').value = searchInput.value.trim();
                     document.getElementById('exitPepSelected').textContent =
                         '✦ Novo PEP será criado: ' + searchInput.value.trim();
@@ -750,13 +820,10 @@
             }
         }
 
-        // Renderiza os itens do dropdown
         function renderPepDropdown(fieldId, peps, query) {
             const dropdown = document.getElementById(fieldId + 'Dropdown');
             const currentValue = document.getElementById(fieldId).value;
-            const filtered = query
-                ? peps.filter(p => p.toLowerCase().includes(query))
-                : peps;
+            const filtered = query ? peps.filter(p => p.toLowerCase().includes(query)) : peps;
 
             dropdown.innerHTML = '';
 
@@ -778,7 +845,6 @@
                     dropdown.appendChild(div);
                 });
 
-                // Para saída por PEP, adiciona opção de criar novo
                 if (fieldId === 'exitPep' && query.length > 0) {
                     const exactMatch = peps.some(p => p.toLowerCase() === query);
                     if (!exactMatch) {
@@ -792,7 +858,6 @@
             }
         }
 
-        // Seleciona um PEP do dropdown
         function selectPep(fieldId, pepValue) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const hiddenInput = document.getElementById(fieldId);
@@ -806,13 +871,12 @@
             }
             dropdown.classList.add('hidden');
 
-            // Se for o campo de devolução de PEP na aba Entrada, dispara o carregamento de materiais
-            if (fieldId === 'entryPepReturn') {
-                // Nada adicional necessário aqui
+            // Se for o campo de devolução, carrega os materiais do PEP
+            if (fieldId === 'returnPep') {
+                loadReturnPepMaterials(pepValue);
             }
         }
 
-        // Limpa o campo de pesquisa de PEP
         function clearPepSearch(fieldId) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const hiddenInput = document.getElementById(fieldId);
@@ -825,11 +889,16 @@
             dropdown.classList.add('hidden');
         }
 
+        // Limpa o PEP de origem na aba Devolução e reseta o material
+        function clearReturnPep() {
+            clearPepSearch('returnPep');
+            clearReturnMaterial();
+        }
+
         // ============================================================
         // SISTEMA DE LUPA DE PESQUISA DE MATERIAL
         // ============================================================
 
-        // Retorna lista de materiais disponíveis
         function getAvailableMaterials() {
             return data.materials.map(m => ({
                 id: m.id,
@@ -840,35 +909,30 @@
             }));
         }
 
-        // Exibe o dropdown de Material ao focar no campo
         function showMaterialDropdown(fieldId) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const dropdown = document.getElementById(fieldId + 'Dropdown');
             const materials = getAvailableMaterials();
             const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
             renderMaterialDropdown(fieldId, materials, query);
             dropdown.classList.remove('hidden');
         }
 
-        // Filtra o dropdown de Material conforme o usuário digita
         function filterMaterialDropdown(fieldId) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const dropdown = document.getElementById(fieldId + 'Dropdown');
             const query = searchInput.value.trim().toLowerCase();
             const materials = getAvailableMaterials();
-
             renderMaterialDropdown(fieldId, materials, query);
             dropdown.classList.remove('hidden');
         }
 
-        // Renderiza os itens do dropdown de Material
         function renderMaterialDropdown(fieldId, materials, query) {
             const dropdown = document.getElementById(fieldId + 'Dropdown');
             const currentValue = document.getElementById(fieldId).value;
             const filtered = query
-                ? materials.filter(m => 
-                    m.code.toLowerCase().includes(query) || 
+                ? materials.filter(m =>
+                    m.code.toLowerCase().includes(query) ||
                     m.description.toLowerCase().includes(query)
                   )
                 : materials;
@@ -889,7 +953,6 @@
             }
         }
 
-        // Seleciona um Material do dropdown
         function selectMaterial(fieldId, materialId, materialCode, materialDesc) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const hiddenInput = document.getElementById(fieldId);
@@ -902,10 +965,20 @@
                 selectedLabel.textContent = 'Material selecionado: ' + materialCode + ' - ' + materialDesc;
             }
             dropdown.classList.add('hidden');
-            saveData(); // Salva imediatamente
+
+            // Atualiza estoque disponível na aba Saída
+            if (fieldId === 'exitMaterial') {
+                const stock = getMaterialStock(materialId);
+                const unit = getMaterialUnit(materialId);
+                document.getElementById('availableStock').textContent = stock + ' ' + unit;
+            }
+
+            // Atualiza estoque alocado na aba Devolução
+            if (fieldId === 'returnMaterial') {
+                updateReturnPepStock(materialId);
+            }
         }
 
-        // Limpa o campo de pesquisa de Material
         function clearMaterialSearch(fieldId) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const hiddenInput = document.getElementById(fieldId);
@@ -916,6 +989,98 @@
             hiddenInput.value = '';
             if (selectedLabel) selectedLabel.textContent = '';
             dropdown.classList.add('hidden');
+        }
+
+        // ============================================================
+        // LUPA DE MATERIAL NA ABA DEVOLUÇÃO (filtrada pelo PEP selecionado)
+        // ============================================================
+
+        function loadReturnPepMaterials(pep) {
+            // Limpa o material selecionado ao trocar de PEP
+            clearReturnMaterial();
+        }
+
+        function showReturnMaterialDropdown() {
+            const pep = document.getElementById('returnPep').value;
+            const searchInput = document.getElementById('returnMaterialSearch');
+            const dropdown = document.getElementById('returnMaterialDropdown');
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            renderReturnMaterialDropdown(pep, query);
+            dropdown.classList.remove('hidden');
+        }
+
+        function filterReturnMaterialDropdown() {
+            const pep = document.getElementById('returnPep').value;
+            const searchInput = document.getElementById('returnMaterialSearch');
+            const dropdown = document.getElementById('returnMaterialDropdown');
+            const query = searchInput.value.trim().toLowerCase();
+            renderReturnMaterialDropdown(pep, query);
+            dropdown.classList.remove('hidden');
+        }
+
+        function renderReturnMaterialDropdown(pep, query) {
+            const dropdown = document.getElementById('returnMaterialDropdown');
+            dropdown.innerHTML = '';
+
+            if (!pep) {
+                dropdown.innerHTML = '<div class="pep-dropdown-empty">Selecione um PEP primeiro</div>';
+                return;
+            }
+
+            const pepAllocs = data.pepAllocations[pep] || {};
+            let materials = Object.keys(pepAllocs)
+                .filter(matId => pepAllocs[matId] > 0)
+                .map(matId => {
+                    const mat = data.materials.find(m => m.id === matId);
+                    return mat ? { id: mat.id, code: mat.code, description: mat.description, unit: mat.unit, allocated: pepAllocs[matId] } : null;
+                })
+                .filter(Boolean);
+
+            if (query) {
+                materials = materials.filter(m =>
+                    m.code.toLowerCase().includes(query) ||
+                    m.description.toLowerCase().includes(query)
+                );
+            }
+
+            if (materials.length === 0) {
+                dropdown.innerHTML = '<div class="pep-dropdown-empty">Nenhum material alocado neste PEP</div>';
+            } else {
+                materials.forEach(material => {
+                    const div = document.createElement('div');
+                    div.className = 'pep-dropdown-item';
+                    div.innerHTML = `<i class="fas fa-box text-purple-400 mr-2"></i><strong>${material.code}</strong> - ${material.description} (Alocado: ${material.allocated} ${material.unit})`;
+                    div.onclick = () => selectReturnMaterial(material.id, material.code, material.description, material.allocated, material.unit);
+                    dropdown.appendChild(div);
+                });
+            }
+        }
+
+        function selectReturnMaterial(materialId, materialCode, materialDesc, allocated, unit) {
+            document.getElementById('returnMaterialSearch').value = materialCode + ' - ' + materialDesc;
+            document.getElementById('returnMaterial').value = materialId;
+            document.getElementById('returnMaterialSelected').textContent = 'Material selecionado: ' + materialCode + ' - ' + materialDesc;
+            document.getElementById('returnMaterialDropdown').classList.add('hidden');
+            document.getElementById('pepAllocatedStock').textContent = allocated + ' ' + unit;
+        }
+
+        function clearReturnMaterial() {
+            document.getElementById('returnMaterialSearch').value = '';
+            document.getElementById('returnMaterial').value = '';
+            document.getElementById('returnMaterialSelected').textContent = '';
+            document.getElementById('returnMaterialDropdown').classList.add('hidden');
+            document.getElementById('pepAllocatedStock').textContent = '0';
+        }
+
+        function updateReturnPepStock(materialId) {
+            const pep = document.getElementById('returnPep').value;
+            if (pep && materialId && data.pepAllocations[pep]) {
+                const allocated = data.pepAllocations[pep][materialId] || 0;
+                const unit = getMaterialUnit(materialId);
+                document.getElementById('pepAllocatedStock').textContent = allocated + ' ' + unit;
+            } else {
+                document.getElementById('pepAllocatedStock').textContent = '0';
+            }
         }
 
         // ============================================================
@@ -945,58 +1110,52 @@
             let totalVal = 0;
             let activePeps = new Set();
             
-            data.movements.forEach(m => {
-                if (m.type === 'entry' && m.value) {
-                    totalVal += m.quantity * m.value;
-                }
-                if (m.pep) activePeps.add(m.pep);
+            data.materials.forEach(m => {
+                totalVal += getMaterialValue(m.id) * getMaterialStock(m.id);
             });
             
-            document.getElementById('totalValue').textContent = 'R$ ' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            Object.keys(data.pepAllocations).forEach(pep => {
+                if (Object.keys(data.pepAllocations[pep]).length > 0) {
+                    activePeps.add(pep);
+                }
+            });
+            
+            document.getElementById('totalValue').textContent = 'R$ ' + totalVal.toFixed(2).replace('.', ',');
             document.getElementById('activePEPs').textContent = activePeps.size;
             
             const today = new Date().toISOString().split('T')[0];
-            const todayMovs = data.movements.filter(m => m.date.startsWith(today)).length;
-            document.getElementById('todayMovements').textContent = todayMovs;
+            const todayCount = data.movements.filter(m => m.date.startsWith(today)).length;
+            document.getElementById('todayMovements').textContent = todayCount;
             
             updateCharts();
             updateAlerts();
         }
 
         function updateCharts() {
-            const ctx1 = document.getElementById('movementChart').getContext('2d');
-            const days = [];
-            const entries = [];
-            const exits = [];
-            
+            const last7Days = [];
             for (let i = 6; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(d.getDate() - i);
-                const dateStr = d.toISOString().split('T')[0];
-                days.push(d.toLocaleDateString('pt-BR', {weekday: 'short'}));
-                
-                const dayMovs = data.movements.filter(m => m.date.startsWith(dateStr));
-                entries.push(dayMovs.filter(m => m.type === 'entry').reduce((a, b) => a + b.quantity, 0));
-                exits.push(dayMovs.filter(m => m.type === 'exit').reduce((a, b) => a + b.quantity, 0));
+                last7Days.push(d.toISOString().split('T')[0]);
             }
             
-            // Destrói gráficos anteriores para evitar duplicação
+            const entryCounts = last7Days.map(day =>
+                data.movements.filter(m => m.date.startsWith(day) && m.type === 'entry').length
+            );
+            const exitCounts = last7Days.map(day =>
+                data.movements.filter(m => m.date.startsWith(day) && m.type === 'exit').length
+            );
+            
+            const ctx1 = document.getElementById('movementChart').getContext('2d');
             if (window._movementChart) window._movementChart.destroy();
             window._movementChart = new Chart(ctx1, {
                 type: 'bar',
                 data: {
-                    labels: days,
-                    datasets: [{
-                        label: 'Entradas',
-                        data: entries,
-                        backgroundColor: '#10b981',
-                        borderRadius: 4
-                    }, {
-                        label: 'Saídas',
-                        data: exits,
-                        backgroundColor: '#ef4444',
-                        borderRadius: 4
-                    }]
+                    labels: last7Days.map(d => d.substring(5)),
+                    datasets: [
+                        { label: 'Entradas', data: entryCounts, backgroundColor: '#10b981' },
+                        { label: 'Saídas', data: exitCounts, backgroundColor: '#ef4444' }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -1079,7 +1238,7 @@
             };
             
             data.materials.push(material);
-            saveData(); // Salva imediatamente
+            saveData();
             updateAllViews();
             closeMaterialModal();
             showNotification('Material cadastrado com sucesso!', 'success');
@@ -1116,7 +1275,7 @@
         function deleteMaterial(id) {
             if (confirm('Deseja realmente excluir este material?')) {
                 data.materials = data.materials.filter(m => m.id !== id);
-                saveData(); // Salva imediatamente
+                saveData();
                 updateAllViews();
             }
         }
@@ -1130,8 +1289,6 @@
                 document.getElementById('supplierField').classList.add('hidden');
                 document.getElementById('pepReturnField').classList.remove('hidden');
                 document.getElementById('entrySupplier').required = false;
-                // Atualiza o dropdown da lupa com os PEPs disponíveis
-                updatePepSearchDropdowns();
             } else {
                 document.getElementById('supplierField').classList.remove('hidden');
                 document.getElementById('pepReturnField').classList.add('hidden');
@@ -1146,6 +1303,11 @@
             const materialId = document.getElementById('entryMaterial').value;
             const quantity = parseFloat(document.getElementById('entryQuantity').value);
             const value = parseFloat(document.getElementById('entryValue').value) || 0;
+
+            if (!materialId) {
+                showNotification('Selecione um material!', 'error');
+                return;
+            }
             
             if (type === 'return') {
                 const pep = document.getElementById('entryPepReturn').value;
@@ -1153,7 +1315,6 @@
                     showNotification('Selecione o PEP de origem!', 'error');
                     return;
                 }
-                // Remove da alocação do PEP
                 if (data.pepAllocations[pep] && data.pepAllocations[pep][materialId]) {
                     data.pepAllocations[pep][materialId] -= quantity;
                     if (data.pepAllocations[pep][materialId] <= 0) {
@@ -1178,11 +1339,11 @@
             };
             
             data.movements.push(movement);
-            saveData(); // Salva imediatamente
+            saveData();
             updateAllViews();
             this.reset();
-            // Limpa os campos de busca de PEP
             clearPepSearch('entryPepReturn');
+            clearMaterialSearch('entryMaterial');
             showNotification('Entrada registrada com sucesso!', 'success');
         });
 
@@ -1196,19 +1357,22 @@
             const quantity = parseFloat(document.getElementById('exitQuantity').value);
             const pep = document.getElementById('exitPep').value;
 
+            if (!materialId) {
+                showNotification('Selecione um material!', 'error');
+                return;
+            }
+
             if (!pep) {
                 showNotification('Informe o PEP de destino!', 'error');
                 return;
             }
             
-            // Verifica estoque
             const available = getMaterialStock(materialId);
             if (quantity > available) {
                 showNotification('Quantidade insuficiente em estoque!', 'error');
                 return;
             }
             
-            // Adiciona à alocação do PEP
             if (!data.pepAllocations[pep]) data.pepAllocations[pep] = {};
             if (!data.pepAllocations[pep][materialId]) data.pepAllocations[pep][materialId] = 0;
             data.pepAllocations[pep][materialId] += quantity;
@@ -1227,44 +1391,17 @@
             };
             
             data.movements.push(movement);
-            saveData(); // Salva imediatamente
+            saveData();
             updateAllViews();
             this.reset();
-            // Limpa os campos de busca de PEP
             clearPepSearch('exitPep');
+            clearMaterialSearch('exitMaterial');
             showNotification('Saída registrada com sucesso!', 'success');
         });
 
         // ============================================================
         // DEVOLUÇÃO
         // ============================================================
-        function loadPepMaterials() {
-            const pep = document.getElementById('returnPep').value;
-            const select = document.getElementById('returnMaterial');
-            select.innerHTML = '<option value="">Selecione o material</option>';
-            
-            if (data.pepAllocations[pep]) {
-                Object.keys(data.pepAllocations[pep]).forEach(matId => {
-                    const mat = data.materials.find(m => m.id === matId);
-                    if (mat && data.pepAllocations[pep][matId] > 0) {
-                        select.innerHTML += `<option value="${matId}">${mat.description} (${data.pepAllocations[pep][matId]} ${mat.unit})</option>`;
-                    }
-                });
-            }
-        }
-
-        function updatePepStock() {
-            const pep = document.getElementById('returnPep').value;
-            const matId = document.getElementById('returnMaterial').value;
-            
-            if (pep && matId && data.pepAllocations[pep]) {
-                document.getElementById('pepAllocatedStock').textContent = 
-                    (data.pepAllocations[pep][matId] || 0) + ' ' + getMaterialUnit(matId);
-            } else {
-                document.getElementById('pepAllocatedStock').textContent = '0';
-            }
-        }
-
         document.getElementById('returnForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -1272,6 +1409,16 @@
             const materialId = document.getElementById('returnMaterial').value;
             const quantity = parseFloat(document.getElementById('returnQuantity').value);
             const condition = document.getElementById('returnCondition').value;
+
+            if (!pep) {
+                showNotification('Selecione o PEP de origem!', 'error');
+                return;
+            }
+
+            if (!materialId) {
+                showNotification('Selecione o material!', 'error');
+                return;
+            }
             
             const allocated = data.pepAllocations[pep]?.[materialId] || 0;
             if (quantity > allocated) {
@@ -1297,9 +1444,10 @@
             };
             
             data.movements.push(movement);
-            saveData(); // Salva imediatamente
+            saveData();
             updateAllViews();
             this.reset();
+            clearReturnPep();
             showNotification('Devolução registrada com sucesso!', 'success');
         });
 
@@ -1314,7 +1462,6 @@
             const searchText = (document.getElementById('stockSearch').value || '').toLowerCase();
             
             data.materials.forEach(m => {
-                // Filtro por texto
                 if (searchText && !m.description.toLowerCase().includes(searchText) && !m.code.toLowerCase().includes(searchText)) {
                     return;
                 }
@@ -1374,7 +1521,7 @@
         }
 
         // ============================================================
-        // HISTÓRICO
+        // HISTÓRICO — com lixeira funcional para apagar registros
         // ============================================================
         function updateHistoryTable() {
             const tbody = document.getElementById('historyTable');
@@ -1413,22 +1560,56 @@
                 }
                 
                 const balance = getMaterialStock(m.materialId);
+                const matDesc = mat ? (mat.code + ' - ' + mat.description) : 'Material removido';
                 
                 const row = `
-                    <tr class="hover:bg-gray-50 transition">
+                    <tr class="hover:bg-gray-50 transition" id="hist-row-${m.id}">
                         <td class="p-3 text-sm text-gray-600">${date}</td>
                         <td class="p-3 text-sm ${typeClass} font-medium">
                             <i class="fas ${icon} mr-1"></i> ${typeText}
                         </td>
-                        <td class="p-3 text-sm text-gray-800">${mat ? mat.description : 'Material removido'}</td>
+                        <td class="p-3 text-sm text-gray-800">${matDesc}</td>
                         <td class="p-3 text-sm font-medium">${m.quantity}</td>
                         <td class="p-3 text-sm text-gray-600">${m.pep || m.supplier || '-'}</td>
                         <td class="p-3 text-sm text-gray-600">${m.user}</td>
                         <td class="p-3 text-sm font-semibold text-gray-800">${balance}</td>
+                        <td class="p-3 text-center">
+                            <button class="btn-delete-history" onclick="deleteMovement('${m.id}')" title="Apagar este registro">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
                     </tr>
                 `;
                 tbody.innerHTML += row;
             });
+        }
+
+        // Apaga um registro do histórico
+        function deleteMovement(id) {
+            if (confirm('Deseja realmente apagar este registro do histórico?\n\nAtenção: isso pode afetar os saldos de estoque.')) {
+                const mov = data.movements.find(m => m.id === id);
+                if (!mov) return;
+
+                // Reverte alocações de PEP se necessário
+                if (mov.type === 'exit' && mov.pep && mov.materialId) {
+                    if (data.pepAllocations[mov.pep] && data.pepAllocations[mov.pep][mov.materialId]) {
+                        data.pepAllocations[mov.pep][mov.materialId] -= mov.quantity;
+                        if (data.pepAllocations[mov.pep][mov.materialId] <= 0) {
+                            delete data.pepAllocations[mov.pep][mov.materialId];
+                        }
+                    }
+                }
+                if ((mov.type === 'return' || (mov.type === 'entry' && mov.subType === 'return')) && mov.pep && mov.materialId) {
+                    if (!data.pepAllocations[mov.pep]) data.pepAllocations[mov.pep] = {};
+                    if (!data.pepAllocations[mov.pep][mov.materialId]) data.pepAllocations[mov.pep][mov.materialId] = 0;
+                    data.pepAllocations[mov.pep][mov.materialId] += mov.quantity;
+                }
+
+                data.movements = data.movements.filter(m => m.id !== id);
+                saveData();
+                updateAllViews();
+                showNotification('Registro apagado com sucesso!', 'success');
+            }
         }
 
         // ============================================================
@@ -1470,39 +1651,17 @@
         }
 
         function updateSelects() {
-            // Atualiza selects de materiais
-            const selects = ['entryMaterial', 'exitMaterial'];
-            selects.forEach(selectId => {
-                const select = document.getElementById(selectId);
-                if (select) {
-                    const currentValue = select.value;
-                    select.innerHTML = '<option value="">Selecione o material</option>';
-                    data.materials.forEach(m => {
-                        const stock = getMaterialStock(m.id);
-                        select.innerHTML += `<option value="${m.id}">${m.code} - ${m.description} (Disp: ${stock} ${m.unit})</option>`;
-                    });
-                    select.value = currentValue;
-                }
-            });
-            
-            // Atualiza selects de PEP (para a aba Devolução PEP e Estoque)
+            // Atualiza selects de PEP (para Estoque)
             const peps = Object.keys(data.pepAllocations);
-            const pepSelects = ['returnPep', 'stockFilterPep'];
-            pepSelects.forEach(selectId => {
-                const select = document.getElementById(selectId);
-                if (select) {
-                    const currentValue = select.value;
-                    if (selectId === 'stockFilterPep') {
-                        select.innerHTML = '<option value="">Todos os PEPs</option>';
-                    } else {
-                        select.innerHTML = '<option value="">Selecione o PEP</option>';
-                    }
-                    peps.forEach(pep => {
-                        select.innerHTML += `<option value="${pep}">${pep}</option>`;
-                    });
-                    select.value = currentValue;
-                }
-            });
+            const stockFilterSelect = document.getElementById('stockFilterPep');
+            if (stockFilterSelect) {
+                const currentValue = stockFilterSelect.value;
+                stockFilterSelect.innerHTML = '<option value="">Todos os PEPs</option>';
+                peps.forEach(pep => {
+                    stockFilterSelect.innerHTML += `<option value="${pep}">${pep}</option>`;
+                });
+                stockFilterSelect.value = currentValue;
+            }
         }
 
         function updateAvailableStock() {
@@ -1517,11 +1676,11 @@
         // EVENT LISTENERS
         // ============================================================
         function setupEventListeners() {
-            // Não há mais listener para exitPep select (substituído pela lupa)
+            // Sem listeners adicionais necessários
         }
 
         // ============================================================
-        // EXPORTAR / IMPORTAR
+        // EXPORTAR JSON / IMPORTAR
         // ============================================================
         function exportData() {
             const dataStr = JSON.stringify(data, null, 2);
@@ -1545,7 +1704,7 @@
                     const imported = JSON.parse(e.target.result);
                     if (confirm('Isso substituirá todos os dados atuais. Deseja continuar?')) {
                         data = imported;
-                        saveData(); // Salva imediatamente após importar
+                        saveData();
                         updateAllViews();
                         showNotification('Dados importados com sucesso!', 'success');
                     }
@@ -1555,6 +1714,175 @@
             };
             reader.readAsText(file);
             input.value = '';
+        }
+
+        // ============================================================
+        // EXPORTAR PARA WORD (.doc) — bem organizado com descrições
+        // ============================================================
+        function exportToWord() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR');
+            const timeStr = now.toLocaleTimeString('pt-BR');
+
+            // Monta tabela de materiais
+            let materiaisRows = '';
+            data.materials.forEach(m => {
+                const stock = getMaterialStock(m.id);
+                const valor = getMaterialValue(m.id);
+                const status = stock <= (m.minStock || 0) ? 'CRÍTICO' : 'Normal';
+                materiaisRows += `
+                    <tr>
+                        <td style="border:1px solid #ccc;padding:6px 10px;">${m.code}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;">${m.description}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;text-align:center;">${m.unit}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;text-align:center;">${stock}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;text-align:center;">${m.minStock || 0}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;text-align:right;">R$ ${valor.toFixed(2).replace('.', ',')}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;text-align:center;color:${status === 'CRÍTICO' ? '#c00' : '#080'};">${status}</td>
+                    </tr>`;
+            });
+
+            // Monta tabela de histórico
+            let historicoRows = '';
+            const sorted = [...data.movements].sort((a, b) => new Date(b.date) - new Date(a.date));
+            sorted.forEach(m => {
+                const mat = data.materials.find(mat => mat.id === m.materialId);
+                const matDesc = mat ? (mat.code + ' - ' + mat.description) : 'Material removido';
+                const date = new Date(m.date).toLocaleString('pt-BR');
+                let tipo = '';
+                if (m.type === 'entry') tipo = m.subType === 'return' ? 'Devolução (Entrada)' : 'Entrada';
+                else if (m.type === 'exit') tipo = 'Saída';
+                else if (m.type === 'return') tipo = 'Retorno';
+                const pepForn = m.pep || m.supplier || '-';
+                const obs = m.obs || m.reason || '-';
+                historicoRows += `
+                    <tr>
+                        <td style="border:1px solid #ccc;padding:6px 10px;">${date}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;">${tipo}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;">${matDesc}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;text-align:center;">${m.quantity}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;">${pepForn}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;">${m.user || '-'}</td>
+                        <td style="border:1px solid #ccc;padding:6px 10px;">${obs}</td>
+                    </tr>`;
+            });
+
+            // Monta resumo por PEP
+            let pepRows = '';
+            Object.keys(data.pepAllocations).forEach(pep => {
+                const allocs = data.pepAllocations[pep];
+                Object.keys(allocs).forEach(matId => {
+                    if (allocs[matId] > 0) {
+                        const mat = data.materials.find(m => m.id === matId);
+                        const matDesc = mat ? (mat.code + ' - ' + mat.description) : matId;
+                        const unit = mat ? mat.unit : '';
+                        pepRows += `
+                            <tr>
+                                <td style="border:1px solid #ccc;padding:6px 10px;">${pep}</td>
+                                <td style="border:1px solid #ccc;padding:6px 10px;">${matDesc}</td>
+                                <td style="border:1px solid #ccc;padding:6px 10px;text-align:center;">${allocs[matId]} ${unit}</td>
+                            </tr>`;
+                    }
+                });
+            });
+
+            const html = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<title>Relatório de Estoque PEP</title>
+<!--[if gte mso 9]>
+<xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml>
+<![endif]-->
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #222; margin: 40px; }
+  h1 { font-size: 18pt; color: #2c3e8c; border-bottom: 2px solid #2c3e8c; padding-bottom: 6px; }
+  h2 { font-size: 13pt; color: #2c3e8c; margin-top: 28px; border-bottom: 1px solid #aac; padding-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 10pt; }
+  th { background: #2c3e8c; color: white; border: 1px solid #2c3e8c; padding: 7px 10px; text-align: left; }
+  tr:nth-child(even) td { background: #f0f4ff; }
+  .info-box { background: #f0f4ff; border: 1px solid #c0ccee; border-radius: 4px; padding: 10px 16px; margin-bottom: 20px; font-size: 10pt; }
+  .footer { margin-top: 40px; font-size: 9pt; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>&#128230; Relatório de Controle de Estoque por PEP</h1>
+
+<div class="info-box">
+  <strong>Data de geração:</strong> ${dateStr} às ${timeStr}<br>
+  <strong>Total de materiais cadastrados:</strong> ${data.materials.length}<br>
+  <strong>Total de movimentações:</strong> ${data.movements.length}<br>
+  <strong>PEPs ativos:</strong> ${Object.keys(data.pepAllocations).length}
+</div>
+
+<h2>1. Cadastro de Materiais</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Código</th>
+      <th>Descrição</th>
+      <th>Unidade</th>
+      <th>Estoque Atual</th>
+      <th>Estoque Mínimo</th>
+      <th>Valor Unitário</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${materiaisRows || '<tr><td colspan="7" style="text-align:center;color:#888;padding:10px;">Nenhum material cadastrado</td></tr>'}
+  </tbody>
+</table>
+
+<h2>2. Alocação por PEP</h2>
+<table>
+  <thead>
+    <tr>
+      <th>PEP</th>
+      <th>Material (Código - Descrição)</th>
+      <th>Quantidade Alocada</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${pepRows || '<tr><td colspan="3" style="text-align:center;color:#888;padding:10px;">Nenhuma alocação registrada</td></tr>'}
+  </tbody>
+</table>
+
+<h2>3. Histórico de Movimentações</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Data/Hora</th>
+      <th>Tipo</th>
+      <th>Material (Código - Descrição)</th>
+      <th>Quantidade</th>
+      <th>PEP / Fornecedor</th>
+      <th>Responsável</th>
+      <th>Observações</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${historicoRows || '<tr><td colspan="7" style="text-align:center;color:#888;padding:10px;">Nenhuma movimentação registrada</td></tr>'}
+  </tbody>
+</table>
+
+<div class="footer">
+  Relatório gerado automaticamente pelo Sistema de Controle de Estoque PEP &mdash; ${dateStr}
+</div>
+
+</body>
+</html>`;
+
+            const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `relatorio_estoque_pep_${now.toISOString().split('T')[0]}.doc`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showNotification('Relatório Word exportado com sucesso!', 'success');
         }
 
         // ============================================================
@@ -1575,7 +1903,7 @@
             let details = `PEP: ${pep}\n\nMateriais alocados:\n`;
             Object.keys(allocs).forEach(matId => {
                 const mat = data.materials.find(m => m.id === matId);
-                details += `• ${mat ? mat.description : matId}: ${allocs[matId]} ${mat ? mat.unit : ''}\n`;
+                details += `• ${mat ? mat.code + ' - ' + mat.description : matId}: ${allocs[matId]} ${mat ? mat.unit : ''}\n`;
             });
             alert(details);
         }
