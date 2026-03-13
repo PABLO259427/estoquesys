@@ -1334,6 +1334,7 @@
                 data.materials = data.materials.filter(m => m.id !== id);
                 saveData();
                 updateAllViews();
+                showNotification('Material excluído com sucesso!', 'success');
             }
         }
 
