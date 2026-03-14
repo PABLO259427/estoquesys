@@ -161,6 +161,42 @@
             background: #fee2e2;
             color: #b91c1c;
         }
+    
+        /* Estilos de Notificação Final e Robusta */
+        @keyframes toastSlideIn {
+            0% { transform: translateX(120%) scale(0.7); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        @keyframes toastSlideOut {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(120%) scale(0.7); opacity: 0; }
+        }
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        .toast-notification {
+            position: fixed !important;
+            top: 30px !important;
+            right: 30px !important;
+            padding: 20px 30px !important;
+            color: #ffffff !important;
+            border-radius: 16px !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+            font-weight: 800 !important;
+            z-index: 2147483647 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 15px !important;
+            animation: toastSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+            min-width: 320px !important;
+            border-left: 6px solid #ffffff !important;
+            cursor: pointer !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -1848,7 +1884,43 @@
   tr:nth-child(even) td { background: #f0f4ff; }
   .info-box { background: #f0f4ff; border: 1px solid #c0ccee; border-radius: 4px; padding: 10px 16px; margin-bottom: 20px; font-size: 10pt; }
   .footer { margin-top: 40px; font-size: 9pt; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
-</style>
+
+        /* Estilos de Notificação Final e Robusta */
+        @keyframes toastSlideIn {
+            0% { transform: translateX(120%) scale(0.7); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        @keyframes toastSlideOut {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(120%) scale(0.7); opacity: 0; }
+        }
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        .toast-notification {
+            position: fixed !important;
+            top: 30px !important;
+            right: 30px !important;
+            padding: 20px 30px !important;
+            color: #ffffff !important;
+            border-radius: 16px !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+            font-weight: 800 !important;
+            z-index: 2147483647 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 15px !important;
+            animation: toastSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+            min-width: 320px !important;
+            border-left: 6px solid #ffffff !important;
+            cursor: pointer !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+
+    </style>
 </head>
 <body>
 
@@ -1931,23 +2003,42 @@
         // ============================================================
         // NOTIFICAÇÕES
         // ============================================================
+        
         function showNotification(message, type) {
-            // Remove notificações anteriores para evitar acúmulo
             document.querySelectorAll('.toast-notification').forEach(el => el.remove());
-
+            
             const div = document.createElement('div');
             div.className = 'toast-notification';
-
+            
             const isSuccess = type === 'success';
-            const bgColor = isSuccess ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)';
-            const icon = isSuccess ? 'fa-check-circle' : 'fa-exclamation-circle';
-
-            div.style.cssText = `
-                position: fixed;
-                top: 24px;
-                right: 24px;
-                padding: 18px 28px;
-                background: ${bgColor};
+            div.style.background = isSuccess 
+                ? 'linear-gradient(135deg, #059669, #10b981)' 
+                : 'linear-gradient(135deg, #dc2626, #ef4444)';
+            
+            div.innerHTML = `
+                <span style="font-size: 24px;">${isSuccess ? '✅' : '❌'}</span>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 14px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Sistema</span>
+                    <span style="font-size: 17px;">${message}</span>
+                </div>
+                <div style="position: absolute; bottom: 0; left: 0; height: 5px; background: rgba(255,255,255,0.6); width: 100%; animation: toastProgress 4s linear forwards;"></div>
+            `;
+            
+            div.onclick = () => {
+                div.style.animation = 'toastSlideOut 0.4s ease-in forwards';
+                setTimeout(() => div.remove(), 400);
+            };
+            
+            document.body.appendChild(div);
+            
+            setTimeout(() => {
+                if (div.parentNode) {
+                    div.style.animation = 'toastSlideOut 0.4s ease-in forwards';
+                    setTimeout(() => { if (div.parentNode) div.remove(); }, 400);
+                }
+            }, 4000);
+        }
+;
                 color: white;
                 border-radius: 12px;
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0,0,0,0.15);
@@ -2238,7 +2329,43 @@
             }
 
             // Gerar conteúdo do Word
-            let content = `<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:left}th{background-color:#f0f0f0;font-weight:bold}h1{color:#333}h2{color:#666;margin-top:20px}</style></head><body>`;
+            let content = `<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:left}th{background-color:#f0f0f0;font-weight:bold}h1{color:#333}h2{color:#666;margin-top:20px}
+        /* Estilos de Notificação Final e Robusta */
+        @keyframes toastSlideIn {
+            0% { transform: translateX(120%) scale(0.7); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        @keyframes toastSlideOut {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(120%) scale(0.7); opacity: 0; }
+        }
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        .toast-notification {
+            position: fixed !important;
+            top: 30px !important;
+            right: 30px !important;
+            padding: 20px 30px !important;
+            color: #ffffff !important;
+            border-radius: 16px !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+            font-weight: 800 !important;
+            z-index: 2147483647 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 15px !important;
+            animation: toastSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+            min-width: 320px !important;
+            border-left: 6px solid #ffffff !important;
+            cursor: pointer !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+
+    </style></head><body>`;
             content += `<h1>Lista de Materiais - PEP: ${pep}</h1>`;
             content += `<p><strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}</p>`;
             
@@ -2304,7 +2431,43 @@
             }
 
             // Gerar conteúdo do Word
-            let content = `<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:left}th{background-color:#f0f0f0;font-weight:bold}h1{color:#333}</style></head><body>`;
+            let content = `<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:left}th{background-color:#f0f0f0;font-weight:bold}h1{color:#333}
+        /* Estilos de Notificação Final e Robusta */
+        @keyframes toastSlideIn {
+            0% { transform: translateX(120%) scale(0.7); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        @keyframes toastSlideOut {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(120%) scale(0.7); opacity: 0; }
+        }
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        .toast-notification {
+            position: fixed !important;
+            top: 30px !important;
+            right: 30px !important;
+            padding: 20px 30px !important;
+            color: #ffffff !important;
+            border-radius: 16px !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+            font-weight: 800 !important;
+            z-index: 2147483647 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 15px !important;
+            animation: toastSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+            min-width: 320px !important;
+            border-left: 6px solid #ffffff !important;
+            cursor: pointer !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+
+    </style></head><body>`;
             content += `<h1>Lista de Estoque</h1>`;
             content += `<p><strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}</p>`;
             content += `<table><thead><tr><th>Código</th><th>Material</th><th>Quantidade</th><th>Unidade</th></tr></thead><tbody>`;
