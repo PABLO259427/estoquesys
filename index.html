@@ -1932,60 +1932,109 @@
         // NOTIFICAÇÕES
         // ============================================================
         function showNotification(message, type) {
+            // Remove notificações anteriores para evitar acúmulo
+            document.querySelectorAll('.toast-notification').forEach(el => el.remove());
+
             const div = document.createElement('div');
-            
+            div.className = 'toast-notification';
+
+            const isSuccess = type === 'success';
+            const bgColor = isSuccess ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)';
+            const icon = isSuccess ? 'fa-check-circle' : 'fa-exclamation-circle';
+
             div.style.cssText = `
                 position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 16px 24px;
-                background-color: ${type === 'success' ? '#10b981' : '#ef4444'};
+                top: 24px;
+                right: 24px;
+                padding: 18px 28px;
+                background: ${bgColor};
                 color: white;
-                border-radius: 8px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-                font-weight: 600;
-                z-index: 9999;
-                font-size: 14px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0,0,0,0.15);
+                font-weight: 700;
+                z-index: 99999;
+                font-size: 15px;
                 display: flex;
                 align-items: center;
-                gap: 8px;
-                animation: slideIn 0.4s ease-out;
+                gap: 12px;
+                animation: toastSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
                 font-family: 'Inter', sans-serif;
+                min-width: 280px;
+                max-width: 420px;
+                border-left: 5px solid rgba(255,255,255,0.5);
+                cursor: pointer;
             `;
-            
-            div.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>${message}`;
+
+            div.innerHTML = `
+                <i class="fas ${icon}" style="font-size:22px;flex-shrink:0;"></i>
+                <span style="flex:1;line-height:1.4;">${message}</span>
+                <i class="fas fa-times" style="font-size:14px;opacity:0.7;flex-shrink:0;"></i>
+            `;
+
+            // Fechar ao clicar
+            div.addEventListener('click', () => {
+                div.style.animation = 'toastSlideOut 0.3s ease-in forwards';
+                setTimeout(() => div.remove(), 300);
+            });
+
             document.body.appendChild(div);
-            
+
+            // Barra de progresso de tempo
+            const progress = document.createElement('div');
+            progress.style.cssText = `
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                height: 4px;
+                background: rgba(255,255,255,0.5);
+                border-radius: 0 0 12px 12px;
+                width: 100%;
+                animation: toastProgress 3.5s linear forwards;
+            `;
+            div.style.position = 'fixed';
+            div.style.overflow = 'hidden';
+            div.appendChild(progress);
+
             setTimeout(() => {
-                div.style.animation = 'slideOut 0.4s ease-out';
-                setTimeout(() => div.remove(), 400);
-            }, 3000);
+                if (div.parentNode) {
+                    div.style.animation = 'toastSlideOut 0.4s ease-in forwards';
+                    setTimeout(() => { if (div.parentNode) div.remove(); }, 400);
+                }
+            }, 3500);
         }
-        
-        // Adicionar animacoes CSS para as notificacoes se nao existirem
+
+        // Animações CSS para as notificações
         if (!document.getElementById('notification-styles')) {
             const style = document.createElement('style');
             style.id = 'notification-styles';
             style.textContent = `
-                @keyframes slideIn {
+                @keyframes toastSlideIn {
                     from {
-                        transform: translateX(400px);
+                        transform: translateX(120%) scale(0.8);
                         opacity: 0;
                     }
                     to {
-                        transform: translateX(0);
+                        transform: translateX(0) scale(1);
                         opacity: 1;
                     }
                 }
-                @keyframes slideOut {
+                @keyframes toastSlideOut {
                     from {
-                        transform: translateX(0);
+                        transform: translateX(0) scale(1);
                         opacity: 1;
                     }
                     to {
-                        transform: translateX(400px);
+                        transform: translateX(120%) scale(0.8);
                         opacity: 0;
                     }
+                }
+                @keyframes toastProgress {
+                    from { width: 100%; }
+                    to { width: 0%; }
+                }
+                .toast-notification:hover {
+                    transform: scale(1.02);
+                    transition: transform 0.15s ease;
                 }
             `;
             document.head.appendChild(style);
