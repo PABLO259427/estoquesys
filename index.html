@@ -1,14 +1,3 @@
-
-
-
-Para implementar a **Validação de Saldo por PEP** com sucesso, apliquei uma inteligência extra nas duas abas onde devoluções podem ocorrer:
-1. **Aba "Devolução PEP":** O dropdown agora só exibe materiais que realmente tenham sido sacados por esse PEP. Além disso, o próprio campo numérico fica bloqueado (limite máximo) de acordo com a quantidade alocada, e o sistema barra devoluções acima desse saldo caso o usuário tente forçar.
-2. **Aba "Entrada" (quando o tipo é Devolução):** Adicionada a mesma validação para evitar que o usuário devolva um material que o PEP nunca retirou. Se o PEP não for escolhido antes, a lupa de materiais avisará em vermelho: "Selecione o PEP de origem primeiro!".
-
-Além disso, o **Alerta Flutuante Verde de Sistema Atualizado** (da alteração anterior) continua presente.
-
-Abaixo está o código 100% completo. É só **copiar e colar** substituindo tudo no seu arquivo `.html`:
-
 ```html
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -32,6 +21,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
         }
         
         .card-hover {
@@ -41,6 +31,37 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
         .card-hover:hover {
             transform: translateY(-2px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* === ANIMAÇÕES E ESTILOS DOS TOASTS REATIVOS === */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100%) scale(0.9); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Dark Glassmorphism para os Toasts se destacarem na tela */
+        .toast-panel {
+            background: rgba(17, 24, 39, 0.85); /* Tom escuro translúcido */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Efeito de progresso/brilho no fundo do toast */
+        .toast-panel::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            width: 100%;
         }
         
         .animate-fade-in {
@@ -176,6 +197,10 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
     </style>
 </head>
 <body class="p-4 md:p-8">
+    
+    <!-- NOVO CONTAINER DE TOASTS REATIVOS -->
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
         <div class="glass-panel rounded-2xl p-6 mb-6 shadow-xl">
@@ -770,10 +795,58 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
 
     <script>
         // ============================================================
+        // NOVO: SISTEMA DE TOASTS REATIVOS (GLASSMORPHISM)
+        // ============================================================
+        const toast = {
+            show(message, type = 'success') {
+                const container = document.getElementById('toast-container');
+                if (!container) return;
+                
+                const id = Date.now() + Math.floor(Math.random() * 1000);
+                
+                // Configurações de estilo baseadas no tipo de mensagem
+                const config = {
+                    success: { icon: 'fa-check-circle', color: 'text-emerald-400', border: 'border-emerald-500/30' },
+                    error: { icon: 'fa-exclamation-circle', color: 'text-red-400', border: 'border-red-500/30' },
+                    warning: { icon: 'fa-exclamation-triangle', color: 'text-amber-400', border: 'border-amber-500/30' }
+                };
+
+                const { icon, color, border } = config[type] || config['success'];
+
+                // Estrutura HTML do Toast (Dark Glassmorphism)
+                const toastHTML = `
+                    <div id="toast-${id}" class="toast-panel ${border} min-w-[300px] p-4 rounded-xl flex items-center gap-3 animate-slide-in shadow-2xl transition-all duration-500 pointer-events-auto">
+                        <div class="${color} text-xl">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-white text-sm font-medium">${message}</p>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-white transition cursor-pointer">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                `;
+
+                container.insertAdjacentHTML('beforeend', toastHTML);
+
+                // Auto-remove após 4 segundos com animação de saída suave
+                setTimeout(() => {
+                    const element = document.getElementById(`toast-${id}`);
+                    if (element) {
+                        element.style.opacity = '0';
+                        element.style.transform = 'translateX(100px)';
+                        setTimeout(() => element.remove(), 500);
+                    }
+                }, 4000);
+            }
+        };
+
+        // ============================================================
         // GERENCIAMENTO DE DADOS — com persistência robusta
         // ============================================================
         let data = {
-            materials: [],
+            materials:[],
             movements:[],
             pepAllocations: {}
         };
@@ -836,16 +909,16 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
                     savedAt: new Date().toISOString()
                 }));
                 
-                // NOVO: Chama o alerta visual flutuante
+                // Alerta visual flutuante (topo ao centro)
                 showSystemUpdatedAlert();
                 
             } catch (e) {
                 console.error('Erro ao salvar dados:', e);
-                showNotification('Atenção: erro ao salvar dados!', 'error');
+                toast.show('Atenção: erro ao salvar dados!', 'error');
             }
         }
 
-        // NOVO: Função que cria e exibe o alerta de salvamento sem precisar de HTML
+        // Função que cria e exibe o alerta de salvamento sem precisar de HTML
         let updateAlertTimer;
         function showSystemUpdatedAlert() {
             let alertBox = document.getElementById('systemUpdateAlert');
@@ -1027,7 +1100,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
         // SISTEMA DE LUPA DE PESQUISA DE MATERIAL
         // ============================================================
 
-        // NOVO: Modificado para validar PEP selecionado se for devolução
+        // Modificado para validar PEP selecionado se for devolução
         function getAvailableMaterials(fieldId) {
             // Se for na aba Entrada, com o tipo Devolução, só mostre os materiais daquele PEP!
             if (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return') {
@@ -1443,7 +1516,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             saveData();
             updateAllViews();
             closeMaterialModal();
-            showNotification('Material cadastrado com sucesso!', 'success');
+            toast.show('Material cadastrado com sucesso!', 'success');
         });
 
         function updateMaterialsTable() {
@@ -1479,7 +1552,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
                 data.materials = data.materials.filter(m => m.id !== id);
                 saveData();
                 updateAllViews();
-                showNotification('Material excluído com sucesso!', 'success');
+                toast.show('Material excluído com sucesso!', 'success');
             }
         }
 
@@ -1517,21 +1590,21 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             const value = parseFloat(document.getElementById('entryValue').value) || 0;
 
             if (!materialId) {
-                showNotification('Selecione um material!', 'error');
+                toast.show('Selecione um material!', 'error');
                 return;
             }
             
             if (type === 'return') {
                 const pep = document.getElementById('entryPepReturn').value;
                 if (!pep) {
-                    showNotification('Selecione o PEP de origem!', 'error');
+                    toast.show('Selecione o PEP de origem!', 'error');
                     return;
                 }
                 
                 // VALIDAÇÃO CRÍTICA DE SALDO DE DEVOLUÇÃO
                 const allocated = data.pepAllocations[pep]?.[materialId] || 0;
                 if (quantity > allocated) {
-                    showNotification(`Erro: A quantidade (${quantity}) supera o saldo em posse do PEP (${allocated})!`, 'error');
+                    toast.show(`Erro: A quantidade (${quantity}) supera o saldo em posse do PEP (${allocated})!`, 'error');
                     return;
                 }
 
@@ -1564,7 +1637,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             this.reset();
             clearPepSearch('entryPepReturn');
             clearMaterialSearch('entryMaterial');
-            showNotification('Entrada registrada com sucesso!', 'success');
+            toast.show('Entrada registrada com sucesso!', 'success');
         });
 
         // ============================================================
@@ -1578,18 +1651,18 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             const pep = document.getElementById('exitPep').value;
 
             if (!materialId) {
-                showNotification('Selecione um material!', 'error');
+                toast.show('Selecione um material!', 'error');
                 return;
             }
 
             if (!pep) {
-                showNotification('Informe o PEP de destino!', 'error');
+                toast.show('Informe o PEP de destino!', 'error');
                 return;
             }
             
             const available = getMaterialStock(materialId);
             if (quantity > available) {
-                showNotification(`Quantidade em falta! O estoque atual é de apenas ${available}.`, 'error');
+                toast.show(`Quantidade em falta! O estoque atual é de apenas ${available}.`, 'error');
                 return;
             }
             
@@ -1616,7 +1689,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             this.reset();
             clearPepSearch('exitPep');
             clearMaterialSearch('exitMaterial');
-            showNotification('Saída registrada com sucesso!', 'success');
+            toast.show('Saída registrada com sucesso!', 'success');
         });
 
         // ============================================================
@@ -1631,19 +1704,19 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             const condition = document.getElementById('returnCondition').value;
 
             if (!pep) {
-                showNotification('Selecione o PEP de origem!', 'error');
+                toast.show('Selecione o PEP de origem!', 'error');
                 return;
             }
 
             if (!materialId) {
-                showNotification('Selecione o material!', 'error');
+                toast.show('Selecione o material!', 'error');
                 return;
             }
             
             // VALIDAÇÃO CRÍTICA DE SALDO DE DEVOLUÇÃO
             const allocated = data.pepAllocations[pep]?.[materialId] || 0;
             if (quantity > allocated) {
-                showNotification(`Quantidade inválida! O saldo deste material neste PEP é de apenas ${allocated}.`, 'error');
+                toast.show(`Quantidade inválida! O saldo deste material neste PEP é de apenas ${allocated}.`, 'error');
                 return;
             }
             
@@ -1669,7 +1742,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             updateAllViews();
             this.reset();
             clearReturnPep();
-            showNotification('Devolução registrada com sucesso!', 'success');
+            toast.show('Devolução registrada com sucesso!', 'success');
         });
 
         // ============================================================
@@ -1736,7 +1809,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             const dateFrom = document.getElementById('historyDateFrom').value;
             const dateTo = document.getElementById('historyDateTo').value;
             
-            let sorted = [...data.movements].sort((a, b) => new Date(b.date) - new Date(a.date));
+            let sorted =[...data.movements].sort((a, b) => new Date(b.date) - new Date(a.date));
             
             if (dateFrom) sorted = sorted.filter(m => m.date >= dateFrom);
             if (dateTo) sorted = sorted.filter(m => m.date <= dateTo + 'T23:59:59');
@@ -1814,7 +1887,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
                 data.movements = data.movements.filter(m => m.id !== id);
                 saveData();
                 updateAllViews();
-                showNotification('Registro apagado com sucesso!', 'success');
+                toast.show('Registro apagado com sucesso!', 'success');
             }
         }
 
@@ -1897,7 +1970,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             a.download = `estoque_pep_${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             URL.revokeObjectURL(url);
-            showNotification('Dados exportados com sucesso!', 'success');
+            toast.show('Dados exportados com sucesso!', 'success');
         }
 
         function importData(input) {
@@ -1912,10 +1985,10 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
                         data = imported;
                         saveData();
                         updateAllViews();
-                        showNotification('Dados importados com sucesso!', 'success');
+                        toast.show('Dados importados com sucesso!', 'success');
                     }
                 } catch (err) {
-                    showNotification('Erro ao importar arquivo!', 'error');
+                    toast.show('Erro ao importar arquivo!', 'error');
                 }
             };
             reader.readAsText(file);
@@ -1950,7 +2023,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
 
             // Monta tabela de histórico
             let historicoRows = '';
-            const sorted = [...data.movements].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const sorted =[...data.movements].sort((a, b) => new Date(b.date) - new Date(a.date));
             sorted.forEach(m => {
                 const mat = data.materials.find(mat => mat.id === m.materialId);
                 const matDesc = mat ? (mat.code + ' - ' + mat.description) : 'Material removido';
@@ -2088,70 +2161,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             a.download = `relatorio_estoque_pep_${now.toISOString().split('T')[0]}.doc`;
             a.click();
             URL.revokeObjectURL(url);
-            showNotification('Relatório Word exportado com sucesso!', 'success');
-        }
-
-        // ============================================================
-        // NOTIFICAÇÕES
-        // ============================================================
-        function showNotification(message, type) {
-            const div = document.createElement('div');
-            
-            div.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 16px 24px;
-                background-color: ${type === 'success' ? '#10b981' : '#ef4444'};
-                color: white;
-                border-radius: 8px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-                font-weight: 600;
-                z-index: 9999;
-                font-size: 14px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                animation: slideIn 0.4s ease-out;
-                font-family: 'Inter', sans-serif;
-            `;
-            
-            div.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>${message}`;
-            document.body.appendChild(div);
-            
-            setTimeout(() => {
-                div.style.animation = 'slideOut 0.4s ease-out';
-                setTimeout(() => div.remove(), 400);
-            }, 3000);
-        }
-        
-        // Adicionar animacoes CSS para as notificacoes se nao existirem
-        if (!document.getElementById('notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(400px);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                @keyframes slideOut {
-                    from {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                    to {
-                        transform: translateX(400px);
-                        opacity: 0;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
+            toast.show('Relatório Word exportado com sucesso!', 'success');
         }
 
         function viewPepDetails(pep) {
@@ -2161,7 +2171,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
                 const mat = data.materials.find(m => m.id === matId);
                 details += `• ${mat ? mat.code + ' - ' + mat.description : matId}: ${allocs[matId]} ${mat ? mat.unit : ''}\n`;
             });
-            alert(details);
+            alert(details); // Mantido o alert padrão aqui porque é uma exibição de lista detalhada e quebra de linha
         }
 
         function filterStockByPep() {
@@ -2323,7 +2333,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             saveData();
             updateAllViews();
             updateHistoryPepTable(pep);
-            showNotification('Registro apagado com sucesso!', 'success');
+            toast.show('Registro apagado com sucesso!', 'success');
         }
 
         function exportHistoryPepList() {
@@ -2331,7 +2341,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             const typeFilter = document.getElementById('historyPepTypeFilter').value;
             
             if (!pep) {
-                showNotification('Selecione um PEP primeiro!', 'error');
+                toast.show('Selecione um PEP primeiro!', 'error');
                 return;
             }
 
@@ -2347,7 +2357,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
             if (movements.length === 0) {
-                showNotification('Nenhum registro para exportar!', 'error');
+                toast.show('Nenhum registro para exportar!', 'error');
                 return;
             }
 
@@ -2398,7 +2408,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            showNotification('Lista do PEP exportada com sucesso!', 'success');
+            toast.show('Lista do PEP exportada com sucesso!', 'success');
         }
 
         function exportStockList() {
@@ -2413,7 +2423,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             });
 
             if (materials.length === 0) {
-                showNotification('Nenhum material para exportar!', 'error');
+                toast.show('Nenhum material para exportar!', 'error');
                 return;
             }
 
@@ -2440,7 +2450,7 @@ Abaixo está o código 100% completo. É só **copiar e colar** substituindo tud
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            showNotification('Estoque exportado com sucesso!', 'success');
+            toast.show('Estoque exportado com sucesso!', 'success');
         }
     </script>
 </body>
