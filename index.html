@@ -1,3 +1,14 @@
+
+
+
+Para implementar a **Validação de Saldo por PEP** com sucesso, apliquei uma inteligência extra nas duas abas onde devoluções podem ocorrer:
+1. **Aba "Devolução PEP":** O dropdown agora só exibe materiais que realmente tenham sido sacados por esse PEP. Além disso, o próprio campo numérico fica bloqueado (limite máximo) de acordo com a quantidade alocada, e o sistema barra devoluções acima desse saldo caso o usuário tente forçar.
+2. **Aba "Entrada" (quando o tipo é Devolução):** Adicionada a mesma validação para evitar que o usuário devolva um material que o PEP nunca retirou. Se o PEP não for escolhido antes, a lupa de materiais avisará em vermelho: "Selecione o PEP de origem primeiro!".
+
+Além disso, o **Alerta Flutuante Verde de Sistema Atualizado** (da alteração anterior) continua presente.
+
+Abaixo está o código 100% completo. É só **copiar e colar** substituindo tudo no seu arquivo `.html`:
+
 ```html
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -983,6 +994,11 @@
             if (fieldId === 'returnPep') {
                 loadReturnPepMaterials(pepValue);
             }
+            
+            // Se for PEP de devolução na aba de Entrada, limpa o material anterior para evitar mistura
+            if (fieldId === 'entryPepReturn') {
+                clearMaterialSearch('entryMaterial');
+            }
         }
 
         function clearPepSearch(fieldId) {
@@ -995,6 +1011,10 @@
             hiddenInput.value = '';
             if (selectedLabel) selectedLabel.textContent = '';
             dropdown.classList.add('hidden');
+            
+            if (fieldId === 'entryPepReturn') {
+                clearMaterialSearch('entryMaterial');
+            }
         }
 
         // Limpa o PEP de origem na aba Devolução e reseta o material
@@ -1007,7 +1027,29 @@
         // SISTEMA DE LUPA DE PESQUISA DE MATERIAL
         // ============================================================
 
-        function getAvailableMaterials() {
+        // NOVO: Modificado para validar PEP selecionado se for devolução
+        function getAvailableMaterials(fieldId) {
+            // Se for na aba Entrada, com o tipo Devolução, só mostre os materiais daquele PEP!
+            if (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return') {
+                const pep = document.getElementById('entryPepReturn').value;
+                if (!pep) return[]; // Se não tiver PEP selecionado, não mostra materiais
+                
+                const pepAllocs = data.pepAllocations[pep] || {};
+                return Object.keys(pepAllocs)
+                    .filter(matId => pepAllocs[matId] > 0)
+                    .map(matId => {
+                        const m = data.materials.find(mat => mat.id === matId);
+                        return m ? {
+                            id: m.id,
+                            code: m.code,
+                            description: m.description,
+                            unit: m.unit,
+                            stock: pepAllocs[matId] // Aqui mandamos o saldo alocado, não o estoque geral
+                        } : null;
+                    }).filter(Boolean);
+            }
+            
+            // Comportamento padrão (Estoque Geral)
             return data.materials.map(m => ({
                 id: m.id,
                 code: m.code,
@@ -1020,7 +1062,18 @@
         function showMaterialDropdown(fieldId) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const dropdown = document.getElementById(fieldId + 'Dropdown');
-            const materials = getAvailableMaterials();
+            
+            // Trava e emite alerta se o usuário não tiver selecionado um PEP de origem antes
+            if (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return') {
+                const pep = document.getElementById('entryPepReturn').value;
+                if (!pep) {
+                    dropdown.innerHTML = '<div class="pep-dropdown-empty text-red-500 font-medium"><i class="fas fa-exclamation-triangle mr-1"></i> Selecione um PEP de origem primeiro!</div>';
+                    dropdown.classList.remove('hidden');
+                    return;
+                }
+            }
+            
+            const materials = getAvailableMaterials(fieldId);
             const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
             renderMaterialDropdown(fieldId, materials, query);
             dropdown.classList.remove('hidden');
@@ -1029,8 +1082,18 @@
         function filterMaterialDropdown(fieldId) {
             const searchInput = document.getElementById(fieldId + 'Search');
             const dropdown = document.getElementById(fieldId + 'Dropdown');
+            
+            if (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return') {
+                const pep = document.getElementById('entryPepReturn').value;
+                if (!pep) {
+                    dropdown.innerHTML = '<div class="pep-dropdown-empty text-red-500 font-medium"><i class="fas fa-exclamation-triangle mr-1"></i> Selecione um PEP de origem primeiro!</div>';
+                    dropdown.classList.remove('hidden');
+                    return;
+                }
+            }
+            
             const query = searchInput.value.trim().toLowerCase();
-            const materials = getAvailableMaterials();
+            const materials = getAvailableMaterials(fieldId);
             renderMaterialDropdown(fieldId, materials, query);
             dropdown.classList.remove('hidden');
         }
@@ -1054,7 +1117,12 @@
                     const isSelected = material.id === currentValue;
                     const div = document.createElement('div');
                     div.className = 'pep-dropdown-item' + (isSelected ? ' selected' : '');
-                    div.innerHTML = `<i class="fas fa-box text-blue-400 mr-2"></i><strong>${material.code}</strong> - ${material.description} (Disp: ${material.stock} ${material.unit})`;
+                    
+                    // Altera o label dinamicamente
+                    const isReturn = (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return');
+                    const labelDisponivel = isReturn ? 'Alocado no PEP' : 'Disp';
+                    
+                    div.innerHTML = `<i class="fas fa-box text-blue-400 mr-2"></i><strong>${material.code}</strong> - ${material.description} (${labelDisponivel}: ${material.stock} ${material.unit})`;
                     div.onclick = () => selectMaterial(fieldId, material.id, material.code, material.description);
                     dropdown.appendChild(div);
                 });
@@ -1069,9 +1137,6 @@
 
             searchInput.value = materialCode + ' - ' + materialDesc;
             hiddenInput.value = materialId;
-            if (selectedLabel) {
-                selectedLabel.textContent = 'Material selecionado: ' + materialCode + ' - ' + materialDesc;
-            }
             dropdown.classList.add('hidden');
 
             // Atualiza estoque disponível na aba Saída
@@ -1079,6 +1144,28 @@
                 const stock = getMaterialStock(materialId);
                 const unit = getMaterialUnit(materialId);
                 document.getElementById('availableStock').textContent = stock + ' ' + unit;
+                document.getElementById('exitQuantity').max = stock; // Trava o máximo no input
+                
+                if (selectedLabel) {
+                    selectedLabel.textContent = 'Material selecionado: ' + materialCode + ' - ' + materialDesc;
+                }
+            } 
+            // Atualiza informações na aba Entrada via Devolução de PEP
+            else if (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return') {
+                const pep = document.getElementById('entryPepReturn').value;
+                const allocated = data.pepAllocations[pep]?.[materialId] || 0;
+                const unit = getMaterialUnit(materialId);
+                
+                document.getElementById('entryQuantity').max = allocated; // Trava o máximo no input
+                
+                if (selectedLabel) {
+                    selectedLabel.innerHTML = `Material selecionado: ${materialCode} - ${materialDesc} <br><span class="text-purple-600 font-semibold mt-1 inline-block">Saldo disponível neste PEP: ${allocated} ${unit}</span>`;
+                }
+            } 
+            else {
+                if (selectedLabel) {
+                    selectedLabel.textContent = 'Material selecionado: ' + materialCode + ' - ' + materialDesc;
+                }
             }
 
             // Atualiza estoque alocado na aba Devolução
@@ -1131,7 +1218,7 @@
             dropdown.innerHTML = '';
 
             if (!pep) {
-                dropdown.innerHTML = '<div class="pep-dropdown-empty">Selecione um PEP primeiro</div>';
+                dropdown.innerHTML = '<div class="pep-dropdown-empty text-red-500 font-medium"><i class="fas fa-exclamation-triangle mr-1"></i> Selecione um PEP de origem primeiro!</div>';
                 return;
             }
 
@@ -1170,6 +1257,9 @@
             document.getElementById('returnMaterialSelected').textContent = 'Material selecionado: ' + materialCode + ' - ' + materialDesc;
             document.getElementById('returnMaterialDropdown').classList.add('hidden');
             document.getElementById('pepAllocatedStock').textContent = allocated + ' ' + unit;
+            
+            // Trava o input de quantidade para não exceder o que tem no PEP
+            document.getElementById('returnQuantity').max = allocated;
         }
 
         function clearReturnMaterial() {
@@ -1402,10 +1492,19 @@
                 document.getElementById('supplierField').classList.add('hidden');
                 document.getElementById('pepReturnField').classList.remove('hidden');
                 document.getElementById('entrySupplier').required = false;
+                
+                // Reseta a pesquisa de material para garantir os limites
+                clearMaterialSearch('entryMaterial');
+                document.getElementById('entryQuantity').removeAttribute('max');
             } else {
                 document.getElementById('supplierField').classList.remove('hidden');
                 document.getElementById('pepReturnField').classList.add('hidden');
                 document.getElementById('entrySupplier').required = true;
+                
+                // Reseta PEP e material
+                clearPepSearch('entryPepReturn');
+                clearMaterialSearch('entryMaterial');
+                document.getElementById('entryQuantity').removeAttribute('max');
             }
         }
 
@@ -1428,6 +1527,14 @@
                     showNotification('Selecione o PEP de origem!', 'error');
                     return;
                 }
+                
+                // VALIDAÇÃO CRÍTICA DE SALDO DE DEVOLUÇÃO
+                const allocated = data.pepAllocations[pep]?.[materialId] || 0;
+                if (quantity > allocated) {
+                    showNotification(`Erro: A quantidade (${quantity}) supera o saldo em posse do PEP (${allocated})!`, 'error');
+                    return;
+                }
+
                 if (data.pepAllocations[pep] && data.pepAllocations[pep][materialId]) {
                     data.pepAllocations[pep][materialId] -= quantity;
                     if (data.pepAllocations[pep][materialId] <= 0) {
@@ -1482,7 +1589,7 @@
             
             const available = getMaterialStock(materialId);
             if (quantity > available) {
-                showNotification('Quantidade insuficiente em estoque!', 'error');
+                showNotification(`Quantidade em falta! O estoque atual é de apenas ${available}.`, 'error');
                 return;
             }
             
@@ -1533,9 +1640,10 @@
                 return;
             }
             
+            // VALIDAÇÃO CRÍTICA DE SALDO DE DEVOLUÇÃO
             const allocated = data.pepAllocations[pep]?.[materialId] || 0;
             if (quantity > allocated) {
-                showNotification('Quantidade maior que a alocada no PEP!', 'error');
+                showNotification(`Quantidade inválida! O saldo deste material neste PEP é de apenas ${allocated}.`, 'error');
                 return;
             }
             
