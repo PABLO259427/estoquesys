@@ -1,8 +1,4 @@
-
-
-
-                                         PABLO LEANDRO MARTINS DUARTE
-
+                                          PABLO LEANDRO MARTINS DUARTE
 ```html
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -585,9 +581,9 @@
                             <table class="w-full text-left border-collapse">
                                 <thead class="sticky top-0 bg-gray-50">
                                     <tr class="border-b border-gray-200">
-                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Data</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Data/Hora</th>
                                         <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Fluxo</th>
-                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Material</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Código / Material</th>
                                         <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Vol.</th>
                                         <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Info</th>
                                         <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">X</th>
@@ -1578,6 +1574,7 @@
             drop.classList.remove('hidden');
         }
         function clearHistoryPepSearch() { document.getElementById('historyPepSearch').value=''; document.getElementById('historyPepContent').classList.add('hidden'); document.getElementById('historyPepEmpty').classList.remove('hidden'); }
+        
         function updateHistoryPepTable(pep) {
             const tbody = document.getElementById('historyPepTable'); tbody.innerHTML='';
             const filter = document.getElementById('historyPepTypeFilter').value;
@@ -1587,11 +1584,18 @@
             mvs.forEach(m => {
                 const mat = data.materials.find(x=>x.id===m.materialId);
                 const isOut = m.type==='exit';
+                
+                // Formata com Data, Ano e Hora:Minuto
+                const dataHora = new Date(m.date).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+                
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50 border-b border-gray-100 last:border-0">
-                        <td class="p-3 text-xs text-gray-500 font-mono">${new Date(m.date).toLocaleDateString('pt-BR')}</td>
+                        <td class="p-3 text-xs text-gray-500 font-mono">${dataHora}</td>
                         <td class="p-3 text-xs"><span class="${isOut?'text-rose-600 bg-rose-50':'text-blue-600 bg-blue-50'} px-2 py-1 rounded border ${isOut?'border-rose-200':'border-blue-200'}">${isOut?'Saca':'Devolve'}</span></td>
-                        <td class="p-3 text-sm font-medium text-gray-800">${mat?mat.description:'---'}</td>
+                        <td class="p-3 text-sm font-medium">
+                            <div class="text-blue-600 font-mono text-xs font-semibold">${mat?mat.code:'---'}</div>
+                            <div class="text-gray-700">${mat?mat.description:'---'}</div>
+                        </td>
                         <td class="p-3 text-sm font-bold">${m.quantity}</td>
                         <td class="p-3 text-xs text-gray-500">${m.obs||'-'}</td>
                         <td class="p-3 text-center"><button class="text-rose-400 hover:text-rose-600" onclick="deleteMovement('${m.id}');setTimeout(()=>updateHistoryPepTable('${pep}'), 100);"><i class="fas fa-times"></i></button></td>
@@ -1599,6 +1603,7 @@
                 `;
             });
         }
+        
         function exportHistoryPepList() { toast.show('Dossiê em desenvolvimento.', 'warning'); }
         function exportStockList() { toast.show('Relatório de estoque em desenvolvimento.', 'warning'); }
     </script>
