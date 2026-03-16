@@ -1,3 +1,14 @@
+
+
+
+A falta de atualização na tabela de Estoque após a confirmação do recebimento pode ocorrer por três motivos principais que foram mapeados e corrigidos agora:
+
+1. **Falha silenciosa do Gráfico (Chart.js):** Se o script do gráfico sofrer algum atraso (por conexão de rede ou aba invisível), ele travava a função responsável por atualizar as outras tabelas (como o Estoque). Isolei cada tabela para que a falha de uma não atrapalhe a outra.
+2. **Esquecimento do clique no Autocomplete:** Se você digitar o código do material e apertar "Confirmar" sem ter clicado na sugestão da lise suspensa, o sistema se perdia. Agora, coloquei um "Auto-selecionar" que identifica o material digitado mesmo que você não clique nele.
+3. **Formato de números (Vírgula x Ponto):** Em alguns navegadores mobile/desktop, digitar `10,50` com vírgula poderia anular a soma. Forcei uma formatação matemática universal.
+
+Substitua todo o seu código pelo código corrigido abaixo:
+
 ```html
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -24,31 +35,24 @@
             position: relative;
         }
 
-        /* === COMMAND CENTER (DARK GLASS) === */
         .dark-glass {
-            background: rgba(15, 23, 42, 0.85); /* Slate 900 translúcido */
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        
+        .card-hover { transition: all 0.3s ease; }
         .card-hover:hover {
             transform: translateY(-2px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
         
-        /* === ANIMAÇÕES E ESTILOS DOS TOASTS REATIVOS === */
         @keyframes slideIn {
             from { opacity: 0; transform: translateX(100%) scale(0.9); }
             to { opacity: 1; transform: translateX(0) scale(1); }
         }
 
-        .animate-slide-in {
-            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        .animate-slide-in { animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
         .toast-panel {
             background: rgba(17, 24, 39, 0.85);
@@ -60,33 +64,19 @@
         }
 
         .toast-panel::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.15);
-            width: 100%;
+            content: ''; position: absolute; bottom: 0; left: 0; height: 3px;
+            background: rgba(255, 255, 255, 0.15); width: 100%;
         }
 
-        /* === SKELETON SCREENS === */
         .skeleton {
             background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            border-radius: 8px;
-            color: transparent !important;
-            pointer-events: none;
-            user-select: none;
+            background-size: 200% 100%; animation: loading 1.5s infinite;
+            border-radius: 8px; color: transparent !important; pointer-events: none; user-select: none;
         }
-        .skeleton * {
-            visibility: hidden;
-        }
+        .skeleton * { visibility: hidden; }
         .skeleton-dark {
             background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            border-radius: 8px;
+            background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 8px;
         }
 
         @keyframes loading {
@@ -94,82 +84,39 @@
             100% { background-position: -200% 0; }
         }
 
-        /* Smart Search Highlighting */
-        .highlight-match {
-            color: #2563eb; /* Azul elétrico */
-            font-weight: 800;
-            background: rgba(37, 99, 235, 0.1);
-            padding: 0 2px;
-            border-radius: 3px;
-        }
+        .highlight-match { color: #2563eb; font-weight: 800; background: rgba(37, 99, 235, 0.1); padding: 0 2px; border-radius: 3px; }
         
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in; }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 6px;
-        }
-        
+        .status-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
         .status-success { background-color: #10b981; }
         .status-warning { background-color: #f59e0b; }
         .status-danger { background-color: #ef4444; }
         
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
         
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 3px;
-        }
-        
-        .tab-active {
-            border-bottom: 2px solid #667eea;
-            color: #667eea;
-            font-weight: 600;
-        }
+        .tab-active { border-bottom: 2px solid #667eea; color: #667eea; font-weight: 600; }
         
         .movement-in { color: #10b981; }
         .movement-out { color: #ef4444; }
         .movement-return { color: #3b82f6; }
 
-        /* Estilos Lupa */
         .pep-search-wrapper { position: relative; }
         .pep-search-wrapper input { padding-left: 2.5rem; }
-        .pep-search-wrapper .search-icon {
-            position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;
-        }
-        .pep-search-wrapper .clear-btn {
-            position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; cursor: pointer; background: none; border: none; padding: 0; font-size: 0.8rem;
-        }
+        .pep-search-wrapper .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
+        .pep-search-wrapper .clear-btn { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; cursor: pointer; background: none; border: none; padding: 0; font-size: 0.8rem; }
         .pep-search-wrapper .clear-btn:hover { color: #6b7280; }
-        .pep-dropdown {
-            position: absolute; top: 100%; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 0.5rem 0.5rem; max-height: 200px; overflow-y: auto; z-index: 50; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-        }
+        .pep-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 0.5rem 0.5rem; max-height: 200px; overflow-y: auto; z-index: 50; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .pep-dropdown-item { padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem; color: #374151; transition: background 0.15s; }
         .pep-dropdown-item:hover { background: #f3f4f6; }
         .pep-dropdown-item.selected { background: #ede9fe; color: #7c3aed; font-weight: 500; }
         .pep-dropdown-empty { padding: 0.5rem 1rem; font-size: 0.875rem; color: #9ca3af; font-style: italic; }
 
-        .btn-delete-history {
-            color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background 0.15s, color 0.15s;
-        }
+        .btn-delete-history { color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background 0.15s, color 0.15s; }
         .btn-delete-history:hover { background: #fee2e2; color: #b91c1c; }
         
         .img-hover-zoom { transition: transform 0.2s ease, box-shadow 0.2s ease; }
@@ -178,7 +125,6 @@
 </head>
 <body class="p-4 md:p-8">
     
-    <!-- CONTAINER DE TOASTS REATIVOS -->
     <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
     <div class="max-w-7xl mx-auto">
@@ -246,9 +192,8 @@
 
             <!-- Tab Contents -->
             <div class="p-0">
-                <!-- Dashboard / Command Center Tab (DARK MODE) -->
+                <!-- Dashboard / Command Center -->
                 <div id="content-dashboard" class="tab-content dark-glass text-white p-6 animate-fade-in min-h-[600px]">
-                    
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
                             <i class="fas fa-globe-americas mr-2 text-blue-400"></i> Visão Operacional
@@ -260,7 +205,6 @@
                         </div>
                     </div>
 
-                    <!-- Dark KPIs -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                         <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 shadow-inner">
                             <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Itens Cadastrados</p>
@@ -283,7 +227,6 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <!-- Gráfico de Linha (Consumo) -->
                         <div class="lg:col-span-2 bg-slate-800/40 rounded-xl p-6 border border-slate-700/50">
                             <h3 class="text-sm font-semibold mb-4 text-slate-300 uppercase tracking-wider"><i class="fas fa-wave-square text-blue-400 mr-2"></i> Ritmo de Movimentação (7 Dias)</h3>
                             <div class="h-64 dashboard-skeleton-chart">
@@ -291,12 +234,11 @@
                             </div>
                         </div>
                         
-                        <!-- Alertas e Top Materiais -->
                         <div class="space-y-6">
                             <div class="bg-slate-800/40 rounded-xl p-6 border border-coral-500/20">
                                 <h3 class="text-sm font-semibold mb-4 text-slate-300 uppercase tracking-wider"><i class="fas fa-exclamation-triangle text-rose-400 mr-2"></i> Radar de Crise (Estoque)</h3>
                                 <div id="alertsContainer" class="space-y-3 max-h-[120px] overflow-y-auto custom-scrollbar pr-2 dashboard-skeleton-list">
-                                    <!-- Alerts will be populated here -->
+                                    <!-- Alerts -->
                                 </div>
                             </div>
                             <div class="bg-slate-800/40 rounded-xl p-6 border border-slate-700/50">
@@ -308,11 +250,10 @@
                         </div>
                     </div>
 
-                    <!-- Modo Engenharia: Cards de PEP -->
                     <div class="mt-8">
                         <h3 class="text-lg font-semibold mb-4 text-slate-200 border-b border-slate-700 pb-2">Status dos Projetos (PEPs)</h3>
                         <div id="pepSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 dashboard-skeleton-list">
-                            <!-- Cards will be populated here -->
+                            <!-- Cards -->
                         </div>
                     </div>
                 </div>
@@ -339,7 +280,6 @@
                                 </tr>
                             </thead>
                             <tbody id="materialsTable" class="divide-y divide-gray-100 skeleton-target">
-                                <!-- Materials will be populated here -->
                             </tbody>
                         </table>
                     </div>
@@ -347,7 +287,6 @@
 
                 <!-- Entry Tab -->
                 <div id="content-entry" class="tab-content hidden animate-fade-in p-6">
-                    <!-- Mantido inalterado conforme original -->
                     <div class="max-w-2xl mx-auto skeleton-target">
                         <h2 class="text-xl font-bold text-gray-800 mb-6">Recebimento Logístico (Entrada)</h2>
                         <form id="entryForm" class="space-y-5 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -424,7 +363,6 @@
 
                 <!-- Exit Tab -->
                 <div id="content-exit" class="tab-content hidden animate-fade-in p-6">
-                    <!-- Mantido inalterado conforme original -->
                     <div class="max-w-2xl mx-auto skeleton-target">
                         <h2 class="text-xl font-bold text-gray-800 mb-6">Liberação para Campo (Saída)</h2>
                         <form id="exitForm" class="space-y-5 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -489,7 +427,6 @@
 
                 <!-- Return Tab -->
                 <div id="content-return" class="tab-content hidden animate-fade-in p-6">
-                    <!-- Mantido inalterado conforme original -->
                     <div class="max-w-2xl mx-auto skeleton-target">
                         <h2 class="text-xl font-bold text-gray-800 mb-6">Retorno de Sobra (Devolução PEP)</h2>
                         <form id="returnForm" class="space-y-5 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -576,7 +513,6 @@
                                 </tr>
                             </thead>
                             <tbody id="stockTable" class="divide-y divide-gray-100 skeleton-target">
-                                <!-- Stock data will be populated here -->
                             </tbody>
                         </table>
                     </div>
@@ -584,7 +520,6 @@
 
                 <!-- History Tab -->
                 <div id="content-history" class="tab-content hidden animate-fade-in p-6">
-                    <!-- Mantido inalterado conforme original -->
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Timeline de Movimentação</h2>
                         <div class="flex gap-2 flex-wrap items-center bg-white p-1 rounded-lg border border-gray-200">
@@ -610,7 +545,6 @@
                                 </tr>
                             </thead>
                             <tbody id="historyTable" class="divide-y divide-gray-100 skeleton-target">
-                                <!-- History will be populated here -->
                             </tbody>
                         </table>
                     </div>
@@ -618,7 +552,6 @@
 
                 <!-- Historico por PEP Tab -->
                 <div id="content-historypep" class="tab-content hidden animate-fade-in p-6">
-                    <!-- Mantido inalterado conforme original -->
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Dossiê por PEP</h2>
                     </div>
@@ -666,7 +599,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="historyPepTable" class="divide-y divide-gray-100 skeleton-target">
-                                    <!-- History by PEP will be populated here -->
                                 </tbody>
                             </table>
                         </div>
@@ -690,7 +622,6 @@
             <h3 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-3">Novo Material no Catálogo</h3>
             <form id="materialForm" class="space-y-4">
                 
-                <!-- Nova seção de Foto -->
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="fas fa-camera text-blue-500 mr-1"></i> Foto do Material (Opcional)
@@ -742,16 +673,12 @@
     </div>
 
     <script>
-        // ============================================================
-        // SISTEMA DE TOASTS REATIVOS (GLASSMORPHISM)
-        // ============================================================
         const toast = {
             show(message, type = 'success') {
                 const container = document.getElementById('toast-container');
                 if (!container) return;
                 
                 const id = Date.now() + Math.floor(Math.random() * 1000);
-                
                 const config = {
                     success: { icon: 'fa-check-circle', color: 'text-emerald-400', border: 'border-emerald-500/30' },
                     error: { icon: 'fa-exclamation-circle', color: 'text-rose-400', border: 'border-rose-500/30' },
@@ -762,15 +689,9 @@
 
                 const toastHTML = `
                     <div id="toast-${id}" class="toast-panel ${border} min-w-[300px] p-4 rounded-xl flex items-center gap-3 animate-slide-in shadow-2xl transition-all duration-500 pointer-events-auto">
-                        <div class="${color} text-xl">
-                            <i class="fas ${icon}"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-white text-sm font-medium">${message}</p>
-                        </div>
-                        <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-white transition cursor-pointer">
-                            <i class="fas fa-times text-xs"></i>
-                        </button>
+                        <div class="${color} text-xl"><i class="fas ${icon}"></i></div>
+                        <div class="flex-1"><p class="text-white text-sm font-medium">${message}</p></div>
+                        <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-white transition cursor-pointer"><i class="fas fa-times text-xs"></i></button>
                     </div>
                 `;
 
@@ -787,9 +708,6 @@
             }
         };
 
-        // ============================================================
-        // SMART SEARCH HIGHLIGHT HELPER
-        // ============================================================
         function highlightMatch(text, query) {
             if (!query) return text;
             const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -797,16 +715,12 @@
             return text.replace(regex, '<span class="highlight-match">$1</span>');
         }
 
-        // ============================================================
-        // SKELETON LOADER SIMULATOR
-        // ============================================================
         function renderWithSkeleton(callback) {
             const activeTabId = document.querySelector('.tab-active').id.replace('tab-', 'content-');
             const targets = document.getElementById(activeTabId).querySelectorAll('.skeleton-target');
             
             targets.forEach(t => {
                 if(t.tagName === 'TBODY') {
-                    t.dataset.realHtml = t.innerHTML;
                     t.innerHTML = `
                         <tr><td colspan="10"><div class="h-8 skeleton w-full mb-2"></div></td></tr>
                         <tr><td colspan="10"><div class="h-8 skeleton w-3/4 mb-2"></div></td></tr>
@@ -820,21 +734,12 @@
             setTimeout(() => {
                 callback(); 
                 targets.forEach(t => {
-                    if(t.tagName !== 'TBODY') {
-                        t.classList.remove('opacity-50', 'pointer-events-none');
-                    }
+                    if(t.tagName !== 'TBODY') t.classList.remove('opacity-50', 'pointer-events-none');
                 });
             }, 300);
         }
 
-        // ============================================================
-        // GERENCIAMENTO DE DADOS
-        // ============================================================
-        let data = {
-            materials:[],
-            movements:[],
-            pepAllocations: {}
-        };
+        let data = { materials:[], movements:[], pepAllocations: {} };
 
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
@@ -889,18 +794,15 @@
             }
         }
 
+        // ============================================================
+        // TRY/CATCH NAS ATUALIZAÇÕES (Evita que o Estoque não mostre)
+        // ============================================================
         function updateAllViews() {
-            updateDashboard();
-            updateMaterialsTable();
-            updateSelects();
-            updateStockTable();
-            updateHistoryTable();
-            updatePepSummary();
+            try { updateDashboard(); } catch(e) { console.error('Dashboard Error', e); }
+            try { updateMaterialsTable(); } catch(e) { console.error('Materials Error', e); }
+            try { updateStockTable(); } catch(e) { console.error('Stock Error', e); }
+            try { updateHistoryTable(); } catch(e) { console.error('History Error', e); }
         }
-
-        // ============================================================
-        // LUPAS DE BUSCA E DROPDOWNS
-        // ============================================================
 
         function getAvailablePeps() { return Object.keys(data.pepAllocations).sort(); }
 
@@ -1128,9 +1030,6 @@
             }
         }
 
-        // ============================================================
-        // CORE TABS
-        // ============================================================
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => { el.classList.remove('tab-active', 'text-blue-600'); });
@@ -1157,9 +1056,6 @@
             }
         }
 
-        // ============================================================
-        // COMMAND CENTER DASHBOARD (DARK)
-        // ============================================================
         function updateDashboard() {
             document.getElementById('totalMaterials').textContent = data.materials.length;
             
@@ -1180,41 +1076,44 @@
         }
 
         function updateCharts() {
-            const last7Days = Array.from({length: 7}, (_, i) => {
-                const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d.toISOString().split('T')[0];
-            });
-            
-            const eData = last7Days.map(day => data.movements.filter(m => m.date.startsWith(day) && m.type === 'entry').reduce((a,b)=>a+b.quantity,0));
-            const sData = last7Days.map(day => data.movements.filter(m => m.date.startsWith(day) && m.type === 'exit').reduce((a,b)=>a+b.quantity,0));
-            
-            Chart.defaults.color = '#94a3b8';
-            Chart.defaults.font.family = 'Inter';
+            try {
+                if (typeof Chart === 'undefined') return;
+                const last7Days = Array.from({length: 7}, (_, i) => {
+                    const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d.toISOString().split('T')[0];
+                });
+                
+                const eData = last7Days.map(day => data.movements.filter(m => m.date.startsWith(day) && m.type === 'entry').reduce((a,b)=>a+Number(b.quantity),0));
+                const sData = last7Days.map(day => data.movements.filter(m => m.date.startsWith(day) && m.type === 'exit').reduce((a,b)=>a+Number(b.quantity),0));
+                
+                Chart.defaults.color = '#94a3b8';
+                Chart.defaults.font.family = 'Inter';
 
-            const ctx1 = document.getElementById('movementChart').getContext('2d');
-            if (window._movementChart) window._movementChart.destroy();
-            window._movementChart = new Chart(ctx1, {
-                type: 'line', 
-                data: {
-                    labels: last7Days.map(d => d.substring(5).split('-').reverse().join('/')),
-                    datasets:[
-                        { label: 'Entradas (Vol)', data: eData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointBackgroundColor: '#10b981' },
-                        { label: 'Saídas (Vol)', data: sData, borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointBackgroundColor: '#0ea5e9' }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
-            });
-            
-            const stockData = data.materials.map(m => ({ name: m.description, stock: getMaterialStock(m.id) })).sort((a,b)=>b.stock-a.stock).slice(0,5);
-            const ctx2 = document.getElementById('stockChart').getContext('2d');
-            if (window._stockChart) window._stockChart.destroy();
-            window._stockChart = new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: stockData.map(s => s.name.substring(0, 15)),
-                    datasets:[{ data: stockData.map(s => s.stock), backgroundColor:['#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e', '#f59e0b'], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
-            });
+                const ctx1 = document.getElementById('movementChart').getContext('2d');
+                if (window._movementChart) window._movementChart.destroy();
+                window._movementChart = new Chart(ctx1, {
+                    type: 'line', 
+                    data: {
+                        labels: last7Days.map(d => d.substring(5).split('-').reverse().join('/')),
+                        datasets:[
+                            { label: 'Entradas (Vol)', data: eData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointBackgroundColor: '#10b981' },
+                            { label: 'Saídas (Vol)', data: sData, borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointBackgroundColor: '#0ea5e9' }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
+                });
+                
+                const stockData = data.materials.map(m => ({ name: m.description, stock: getMaterialStock(m.id) })).sort((a,b)=>b.stock-a.stock).slice(0,5);
+                const ctx2 = document.getElementById('stockChart').getContext('2d');
+                if (window._stockChart) window._stockChart.destroy();
+                window._stockChart = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: stockData.map(s => s.name.substring(0, 15)),
+                        datasets:[{ data: stockData.map(s => s.stock), backgroundColor:['#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e', '#f59e0b'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
+                });
+            } catch (e) { console.warn('Gráfico não pôde ser renderizado', e); }
         }
 
         function updateAlerts() {
@@ -1284,9 +1183,6 @@
             });
         }
 
-        // ============================================================
-        // LÓGICA DE FOTOS / IMAGEM (Compressão Canvas)
-        // ============================================================
         function previewMaterialImage(input) {
             const file = input.files[0];
             if (!file) { clearImagePreview(); return; }
@@ -1295,7 +1191,6 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // Compressão severa mas funcional para localstorage (Max 200px)
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     let width = img.width;
@@ -1308,12 +1203,10 @@
                         width *= maxDim / height; height = maxDim;
                     }
                     
-                    canvas.width = width;
-                    canvas.height = height;
+                    canvas.width = width; canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% qualidade
-                    
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); 
                     document.getElementById('matImageBase64').value = compressedDataUrl;
                     document.getElementById('matImagePreview').src = compressedDataUrl;
                     document.getElementById('matImagePreview').classList.remove('hidden');
@@ -1332,32 +1225,18 @@
             document.getElementById('matImage').value = '';
         }
 
-        // ============================================================
-        // MATERIAIS MODAL & TABELA
-        // ============================================================
         function openMaterialModal() {
             const modal = document.getElementById('materialModal');
             const inner = document.getElementById('materialModalInner');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                inner.classList.remove('scale-95');
-                document.getElementById('matCode').focus();
-            }, 10);
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); document.getElementById('matCode').focus(); }, 10);
         }
 
         function closeMaterialModal() {
             const modal = document.getElementById('materialModal');
             const inner = document.getElementById('materialModalInner');
-            modal.classList.add('opacity-0');
-            inner.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                document.getElementById('materialForm').reset();
-                clearImagePreview();
-            }, 300);
+            modal.classList.add('opacity-0'); inner.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); document.getElementById('materialForm').reset(); clearImagePreview(); }, 300);
         }
 
         document.getElementById('materialForm').addEventListener('submit', function(e) {
@@ -1367,13 +1246,11 @@
                 code: document.getElementById('matCode').value.toUpperCase(),
                 description: document.getElementById('matDesc').value,
                 unit: document.getElementById('matUnit').value,
-                minStock: parseFloat(document.getElementById('matMinStock').value) || 0,
-                image: document.getElementById('matImageBase64').value || null, // Salva a foto
+                minStock: parseFloat(document.getElementById('matMinStock').value.toString().replace(',', '.')) || 0,
+                image: document.getElementById('matImageBase64').value || null,
                 createdAt: new Date().toISOString()
             });
-            saveData();
-            updateAllViews();
-            closeMaterialModal();
+            saveData(); updateAllViews(); closeMaterialModal();
         });
 
         function updateMaterialsTable() {
@@ -1412,14 +1289,10 @@
         function deleteMaterial(id) {
             if (confirm('Autorização exigida: Excluir definitivamente este SKU?')) {
                 data.materials = data.materials.filter(m => m.id !== id);
-                saveData();
-                updateAllViews();
+                saveData(); updateAllViews();
             }
         }
 
-        // ============================================================
-        // LOGICA DE FORMULARIOS (Entrada, Saida, Return)
-        // ============================================================
         function toggleEntryFields() {
             const type = document.getElementById('entryType').value;
             if (type === 'return') {
@@ -1438,11 +1311,20 @@
         document.getElementById('entryForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const type = document.getElementById('entryType').value;
-            const materialId = document.getElementById('entryMaterial').value;
-            const quantity = parseFloat(document.getElementById('entryQuantity').value);
-            const value = parseFloat(document.getElementById('entryValue').value) || 0;
+            
+            // Lógica de Prevenção/Fallback caso usuário digite mas não clique no Dropdown
+            let materialId = document.getElementById('entryMaterial').value;
+            const matSearchTerm = document.getElementById('entryMaterialSearch').value.trim();
+            if (!materialId && matSearchTerm) {
+                const matFound = data.materials.find(m => m.code.toUpperCase() === matSearchTerm.toUpperCase() || matSearchTerm.toUpperCase().startsWith(m.code.toUpperCase()));
+                if(matFound) materialId = matFound.id;
+            }
 
             if (!materialId) { toast.show('Código do material pendente.', 'warning'); return; }
+            
+            const quantity = parseFloat(document.getElementById('entryQuantity').value.toString().replace(',', '.'));
+            const valStr = document.getElementById('entryValue').value.toString().replace(',', '.');
+            const value = parseFloat(valStr) || 0;
             
             if (type === 'return') {
                 const pep = document.getElementById('entryPepReturn').value;
@@ -1470,14 +1352,23 @@
 
         document.getElementById('exitForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const materialId = document.getElementById('exitMaterial').value;
-            const quantity = parseFloat(document.getElementById('exitQuantity').value);
-            const pep = document.getElementById('exitPep').value;
+            
+            let materialId = document.getElementById('exitMaterial').value;
+            const matSearchTerm = document.getElementById('exitMaterialSearch').value.trim();
+            if (!materialId && matSearchTerm) {
+                const matFound = data.materials.find(m => m.code.toUpperCase() === matSearchTerm.toUpperCase() || matSearchTerm.toUpperCase().startsWith(m.code.toUpperCase()));
+                if(matFound) materialId = matFound.id;
+            }
 
             if (!materialId) { toast.show('Defina o material para liberação.', 'warning'); return; }
+            
+            let pep = document.getElementById('exitPep').value;
+            if(!pep) pep = document.getElementById('exitPepSearch').value.trim(); // Fallback se digitar
             if (!pep) { toast.show('Alvo de PEP não definido.', 'warning'); return; }
             
+            const quantity = parseFloat(document.getElementById('exitQuantity').value.toString().replace(',', '.'));
             const available = getMaterialStock(materialId);
+            
             if (quantity > available) { toast.show(`Quebra de Caixa! Faltam ${quantity - available} UN.`, 'error'); return; }
             
             if (!data.pepAllocations[pep]) data.pepAllocations[pep] = {};
@@ -1497,8 +1388,15 @@
         document.getElementById('returnForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const pep = document.getElementById('returnPep').value;
-            const materialId = document.getElementById('returnMaterial').value;
-            const quantity = parseFloat(document.getElementById('returnQuantity').value);
+            let materialId = document.getElementById('returnMaterial').value;
+            
+            const matSearchTerm = document.getElementById('returnMaterialSearch').value.trim();
+            if (!materialId && matSearchTerm) {
+                const matFound = data.materials.find(m => m.code.toUpperCase() === matSearchTerm.toUpperCase() || matSearchTerm.toUpperCase().startsWith(m.code.toUpperCase()));
+                if(matFound) materialId = matFound.id;
+            }
+
+            const quantity = parseFloat(document.getElementById('returnQuantity').value.toString().replace(',', '.'));
             
             if (!pep || !materialId) { toast.show('Forneça PEP e SKU.', 'warning'); return; }
             
@@ -1518,9 +1416,6 @@
             toast.show('Logística reversa concluída.', 'success');
         });
 
-        // ============================================================
-        // VISUALIZAÇÕES DE TABELAS (Estoque, Histórico)
-        // ============================================================
         function updateStockTable() {
             const tbody = document.getElementById('stockTable');
             tbody.innerHTML = '';
@@ -1530,7 +1425,6 @@
                 if (searchText && !m.description.toLowerCase().includes(searchText) && !m.code.toLowerCase().includes(searchText)) return;
                 const stock = getMaterialStock(m.id);
                 
-                // Imagem renderizada no estoque com Efeito Zoom ao passar o mouse
                 const imgHtml = m.image 
                     ? `<img src="${m.image}" alt="${m.code}" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
                     : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400"><i class="fas fa-box"></i></div>`;
@@ -1597,17 +1491,20 @@
             }
         }
 
-        // Helpers e Export
         function getMaterialStock(materialId) {
             let stock = 0;
             data.movements.forEach(m => {
-                if(m.materialId===materialId){ if(m.type==='entry'||m.type==='return') stock+=m.quantity; else if(m.type==='exit') stock-=m.quantity; }
+                if(m.materialId === materialId){ 
+                    // Correção forçada para números independentemente de bugs passados
+                    if(m.type==='entry'||m.type==='return') stock += Number(m.quantity); 
+                    else if(m.type==='exit') stock -= Number(m.quantity); 
+                }
             });
             return stock;
         }
+        
         function getMaterialValue(materialId) { const e = data.movements.filter(m => m.materialId===materialId && m.type==='entry' && m.value); return e.length>0?e[e.length-1].value:0; }
         function getMaterialUnit(materialId) { const m = data.materials.find(x => x.id === materialId); return m ? m.unit : 'UN'; }
-        function updateSelects() {}
         function filterStock() { updateStockTable(); }
         function filterHistory() { updateHistoryTable(); }
 
@@ -1631,7 +1528,6 @@
 
         function exportToWord() { toast.show('Módulo Word obsoleto substituído pelo JSON, adaptando em breve.', 'warning'); }
 
-        // Histórico PEP Dinâmico
         function filterHistoryPepDropdown() {
             const q = document.getElementById('historyPepSearch').value.trim().toLowerCase();
             const peps = new Set();
