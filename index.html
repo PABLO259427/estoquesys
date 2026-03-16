@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -25,65 +26,129 @@
 
         /* === COMMAND CENTER (DARK GLASS) === */
         .dark-glass {
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(15, 23, 42, 0.85); /* Slate 900 translúcido */
             backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
-        .card-hover { transition: all 0.3s ease; }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
         .card-hover:hover {
             transform: translateY(-2px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
         
-        /* === ANIMAÇÕES E ESTILOS DOS TOASTS === */
+        /* === ANIMAÇÕES E ESTILOS DOS TOASTS REATIVOS === */
         @keyframes slideIn {
             from { opacity: 0; transform: translateX(100%) scale(0.9); }
             to { opacity: 1; transform: translateX(0) scale(1); }
         }
-        .animate-slide-in { animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .toast-panel {
-            background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1); position: relative; overflow: hidden;
+
+        .animate-slide-in {
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+
+        .toast-panel {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
         .toast-panel::after {
-            content: ''; position: absolute; bottom: 0; left: 0; height: 3px;
-            background: rgba(255, 255, 255, 0.15); width: 100%;
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            width: 100%;
         }
 
         /* === SKELETON SCREENS === */
         .skeleton {
             background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
-            background-size: 200% 100%; animation: loading 1.5s infinite;
-            border-radius: 8px; color: transparent !important; pointer-events: none; user-select: none;
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 8px;
+            color: transparent !important;
+            pointer-events: none;
+            user-select: none;
         }
-        .skeleton * { visibility: hidden; }
+        .skeleton * {
+            visibility: hidden;
+        }
         .skeleton-dark {
             background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
-            background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 8px;
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 8px;
         }
+
         @keyframes loading {
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
 
+        /* Smart Search Highlighting */
         .highlight-match {
-            color: #2563eb; font-weight: 800; background: rgba(37, 99, 235, 0.1);
-            padding: 0 2px; border-radius: 3px;
+            color: #2563eb; /* Azul elétrico */
+            font-weight: 800;
+            background: rgba(37, 99, 235, 0.1);
+            padding: 0 2px;
+            border-radius: 3px;
         }
         
-        .animate-fade-in { animation: fadeIn 0.3s ease-in; }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
         
-        .tab-active { border-bottom: 2px solid #667eea; color: #667eea; font-weight: 600; }
+        .status-success { background-color: #10b981; }
+        .status-warning { background-color: #f59e0b; }
+        .status-danger { background-color: #ef4444; }
         
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        
+        .tab-active {
+            border-bottom: 2px solid #667eea;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .movement-in { color: #10b981; }
+        .movement-out { color: #ef4444; }
+        .movement-return { color: #3b82f6; }
+
         /* Estilos Lupa */
         .pep-search-wrapper { position: relative; }
         .pep-search-wrapper input { padding-left: 2.5rem; }
@@ -106,10 +171,14 @@
             color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background 0.15s, color 0.15s;
         }
         .btn-delete-history:hover { background: #fee2e2; color: #b91c1c; }
+        
+        .img-hover-zoom { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .img-hover-zoom:hover { transform: scale(2.5); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); z-index: 50; }
     </style>
 </head>
 <body class="p-4 md:p-8">
     
+    <!-- CONTAINER DE TOASTS REATIVOS -->
     <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
     <div class="max-w-7xl mx-auto">
@@ -131,6 +200,9 @@
                     </span>
                     <button onclick="exportData()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center gap-2 text-sm font-medium text-gray-700">
                         <i class="fas fa-download"></i> JSON
+                    </button>
+                    <button onclick="exportToWord()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm font-medium">
+                        <i class="fas fa-file-word"></i> Relatório
                     </button>
                     <button onclick="document.getElementById('importFile').click()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center gap-2 text-sm font-medium text-gray-700">
                         <i class="fas fa-upload"></i> Importar
@@ -166,6 +238,9 @@
                     <button onclick="switchTab('history')" id="tab-history" class="tab-btn px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800 transition whitespace-nowrap">
                         <i class="fas fa-history mr-2"></i>Histórico
                     </button>
+                    <button onclick="switchTab('historypep')" id="tab-historypep" class="tab-btn px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800 transition whitespace-nowrap">
+                        <i class="fas fa-folder-open mr-2"></i>Histórico PEP
+                    </button>
                 </nav>
             </div>
 
@@ -178,18 +253,26 @@
                         <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
                             <i class="fas fa-globe-americas mr-2 text-blue-400"></i> Visão Operacional
                         </h2>
+                        <div class="flex gap-2">
+                            <span class="flex items-center gap-1 text-xs bg-slate-800 border border-slate-700 px-2 py-1 rounded-full text-slate-300">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Sistema Online
+                            </span>
+                        </div>
                     </div>
 
+                    <!-- Dark KPIs -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                         <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 shadow-inner">
                             <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Itens Cadastrados</p>
                             <h3 class="text-3xl font-light text-white dashboard-skeleton" id="totalMaterials">0</h3>
                         </div>
-                        <div class="bg-slate-800/50 rounded-xl p-5 border border-emerald-500/20 shadow-inner">
+                        <div class="bg-slate-800/50 rounded-xl p-5 border border-emerald-500/20 shadow-inner relative overflow-hidden">
+                            <div class="absolute right-0 top-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl transform translate-x-4 -translate-y-4"></div>
                             <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Capital Imobilizado</p>
                             <h3 class="text-3xl font-light text-emerald-400 dashboard-skeleton" id="totalValue">R$ 0,00</h3>
                         </div>
-                        <div class="bg-slate-800/50 rounded-xl p-5 border border-blue-500/20 shadow-inner">
+                        <div class="bg-slate-800/50 rounded-xl p-5 border border-blue-500/20 shadow-inner relative overflow-hidden">
+                            <div class="absolute right-0 top-0 w-16 h-16 bg-blue-500/10 rounded-full blur-xl transform translate-x-4 -translate-y-4"></div>
                             <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">PEPs em Execução</p>
                             <h3 class="text-3xl font-light text-blue-400 dashboard-skeleton" id="activePEPs">0</h3>
                         </div>
@@ -200,6 +283,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Gráfico de Linha (Consumo) -->
                         <div class="lg:col-span-2 bg-slate-800/40 rounded-xl p-6 border border-slate-700/50">
                             <h3 class="text-sm font-semibold mb-4 text-slate-300 uppercase tracking-wider"><i class="fas fa-wave-square text-blue-400 mr-2"></i> Ritmo de Movimentação (7 Dias)</h3>
                             <div class="h-64 dashboard-skeleton-chart">
@@ -207,10 +291,13 @@
                             </div>
                         </div>
                         
+                        <!-- Alertas e Top Materiais -->
                         <div class="space-y-6">
                             <div class="bg-slate-800/40 rounded-xl p-6 border border-coral-500/20">
                                 <h3 class="text-sm font-semibold mb-4 text-slate-300 uppercase tracking-wider"><i class="fas fa-exclamation-triangle text-rose-400 mr-2"></i> Radar de Crise (Estoque)</h3>
-                                <div id="alertsContainer" class="space-y-3 max-h-[120px] overflow-y-auto custom-scrollbar pr-2 dashboard-skeleton-list"></div>
+                                <div id="alertsContainer" class="space-y-3 max-h-[120px] overflow-y-auto custom-scrollbar pr-2 dashboard-skeleton-list">
+                                    <!-- Alerts will be populated here -->
+                                </div>
                             </div>
                             <div class="bg-slate-800/40 rounded-xl p-6 border border-slate-700/50">
                                 <h3 class="text-sm font-semibold mb-4 text-slate-300 uppercase tracking-wider"><i class="fas fa-chart-pie text-purple-400 mr-2"></i> Top 5 Volumes</h3>
@@ -221,9 +308,12 @@
                         </div>
                     </div>
 
+                    <!-- Modo Engenharia: Cards de PEP -->
                     <div class="mt-8">
                         <h3 class="text-lg font-semibold mb-4 text-slate-200 border-b border-slate-700 pb-2">Status dos Projetos (PEPs)</h3>
-                        <div id="pepSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 dashboard-skeleton-list"></div>
+                        <div id="pepSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 dashboard-skeleton-list">
+                            <!-- Cards will be populated here -->
+                        </div>
                     </div>
                 </div>
 
@@ -239,57 +329,68 @@
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-gray-50/80 border-b border-gray-200">
+                                    <th class="p-4 w-16 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Foto</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Código</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Descrição</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">UN</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Estoque Atual</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Valor Unit.</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="materialsTable" class="divide-y divide-gray-100 skeleton-target"></tbody>
+                            <tbody id="materialsTable" class="divide-y divide-gray-100 skeleton-target">
+                                <!-- Materials will be populated here -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
 
                 <!-- Entry Tab -->
                 <div id="content-entry" class="tab-content hidden animate-fade-in p-6">
-                    <!-- HTML mantido conforme seu código original de Entrada -->
+                    <!-- Mantido inalterado conforme original -->
                     <div class="max-w-2xl mx-auto skeleton-target">
                         <h2 class="text-xl font-bold text-gray-800 mb-6">Recebimento Logístico (Entrada)</h2>
                         <form id="entryForm" class="space-y-5 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Tipo de Entrada</label>
-                                    <select id="entryType" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="toggleEntryFields()">
+                                    <select id="entryType" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" onchange="toggleEntryFields()">
                                         <option value="supplier">Compra / Almoxarifado</option>
                                         <option value="return">Devolução de Campo (PEP)</option>
                                     </select>
                                 </div>
                                 <div id="supplierField">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Fornecedor / Origem</label>
-                                    <input type="text" id="entrySupplier" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <input type="text" id="entrySupplier" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" placeholder="Ex: Comercial Elétrica">
                                 </div>
+
                                 <div id="pepReturnField" class="hidden">
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1">PEP de Origem</label>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                        <i class="fas fa-project-diagram text-purple-500 mr-1"></i> PEP de Origem
+                                    </label>
                                     <div class="pep-search-wrapper" id="entryPepReturnWrapper">
                                         <i class="fas fa-search search-icon"></i>
-                                        <input type="text" id="entryPepReturnSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Buscar PEP..." oninput="filterPepDropdown('entryPepReturn')" onfocus="showPepDropdown('entryPepReturn')" autocomplete="off">
+                                        <input type="text" id="entryPepReturnSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition-shadow" placeholder="Buscar PEP..." oninput="filterPepDropdown('entryPepReturn')" onfocus="showPepDropdown('entryPepReturn')" autocomplete="off">
                                         <button type="button" class="clear-btn" onclick="clearPepSearch('entryPepReturn')"><i class="fas fa-times"></i></button>
                                         <div id="entryPepReturnDropdown" class="pep-dropdown hidden"></div>
                                     </div>
                                     <input type="hidden" id="entryPepReturn" name="entryPepReturn">
+                                    <p class="mt-1 text-xs text-gray-500" id="entryPepReturnSelected"></p>
                                 </div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Material</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                    <i class="fas fa-box-open text-blue-500 mr-1"></i> Material
+                                </label>
                                 <div class="pep-search-wrapper" id="entryMaterialWrapper">
                                     <i class="fas fa-search search-icon"></i>
-                                    <input type="text" id="entryMaterialSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Código ou Descrição..." oninput="filterMaterialDropdown('entryMaterial')" onfocus="showMaterialDropdown('entryMaterial')" autocomplete="off">
+                                    <input type="text" id="entryMaterialSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="Código ou Descrição..." oninput="filterMaterialDropdown('entryMaterial')" onfocus="showMaterialDropdown('entryMaterial')" autocomplete="off">
                                     <button type="button" class="clear-btn" onclick="clearMaterialSearch('entryMaterial')"><i class="fas fa-times"></i></button>
                                     <div id="entryMaterialDropdown" class="pep-dropdown hidden"></div>
                                 </div>
                                 <input type="hidden" id="entryMaterial" name="entryMaterial">
+                                <p class="mt-1 text-xs text-gray-500" id="entryMaterialSelected"></p>
                             </div>
                             
                             <div class="grid grid-cols-2 gap-5">
@@ -303,8 +404,19 @@
                                 </div>
                             </div>
                             
-                            <button type="submit" class="w-full py-3.5 mt-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-bold shadow-lg shadow-emerald-500/30">
-                                Confirmar Recebimento
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Documento / NF</label>
+                                    <input type="text" id="entryDocument" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: NF 12345">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
+                                    <input type="text" id="entryObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Opcional">
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="w-full py-3.5 mt-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30">
+                                <i class="fas fa-check-circle"></i> Confirmar Recebimento
                             </button>
                         </form>
                     </div>
@@ -312,29 +424,37 @@
 
                 <!-- Exit Tab -->
                 <div id="content-exit" class="tab-content hidden animate-fade-in p-6">
-                    <!-- HTML mantido conforme seu código original de Saída -->
+                    <!-- Mantido inalterado conforme original -->
                     <div class="max-w-2xl mx-auto skeleton-target">
                         <h2 class="text-xl font-bold text-gray-800 mb-6">Liberação para Campo (Saída)</h2>
                         <form id="exitForm" class="space-y-5 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">PEP de Destino</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                    <i class="fas fa-project-diagram text-rose-500 mr-1"></i> PEP de Destino
+                                </label>
                                 <div class="pep-search-wrapper" id="exitPepWrapper">
                                     <i class="fas fa-search search-icon"></i>
-                                    <input type="text" id="exitPepSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" placeholder="Buscar ou criar PEP..." oninput="filterPepDropdown('exitPep')" onfocus="showPepDropdown('exitPep')" autocomplete="off">
+                                    <input type="text" id="exitPepSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 transition-shadow" placeholder="Buscar ou criar PEP..." oninput="filterPepDropdown('exitPep')" onfocus="showPepDropdown('exitPep')" autocomplete="off">
                                     <button type="button" class="clear-btn" onclick="clearPepSearch('exitPep')"><i class="fas fa-times"></i></button>
                                     <div id="exitPepDropdown" class="pep-dropdown hidden"></div>
                                 </div>
                                 <input type="hidden" id="exitPep" name="exitPep">
+                                <p class="mt-1 text-xs text-gray-500" id="exitPepSelected"></p>
                             </div>
+
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Material</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                    <i class="fas fa-box text-blue-500 mr-1"></i> Material
+                                </label>
                                 <div class="pep-search-wrapper" id="exitMaterialWrapper">
                                     <i class="fas fa-search search-icon"></i>
-                                    <input type="text" id="exitMaterialSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Código ou Descrição..." oninput="filterMaterialDropdown('exitMaterial')" onfocus="showMaterialDropdown('exitMaterial')" autocomplete="off">
+                                    <input type="text" id="exitMaterialSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="Código ou Descrição..." oninput="filterMaterialDropdown('exitMaterial')" onfocus="showMaterialDropdown('exitMaterial')" autocomplete="off">
                                     <button type="button" class="clear-btn" onclick="clearMaterialSearch('exitMaterial')"><i class="fas fa-times"></i></button>
                                     <div id="exitMaterialDropdown" class="pep-dropdown hidden"></div>
                                 </div>
                                 <input type="hidden" id="exitMaterial" name="exitMaterial">
+                                <p class="mt-1 text-xs text-gray-500" id="exitMaterialSelected"></p>
                                 <p class="mt-1 text-xs font-medium bg-blue-50 text-blue-700 px-2 py-1 rounded inline-block">Disponível Geral: <span id="availableStock">0</span></p>
                             </div>
                             
@@ -348,8 +468,20 @@
                                     <input type="date" id="exitDateNeeded" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500">
                                 </div>
                             </div>
-                            <button type="submit" class="w-full py-3.5 mt-2 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition font-bold shadow-lg shadow-rose-500/30">
-                                Efetivar Liberação
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Solicitante</label>
+                                    <input type="text" id="exitRequester" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" placeholder="Nome do responsável">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
+                                    <input type="text" id="exitObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" placeholder="Destinação exata...">
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="w-full py-3.5 mt-2 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition font-bold flex items-center justify-center gap-2 shadow-lg shadow-rose-500/30">
+                                <i class="fas fa-paper-plane"></i> Efetivar Liberação
                             </button>
                         </form>
                     </div>
@@ -357,38 +489,68 @@
 
                 <!-- Return Tab -->
                 <div id="content-return" class="tab-content hidden animate-fade-in p-6">
+                    <!-- Mantido inalterado conforme original -->
                     <div class="max-w-2xl mx-auto skeleton-target">
                         <h2 class="text-xl font-bold text-gray-800 mb-6">Retorno de Sobra (Devolução PEP)</h2>
                         <form id="returnForm" class="space-y-5 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">PEP de Origem</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                    <i class="fas fa-project-diagram text-purple-500 mr-1"></i> PEP de Origem
+                                </label>
                                 <div class="pep-search-wrapper" id="returnPepWrapper">
                                     <i class="fas fa-search search-icon"></i>
-                                    <input type="text" id="returnPepSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Buscar PEP..." oninput="filterPepDropdown('returnPep')" onfocus="showPepDropdown('returnPep')" autocomplete="off">
+                                    <input type="text" id="returnPepSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Buscar PEP emissor..." oninput="filterPepDropdown('returnPep')" onfocus="showPepDropdown('returnPep')" autocomplete="off">
+                                    <button type="button" class="clear-btn" onclick="clearReturnPep()"><i class="fas fa-times"></i></button>
                                     <div id="returnPepDropdown" class="pep-dropdown hidden"></div>
                                 </div>
                                 <input type="hidden" id="returnPep" name="returnPep">
+                                <p class="mt-1 text-xs text-gray-500" id="returnPepSelected"></p>
                             </div>
+
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Material</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                    <i class="fas fa-box text-blue-500 mr-1"></i> Material Utilizado
+                                </label>
                                 <div class="pep-search-wrapper" id="returnMaterialWrapper">
                                     <i class="fas fa-search search-icon"></i>
                                     <input type="text" id="returnMaterialSearch" class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Filtrado por PEP..." oninput="filterReturnMaterialDropdown()" onfocus="showReturnMaterialDropdown()" autocomplete="off">
+                                    <button type="button" class="clear-btn" onclick="clearReturnMaterial()"><i class="fas fa-times"></i></button>
                                     <div id="returnMaterialDropdown" class="pep-dropdown hidden"></div>
                                 </div>
                                 <input type="hidden" id="returnMaterial" name="returnMaterial">
+                                <p class="mt-1 text-xs text-gray-500" id="returnMaterialSelected"></p>
                                 <p class="mt-1 text-xs font-medium bg-purple-50 text-purple-700 px-2 py-1 rounded inline-block">Carga Alocada: <span id="pepAllocatedStock">0</span></p>
                             </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Qtde Devolvida</label>
-                                <input type="number" id="returnQuantity" step="0.01" min="0.01" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                            
+                            <div class="grid grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Qtde Devolvida</label>
+                                    <input type="number" id="returnQuantity" step="0.01" min="0.01" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Condição Física</label>
+                                    <select id="returnCondition" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        <option value="novo">Intacto (Original)</option>
+                                        <option value="usado">Usado (Bom)</option>
+                                        <option value="danificado">Avariado/Sucata</option>
+                                    </select>
+                                </div>
                             </div>
-                            <button type="submit" class="w-full py-3.5 mt-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold shadow-lg shadow-blue-500/30">Processar Retorno</button>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Motivo do Retorno</label>
+                                <input type="text" id="returnReason" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: Sobra de projeto, erro de dimensionamento...">
+                            </div>
+                            
+                            <button type="submit" class="w-full py-3.5 mt-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30">
+                                <i class="fas fa-undo-alt"></i> Processar Retorno
+                            </button>
                         </form>
                     </div>
                 </div>
 
-                <!-- Stock Tab (ATUALIZADA) -->
+                <!-- Stock Tab -->
                 <div id="content-stock" class="tab-content hidden animate-fade-in p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Balanço Físico Geral</h2>
@@ -397,6 +559,9 @@
                                 <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
                                 <input type="text" id="stockSearch" placeholder="Filtrar tabela..." class="pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" onkeyup="filterStock()">
                             </div>
+                            <button onclick="exportStockList()" class="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition flex items-center gap-2 text-sm font-medium">
+                                <i class="fas fa-print"></i> Relatório
+                            </button>
                         </div>
                     </div>
                     
@@ -404,11 +569,10 @@
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-gray-50/80 border-b border-gray-200">
-                                    <!-- NOVA COLUNA PARA FOTO -->
-                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 w-16 text-center">Foto</th>
+                                    <th class="p-4 w-16 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Foto</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Código</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Material</th>
-                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Saldo Físico</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Saldo Físico</th>
                                 </tr>
                             </thead>
                             <tbody id="stockTable" class="divide-y divide-gray-100 skeleton-target">
@@ -420,9 +584,19 @@
 
                 <!-- History Tab -->
                 <div id="content-history" class="tab-content hidden animate-fade-in p-6">
+                    <!-- Mantido inalterado conforme original -->
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Timeline de Movimentação</h2>
+                        <div class="flex gap-2 flex-wrap items-center bg-white p-1 rounded-lg border border-gray-200">
+                            <input type="date" id="historyDateFrom" class="px-3 py-1.5 bg-transparent border-none focus:ring-0 text-sm text-gray-600 outline-none">
+                            <span class="text-gray-300">|</span>
+                            <input type="date" id="historyDateTo" class="px-3 py-1.5 bg-transparent border-none focus:ring-0 text-sm text-gray-600 outline-none">
+                            <button onclick="filterHistory()" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition text-sm font-semibold">
+                                <i class="fas fa-filter"></i>
+                            </button>
+                        </div>
                     </div>
+                    
                     <div class="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar bg-white rounded-xl shadow-sm border border-gray-100">
                         <table class="w-full text-left border-collapse">
                             <thead class="sticky top-0 bg-white shadow-sm z-10">
@@ -432,33 +606,105 @@
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Item</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Qtd</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Alvo (PEP/Fornecedor)</th>
-                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Ações</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Apagar</th>
                                 </tr>
                             </thead>
-                            <tbody id="historyTable" class="divide-y divide-gray-100 skeleton-target"></tbody>
+                            <tbody id="historyTable" class="divide-y divide-gray-100 skeleton-target">
+                                <!-- History will be populated here -->
+                            </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Historico por PEP Tab -->
+                <div id="content-historypep" class="tab-content hidden animate-fade-in p-6">
+                    <!-- Mantido inalterado conforme original -->
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">Dossiê por PEP</h2>
+                    </div>
+                    
+                    <div class="mb-6 max-w-md">
+                        <div id="historyPepWrapper" class="relative">
+                            <div class="pep-search-wrapper relative">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="historyPepSearch" placeholder="Localizar PEP específico..." class="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm" oninput="filterHistoryPepDropdown()">
+                                <button type="button" onclick="clearHistoryPepSearch()" class="clear-btn" style="display: none;"><i class="fas fa-times"></i></button>
+                            </div>
+                            <div id="historyPepDropdown" class="pep-dropdown hidden"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="historyPepContent" class="hidden">
+                        <div class="mb-4 flex justify-between items-end border-b border-gray-200 pb-4">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Projeto Inspecionado</p>
+                                <h3 class="text-2xl font-bold text-blue-700" id="selectedHistoryPep"></h3>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <select id="historyPepTypeFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white" onchange="updateHistoryPepTable(document.getElementById('historyPepSearch').value)">
+                                    <option value="">Filtro: Todos</option>
+                                    <option value="exit">Saídas</option>
+                                    <option value="entry">Devoluções</option>
+                                </select>
+                                <button onclick="exportHistoryPepList()" class="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium shadow-sm">
+                                    <i class="fas fa-print"></i> Gerar Dossiê
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar bg-white rounded-xl shadow-sm border border-gray-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="sticky top-0 bg-gray-50">
+                                    <tr class="border-b border-gray-200">
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Data</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Fluxo</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Material</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Vol.</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Info</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">X</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyPepTable" class="divide-y divide-gray-100 skeleton-target">
+                                    <!-- History by PEP will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="historyPepEmpty" class="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-300">
+                        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm mb-4">
+                            <i class="fas fa-satellite text-2xl text-gray-300"></i>
+                        </div>
+                        <h4 class="text-gray-700 font-medium">Nenhum PEP selecionado</h4>
+                        <p class="text-gray-400 text-sm mt-1">Busque um projeto na barra acima para auditar</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal for Material (ATUALIZADO COM CAMPO DE IMAGEM) -->
+    <!-- Modal for Material -->
     <div id="materialModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[200] transition-opacity opacity-0">
         <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="materialModalInner">
             <h3 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-3">Novo Material no Catálogo</h3>
             <form id="materialForm" class="space-y-4">
                 
-                <!-- CAMPO DE FOTO ADICIONADO AQUI -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Foto do Material</label>
-                    <div class="flex items-center gap-3">
-                        <div id="matImagePreview" class="w-16 h-16 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">
-                            <i class="fas fa-camera text-gray-400"></i>
+                <!-- Nova seção de Foto -->
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-camera text-blue-500 mr-1"></i> Foto do Material (Opcional)
+                    </label>
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-lg bg-white border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden shrink-0" id="matImagePreviewContainer">
+                            <i class="fas fa-image text-gray-300 text-xl" id="matImagePlaceholder"></i>
+                            <img id="matImagePreview" class="w-full h-full object-cover hidden" />
                         </div>
-                        <input type="file" id="matImage" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition">
+                        <div class="flex-1">
+                            <input type="file" id="matImage" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white cursor-pointer" onchange="previewMaterialImage(this)">
+                            <p class="text-[10px] text-gray-500 mt-1">A imagem será otimizada automaticamente.</p>
+                        </div>
                     </div>
-                    <!-- Input oculto que vai guardar a string em Base64 -->
                     <input type="hidden" id="matImageBase64">
                 </div>
 
@@ -484,73 +730,137 @@
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Alarme de Mínimo</label>
-                        <input type="number" id="matMinStock" step="0.01" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-400">
+                        <input type="number" id="matMinStock" step="0.01" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-400" placeholder="Gatilho crítico">
                     </div>
                 </div>
-                <div class="flex gap-3 mt-6 pt-4">
+                <div class="flex gap-3 mt-6 pt-4 border-t border-gray-100">
                     <button type="button" onclick="closeMaterialModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 font-semibold transition">Cancelar</button>
-                    <button type="submit" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold transition shadow-lg shadow-blue-500/30">Gravar</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold transition shadow-lg shadow-blue-500/30">Gravar Material</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- NOVO MODAL: VISUALIZADOR DE IMAGENS -->
-    <div id="imageViewerModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center z-[300] transition-opacity opacity-0" onclick="closeImageViewer()">
-        <div class="bg-white rounded-2xl p-4 max-w-2xl mx-4 shadow-2xl transform scale-95 transition-transform duration-300 relative" onclick="event.stopPropagation()">
-            <button onclick="closeImageViewer()" class="absolute -top-4 -right-4 bg-rose-500 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-rose-600 shadow-lg transition"><i class="fas fa-times"></i></button>
-            <h3 id="imageViewerTitle" class="text-lg font-bold mb-3 text-gray-800 text-center border-b border-gray-100 pb-2"></h3>
-            <img id="imageViewerImg" src="" class="max-w-full max-h-[70vh] rounded-lg mx-auto object-contain">
-        </div>
-    </div>
-
     <script>
-        // Sistema Base
+        // ============================================================
+        // SISTEMA DE TOASTS REATIVOS (GLASSMORPHISM)
+        // ============================================================
         const toast = {
             show(message, type = 'success') {
                 const container = document.getElementById('toast-container');
                 if (!container) return;
+                
                 const id = Date.now() + Math.floor(Math.random() * 1000);
+                
                 const config = {
                     success: { icon: 'fa-check-circle', color: 'text-emerald-400', border: 'border-emerald-500/30' },
                     error: { icon: 'fa-exclamation-circle', color: 'text-rose-400', border: 'border-rose-500/30' },
                     warning: { icon: 'fa-bolt', color: 'text-amber-400', border: 'border-amber-500/30' }
                 };
+
                 const { icon, color, border } = config[type] || config['success'];
-                const html = `<div id="toast-${id}" class="toast-panel ${border} min-w-[300px] p-4 rounded-xl flex items-center gap-3 animate-slide-in shadow-2xl pointer-events-auto transition-all"><div class="${color} text-xl"><i class="fas ${icon}"></i></div><div class="flex-1"><p class="text-white text-sm font-medium">${message}</p></div><button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-white transition"><i class="fas fa-times text-xs"></i></button></div>`;
-                container.insertAdjacentHTML('beforeend', html);
-                setTimeout(() => { const e = document.getElementById(`toast-${id}`); if(e){ e.style.opacity='0'; setTimeout(()=>e.remove(), 500); } }, 4000);
+
+                const toastHTML = `
+                    <div id="toast-${id}" class="toast-panel ${border} min-w-[300px] p-4 rounded-xl flex items-center gap-3 animate-slide-in shadow-2xl transition-all duration-500 pointer-events-auto">
+                        <div class="${color} text-xl">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-white text-sm font-medium">${message}</p>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-white transition cursor-pointer">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                `;
+
+                container.insertAdjacentHTML('beforeend', toastHTML);
+
+                setTimeout(() => {
+                    const element = document.getElementById(`toast-${id}`);
+                    if (element) {
+                        element.style.opacity = '0';
+                        element.style.transform = 'translateX(100px)';
+                        setTimeout(() => element.remove(), 500);
+                    }
+                }, 4000);
             }
         };
 
+        // ============================================================
+        // SMART SEARCH HIGHLIGHT HELPER
+        // ============================================================
         function highlightMatch(text, query) {
             if (!query) return text;
             const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            return text.replace(new RegExp(`(${safeQuery})`, 'gi'), '<span class="highlight-match">$1</span>');
+            const regex = new RegExp(`(${safeQuery})`, 'gi');
+            return text.replace(regex, '<span class="highlight-match">$1</span>');
         }
 
-        let data = { materials:[], movements:[], pepAllocations: {} };
+        // ============================================================
+        // SKELETON LOADER SIMULATOR
+        // ============================================================
+        function renderWithSkeleton(callback) {
+            const activeTabId = document.querySelector('.tab-active').id.replace('tab-', 'content-');
+            const targets = document.getElementById(activeTabId).querySelectorAll('.skeleton-target');
+            
+            targets.forEach(t => {
+                if(t.tagName === 'TBODY') {
+                    t.dataset.realHtml = t.innerHTML;
+                    t.innerHTML = `
+                        <tr><td colspan="10"><div class="h-8 skeleton w-full mb-2"></div></td></tr>
+                        <tr><td colspan="10"><div class="h-8 skeleton w-3/4 mb-2"></div></td></tr>
+                        <tr><td colspan="10"><div class="h-8 skeleton w-5/6"></div></td></tr>
+                    `;
+                } else {
+                    t.classList.add('opacity-50', 'pointer-events-none', 'transition-opacity');
+                }
+            });
+
+            setTimeout(() => {
+                callback(); 
+                targets.forEach(t => {
+                    if(t.tagName !== 'TBODY') {
+                        t.classList.remove('opacity-50', 'pointer-events-none');
+                    }
+                });
+            }, 300);
+        }
+
+        // ============================================================
+        // GERENCIAMENTO DE DADOS
+        // ============================================================
+        let data = {
+            materials:[],
+            movements:[],
+            pepAllocations: {}
+        };
 
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             updateAllViews();
             setupKeyboardShortcuts();
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('exitDateNeeded').value = today;
+
             document.addEventListener('click', function(e) {
-                if (!e.target.closest('#entryPepReturnWrapper')) document.getElementById('entryPepReturnDropdown')?.classList.add('hidden');
-                if (!e.target.closest('#exitPepWrapper')) document.getElementById('exitPepDropdown')?.classList.add('hidden');
-                if (!e.target.closest('#returnPepWrapper')) document.getElementById('returnPepDropdown')?.classList.add('hidden');
-                if (!e.target.closest('#returnMaterialWrapper')) document.getElementById('returnMaterialDropdown')?.classList.add('hidden');
-                if (!e.target.closest('#entryMaterialWrapper')) document.getElementById('entryMaterialDropdown')?.classList.add('hidden');
-                if (!e.target.closest('#exitMaterialWrapper')) document.getElementById('exitMaterialDropdown')?.classList.add('hidden');
+                if (!e.target.closest('#entryPepReturnWrapper')) document.getElementById('entryPepReturnDropdown').classList.add('hidden');
+                if (!e.target.closest('#exitPepWrapper')) document.getElementById('exitPepDropdown').classList.add('hidden');
+                if (!e.target.closest('#returnPepWrapper')) document.getElementById('returnPepDropdown').classList.add('hidden');
+                if (!e.target.closest('#returnMaterialWrapper')) document.getElementById('returnMaterialDropdown').classList.add('hidden');
+                if (!e.target.closest('#entryMaterialWrapper')) document.getElementById('entryMaterialDropdown').classList.add('hidden');
+                if (!e.target.closest('#exitMaterialWrapper')) document.getElementById('exitMaterialDropdown').classList.add('hidden');
             });
         });
 
         function setupKeyboardShortcuts() {
             document.addEventListener('keydown', (e) => {
                 if (e.altKey) {
-                    if (e.key.toLowerCase() === 'n') { e.preventDefault(); switchTab('materials'); openMaterialModal(); }
-                    if (e.key.toLowerCase() === 'e') { e.preventDefault(); switchTab('entry'); }
-                    if (e.key.toLowerCase() === 's') { e.preventDefault(); switchTab('exit'); }
+                    const key = e.key.toLowerCase();
+                    if (key === 'n') { e.preventDefault(); switchTab('materials'); openMaterialModal(); }
+                    if (key === 'e') { e.preventDefault(); switchTab('entry'); }
+                    if (key === 's') { e.preventDefault(); switchTab('exit'); }
                 }
             });
         }
@@ -560,115 +870,493 @@
                 const saved = localStorage.getItem('pepStockData');
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    data.materials = parsed.materials || [];
+                    data.materials = parsed.materials ||[];
                     data.movements = parsed.movements ||[];
                     data.pepAllocations = parsed.pepAllocations || {};
                 }
-            } catch (e) { data = { materials:[], movements:[], pepAllocations: {} }; }
+            } catch (e) {
+                data = { materials:[], movements:[], pepAllocations: {} };
+            }
         }
 
         function saveData() {
             try {
                 localStorage.setItem('pepStockData', JSON.stringify(data));
+                localStorage.setItem('pepStockData_backup', JSON.stringify({ data: data, savedAt: new Date().toISOString() }));
                 toast.show('Banco de dados sincronizado.', 'success');
-            } catch (e) { toast.show('Atenção: limite de memória atingido. Suas fotos podem estar muito pesadas.', 'error'); }
+            } catch (e) {
+                toast.show('Atenção: limite do navegador atingido! Evite imagens muito pesadas.', 'error');
+            }
         }
 
         function updateAllViews() {
             updateDashboard();
             updateMaterialsTable();
+            updateSelects();
             updateStockTable();
             updateHistoryTable();
+            updatePepSummary();
         }
 
-        function getMaterialStock(materialId) {
-            let stock = 0;
-            data.movements.forEach(m => {
-                if(m.materialId===materialId) {
-                    if(m.type==='entry'||m.type==='return') stock+=m.quantity; else if(m.type==='exit') stock-=m.quantity;
+        // ============================================================
+        // LUPAS DE BUSCA E DROPDOWNS
+        // ============================================================
+
+        function getAvailablePeps() { return Object.keys(data.pepAllocations).sort(); }
+
+        function showPepDropdown(fieldId) {
+            const searchInput = document.getElementById(fieldId + 'Search');
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            renderPepDropdown(fieldId, getAvailablePeps(), query);
+            document.getElementById(fieldId + 'Dropdown').classList.remove('hidden');
+        }
+
+        function filterPepDropdown(fieldId) {
+            const query = document.getElementById(fieldId + 'Search').value.trim().toLowerCase();
+            renderPepDropdown(fieldId, getAvailablePeps(), query);
+            document.getElementById(fieldId + 'Dropdown').classList.remove('hidden');
+
+            if (fieldId === 'exitPep' && query.length > 0 && !getAvailablePeps().some(p => p.toLowerCase() === query)) {
+                document.getElementById('exitPepSelected').innerHTML = `<span class="text-emerald-600 font-semibold"><i class="fas fa-magic"></i> Novo PEP será criado: ${document.getElementById(fieldId + 'Search').value.trim()}</span>`;
+            } else if (fieldId === 'exitPep') {
+                document.getElementById('exitPepSelected').textContent = '';
+            }
+        }
+
+        function renderPepDropdown(fieldId, peps, query) {
+            const dropdown = document.getElementById(fieldId + 'Dropdown');
+            const currentValue = document.getElementById(fieldId).value;
+            const filtered = query ? peps.filter(p => p.toLowerCase().includes(query)) : peps;
+
+            dropdown.innerHTML = '';
+
+            if (filtered.length === 0) {
+                if (fieldId === 'exitPep' && query.length > 0) {
+                    dropdown.innerHTML = `<div class="pep-dropdown-item hover:bg-emerald-50" onclick="selectPep('${fieldId}', '${query.replace(/'/g, "\\'")}')">
+                        <i class="fas fa-plus-circle text-emerald-500 mr-1"></i> Adicionar PEP: <strong>${query}</strong>
+                    </div>`;
+                } else {
+                    dropdown.innerHTML = '<div class="pep-dropdown-empty">Nenhum registro no radar</div>';
+                }
+            } else {
+                filtered.forEach(pep => {
+                    const div = document.createElement('div');
+                    div.className = 'pep-dropdown-item' + (pep === currentValue ? ' selected' : '');
+                    const labelHighlighted = highlightMatch(pep, query);
+                    div.innerHTML = `<i class="fas fa-code-branch text-purple-400 mr-2 w-4"></i>${labelHighlighted}`;
+                    div.onclick = () => selectPep(fieldId, pep);
+                    dropdown.appendChild(div);
+                });
+
+                if (fieldId === 'exitPep' && query.length > 0 && !peps.some(p => p.toLowerCase() === query)) {
+                    const div = document.createElement('div');
+                    div.className = 'pep-dropdown-item hover:bg-emerald-50 border-t border-gray-100';
+                    div.innerHTML = `<i class="fas fa-plus-circle text-emerald-500 mr-1 w-4"></i> Criar: <strong>${query}</strong>`;
+                    div.onclick = () => selectPep(fieldId, document.getElementById(fieldId + 'Search').value.trim());
+                    dropdown.appendChild(div);
+                }
+            }
+        }
+
+        function selectPep(fieldId, pepValue) {
+            document.getElementById(fieldId + 'Search').value = pepValue;
+            document.getElementById(fieldId).value = pepValue;
+            const label = document.getElementById(fieldId + 'Selected');
+            if (label) label.innerHTML = `<i class="fas fa-check-circle text-emerald-500 mr-1"></i> Alvo travado: <b>${pepValue}</b>`;
+            document.getElementById(fieldId + 'Dropdown').classList.add('hidden');
+
+            if (fieldId === 'returnPep') loadReturnPepMaterials(pepValue);
+            if (fieldId === 'entryPepReturn') clearMaterialSearch('entryMaterial');
+        }
+
+        function clearPepSearch(fieldId) {
+            document.getElementById(fieldId + 'Search').value = '';
+            document.getElementById(fieldId).value = '';
+            const label = document.getElementById(fieldId + 'Selected');
+            if (label) label.textContent = '';
+            document.getElementById(fieldId + 'Dropdown').classList.add('hidden');
+            if (fieldId === 'entryPepReturn') clearMaterialSearch('entryMaterial');
+        }
+        function clearReturnPep() { clearPepSearch('returnPep'); clearReturnMaterial(); }
+
+        function getAvailableMaterials(fieldId) {
+            if (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return') {
+                const pep = document.getElementById('entryPepReturn').value;
+                if (!pep) return[];
+                const pepAllocs = data.pepAllocations[pep] || {};
+                return Object.keys(pepAllocs).filter(matId => pepAllocs[matId] > 0).map(matId => {
+                    const m = data.materials.find(mat => mat.id === matId);
+                    return m ? { id: m.id, code: m.code, description: m.description, unit: m.unit, stock: pepAllocs[matId] } : null;
+                }).filter(Boolean);
+            }
+            return data.materials.map(m => ({ id: m.id, code: m.code, description: m.description, unit: m.unit, stock: getMaterialStock(m.id) }));
+        }
+
+        function showMaterialDropdown(fieldId) {
+            const dropdown = document.getElementById(fieldId + 'Dropdown');
+            if (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return') {
+                if (!document.getElementById('entryPepReturn').value) {
+                    dropdown.innerHTML = '<div class="pep-dropdown-empty text-rose-500 font-medium"><i class="fas fa-exclamation-triangle mr-1"></i> Especifique o PEP primeiro!</div>';
+                    dropdown.classList.remove('hidden');
+                    return;
+                }
+            }
+            const query = document.getElementById(fieldId + 'Search').value.trim().toLowerCase();
+            renderMaterialDropdown(fieldId, getAvailableMaterials(fieldId), query);
+            dropdown.classList.remove('hidden');
+        }
+
+        function filterMaterialDropdown(fieldId) {
+            const query = document.getElementById(fieldId + 'Search').value.trim().toLowerCase();
+            const dropdown = document.getElementById(fieldId + 'Dropdown');
+            if (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return' && !document.getElementById('entryPepReturn').value) return;
+            renderMaterialDropdown(fieldId, getAvailableMaterials(fieldId), query);
+            dropdown.classList.remove('hidden');
+        }
+
+        function renderMaterialDropdown(fieldId, materials, query) {
+            const dropdown = document.getElementById(fieldId + 'Dropdown');
+            const currentValue = document.getElementById(fieldId).value;
+            const filtered = query ? materials.filter(m => m.code.toLowerCase().includes(query) || m.description.toLowerCase().includes(query)) : materials;
+            dropdown.innerHTML = '';
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="pep-dropdown-empty">Nenhum hardware compatível</div>';
+            } else {
+                filtered.forEach(material => {
+                    const div = document.createElement('div');
+                    div.className = 'pep-dropdown-item' + (material.id === currentValue ? ' selected' : '');
+                    const isReturn = (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return');
+                    
+                    const codeH = highlightMatch(material.code, query);
+                    const descH = highlightMatch(material.description, query);
+
+                    div.innerHTML = `<div class="flex justify-between items-center"><span class="truncate pr-2"><i class="fas fa-microchip text-blue-500 mr-2 w-4"></i><b>${codeH}</b> - ${descH}</span><span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-mono">${material.stock} ${material.unit}</span></div>`;
+                    div.onclick = () => selectMaterial(fieldId, material.id, material.code, material.description);
+                    dropdown.appendChild(div);
+                });
+            }
+        }
+
+        function selectMaterial(fieldId, materialId, materialCode, materialDesc) {
+            document.getElementById(fieldId + 'Search').value = materialCode + ' - ' + materialDesc;
+            document.getElementById(fieldId).value = materialId;
+            document.getElementById(fieldId + 'Dropdown').classList.add('hidden');
+            const selectedLabel = document.getElementById(fieldId + 'Selected');
+
+            if (fieldId === 'exitMaterial') {
+                const stock = getMaterialStock(materialId);
+                const unit = getMaterialUnit(materialId);
+                document.getElementById('availableStock').textContent = stock + ' ' + unit;
+                document.getElementById('exitQuantity').max = stock;
+                if (selectedLabel) selectedLabel.innerHTML = `<i class="fas fa-check-circle text-blue-500 mr-1"></i> Travado: ${materialCode}`;
+            } else if (fieldId === 'entryMaterial' && document.getElementById('entryType').value === 'return') {
+                const pep = document.getElementById('entryPepReturn').value;
+                const allocated = data.pepAllocations[pep]?.[materialId] || 0;
+                document.getElementById('entryQuantity').max = allocated;
+                if (selectedLabel) selectedLabel.innerHTML = `<i class="fas fa-check-circle text-purple-500 mr-1"></i> Retorno PEP Max: <b>${allocated} ${getMaterialUnit(materialId)}</b>`;
+            } else {
+                if (selectedLabel) selectedLabel.innerHTML = `<i class="fas fa-check-circle text-blue-500 mr-1"></i> Travado: ${materialCode}`;
+            }
+            if (fieldId === 'returnMaterial') updateReturnPepStock(materialId);
+        }
+
+        function clearMaterialSearch(fieldId) {
+            document.getElementById(fieldId + 'Search').value = '';
+            document.getElementById(fieldId).value = '';
+            const label = document.getElementById(fieldId + 'Selected');
+            if (label) label.textContent = '';
+            document.getElementById(fieldId + 'Dropdown').classList.add('hidden');
+            if(fieldId === 'exitMaterial') document.getElementById('availableStock').textContent = '0';
+        }
+
+        function showReturnMaterialDropdown() {
+            const pep = document.getElementById('returnPep').value;
+            const query = document.getElementById('returnMaterialSearch').value.trim().toLowerCase();
+            renderReturnMaterialDropdown(pep, query);
+            document.getElementById('returnMaterialDropdown').classList.remove('hidden');
+        }
+        function filterReturnMaterialDropdown() {
+            const pep = document.getElementById('returnPep').value;
+            const query = document.getElementById('returnMaterialSearch').value.trim().toLowerCase();
+            renderReturnMaterialDropdown(pep, query);
+            document.getElementById('returnMaterialDropdown').classList.remove('hidden');
+        }
+        function renderReturnMaterialDropdown(pep, query) {
+            const dropdown = document.getElementById('returnMaterialDropdown');
+            dropdown.innerHTML = '';
+            if (!pep) { dropdown.innerHTML = '<div class="pep-dropdown-empty text-rose-500 font-medium">PEP mandatório.</div>'; return; }
+            
+            const pepAllocs = data.pepAllocations[pep] || {};
+            let materials = Object.keys(pepAllocs).filter(id => pepAllocs[id] > 0).map(id => {
+                const m = data.materials.find(mat => mat.id === id);
+                return m ? { ...m, allocated: pepAllocs[id] } : null;
+            }).filter(Boolean);
+
+            if (query) materials = materials.filter(m => m.code.toLowerCase().includes(query) || m.description.toLowerCase().includes(query));
+
+            if (materials.length === 0) dropdown.innerHTML = '<div class="pep-dropdown-empty">Limpo. Nenhum material pendente neste PEP.</div>';
+            else materials.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'pep-dropdown-item';
+                div.innerHTML = `<div class="flex justify-between items-center"><span class="truncate pr-2"><i class="fas fa-undo text-purple-400 mr-2 w-4"></i><b>${highlightMatch(m.code, query)}</b> - ${highlightMatch(m.description, query)}</span><span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-mono">${m.allocated} ${m.unit}</span></div>`;
+                div.onclick = () => selectReturnMaterial(m.id, m.code, m.description, m.allocated, m.unit);
+                dropdown.appendChild(div);
+            });
+        }
+        function selectReturnMaterial(id, code, desc, alloc, unit) {
+            document.getElementById('returnMaterialSearch').value = code + ' - ' + desc;
+            document.getElementById('returnMaterial').value = id;
+            document.getElementById('returnMaterialSelected').innerHTML = `<i class="fas fa-check-circle text-blue-500 mr-1"></i> Travado: ${code}`;
+            document.getElementById('returnMaterialDropdown').classList.add('hidden');
+            document.getElementById('pepAllocatedStock').textContent = alloc + ' ' + unit;
+            document.getElementById('returnQuantity').max = alloc;
+        }
+        function clearReturnMaterial() {
+            document.getElementById('returnMaterialSearch').value = '';
+            document.getElementById('returnMaterial').value = '';
+            document.getElementById('returnMaterialSelected').textContent = '';
+            document.getElementById('returnMaterialDropdown').classList.add('hidden');
+            document.getElementById('pepAllocatedStock').textContent = '0';
+        }
+        function updateReturnPepStock(id) {
+            const pep = document.getElementById('returnPep').value;
+            if (pep && id && data.pepAllocations[pep]) {
+                document.getElementById('pepAllocatedStock').textContent = (data.pepAllocations[pep][id] || 0) + ' ' + getMaterialUnit(id);
+            } else {
+                document.getElementById('pepAllocatedStock').textContent = '0';
+            }
+        }
+
+        // ============================================================
+        // CORE TABS
+        // ============================================================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => { el.classList.remove('tab-active', 'text-blue-600'); });
+            
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+            
+            if(tabName !== 'dashboard' && tabName !== 'entry' && tabName !== 'exit' && tabName !== 'return') {
+                renderWithSkeleton(() => {
+                    if (tabName === 'stock') updateStockTable();
+                    if (tabName === 'history') updateHistoryTable();
+                    if (tabName === 'materials') updateMaterialsTable();
+                    if (tabName === 'historypep') {
+                        const pep = document.getElementById('historyPepSearch').value;
+                        if (pep) updateHistoryPepTable(pep);
+                    }
+                });
+            } else {
+                if (tabName === 'dashboard') {
+                    const nodes = document.querySelectorAll('.dashboard-skeleton');
+                    nodes.forEach(n => { const v = n.textContent; n.innerHTML = `<div class="h-8 skeleton-dark w-16"></div>`; setTimeout(()=> n.textContent = v, 300); });
+                    updateDashboard();
+                }
+            }
+        }
+
+        // ============================================================
+        // COMMAND CENTER DASHBOARD (DARK)
+        // ============================================================
+        function updateDashboard() {
+            document.getElementById('totalMaterials').textContent = data.materials.length;
+            
+            let totalVal = 0;
+            let activePeps = new Set();
+            data.materials.forEach(m => totalVal += getMaterialValue(m.id) * getMaterialStock(m.id));
+            Object.keys(data.pepAllocations).forEach(p => { if (Object.keys(data.pepAllocations[p]).length > 0) activePeps.add(p); });
+            
+            document.getElementById('totalValue').textContent = 'R$ ' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('activePEPs').textContent = activePeps.size;
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('todayMovements').textContent = data.movements.filter(m => m.date.startsWith(today)).length;
+            
+            updateCharts();
+            updateAlerts();
+            updatePepSummary(); 
+        }
+
+        function updateCharts() {
+            const last7Days = Array.from({length: 7}, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d.toISOString().split('T')[0];
+            });
+            
+            const eData = last7Days.map(day => data.movements.filter(m => m.date.startsWith(day) && m.type === 'entry').reduce((a,b)=>a+b.quantity,0));
+            const sData = last7Days.map(day => data.movements.filter(m => m.date.startsWith(day) && m.type === 'exit').reduce((a,b)=>a+b.quantity,0));
+            
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = 'Inter';
+
+            const ctx1 = document.getElementById('movementChart').getContext('2d');
+            if (window._movementChart) window._movementChart.destroy();
+            window._movementChart = new Chart(ctx1, {
+                type: 'line', 
+                data: {
+                    labels: last7Days.map(d => d.substring(5).split('-').reverse().join('/')),
+                    datasets:[
+                        { label: 'Entradas (Vol)', data: eData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointBackgroundColor: '#10b981' },
+                        { label: 'Saídas (Vol)', data: sData, borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointBackgroundColor: '#0ea5e9' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
+            });
+            
+            const stockData = data.materials.map(m => ({ name: m.description, stock: getMaterialStock(m.id) })).sort((a,b)=>b.stock-a.stock).slice(0,5);
+            const ctx2 = document.getElementById('stockChart').getContext('2d');
+            if (window._stockChart) window._stockChart.destroy();
+            window._stockChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: stockData.map(s => s.name.substring(0, 15)),
+                    datasets:[{ data: stockData.map(s => s.stock), backgroundColor:['#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e', '#f59e0b'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
+            });
+        }
+
+        function updateAlerts() {
+            const container = document.getElementById('alertsContainer');
+            container.innerHTML = '';
+            let crit = 0;
+            data.materials.forEach(m => {
+                const stock = getMaterialStock(m.id);
+                if (stock <= (m.minStock || 0)) {
+                    crit++;
+                    container.innerHTML += `
+                        <div class="flex items-center p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+                            <span class="w-2 h-2 rounded-full bg-rose-500 mr-3 animate-pulse"></span>
+                            <div class="flex-1">
+                                <p class="text-xs font-semibold text-rose-300">${m.code}</p>
+                                <p class="text-[11px] text-slate-400 truncate w-40">${m.description}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-rose-400">${stock} ${m.unit}</p>
+                                <p class="text-[10px] text-slate-500">Mín: ${m.minStock || 0}</p>
+                            </div>
+                        </div>
+                    `;
                 }
             });
-            return stock;
+            if (crit === 0) container.innerHTML = '<div class="h-full flex items-center justify-center text-slate-500 text-sm"><i class="fas fa-shield-check text-emerald-500 mr-2 text-xl"></i> Ponto de Controle Estável.</div>';
         }
-        function getMaterialValue(materialId) { const e = data.movements.filter(m => m.materialId===materialId && m.type==='entry' && m.value); return e.length>0?e[e.length-1].value:0; }
-        
-        // Modal de Imagem Visão Ampliada
-        function openImageViewer(src, title) {
-            document.getElementById('imageViewerImg').src = src;
-            document.getElementById('imageViewerTitle').textContent = title;
-            const modal = document.getElementById('imageViewerModal');
+
+        function updatePepSummary() {
+            const container = document.getElementById('pepSummary');
+            container.innerHTML = '';
+            
+            Object.keys(data.pepAllocations).forEach(pep => {
+                const allocs = data.pepAllocations[pep];
+                const types = Object.keys(allocs).length;
+                if(types === 0) return;
+
+                let financialLoad = 0;
+                let alerts = 0;
+                
+                Object.keys(allocs).forEach(matId => {
+                    const qty = allocs[matId];
+                    financialLoad += (qty * getMaterialValue(matId));
+                    const mat = data.materials.find(m => m.id === matId);
+                    if(mat && getMaterialStock(matId) <= (mat.minStock || 0)) alerts++;
+                });
+
+                const alertHtml = alerts > 0 ? `<span class="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow border border-slate-800 animate-pulse">${alerts} Crit</span>` : '';
+
+                const card = `
+                    <div class="bg-slate-800/60 p-5 rounded-xl border border-slate-700/50 relative hover:border-blue-500/50 transition cursor-default">
+                        ${alertHtml}
+                        <h4 class="font-mono font-bold text-slate-200 text-sm mb-1">${pep}</h4>
+                        <div class="flex justify-between items-end mt-4">
+                            <div>
+                                <p class="text-[10px] uppercase text-slate-500 tracking-wider">Custo Absorvido</p>
+                                <p class="text-lg font-bold text-emerald-400">R$ ${financialLoad.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2})}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] uppercase text-slate-500 tracking-wider">Diversidade</p>
+                                <p class="text-sm font-semibold text-blue-400">${types} SKUs</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        // ============================================================
+        // LÓGICA DE FOTOS / IMAGEM (Compressão Canvas)
+        // ============================================================
+        function previewMaterialImage(input) {
+            const file = input.files[0];
+            if (!file) { clearImagePreview(); return; }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Compressão severa mas funcional para localstorage (Max 200px)
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 200;
+                    
+                    if (width > height && width > maxDim) {
+                        height *= maxDim / width; width = maxDim;
+                    } else if (height > maxDim) {
+                        width *= maxDim / height; height = maxDim;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% qualidade
+                    
+                    document.getElementById('matImageBase64').value = compressedDataUrl;
+                    document.getElementById('matImagePreview').src = compressedDataUrl;
+                    document.getElementById('matImagePreview').classList.remove('hidden');
+                    document.getElementById('matImagePlaceholder').classList.add('hidden');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImagePreview() {
+            document.getElementById('matImageBase64').value = '';
+            document.getElementById('matImagePreview').src = '';
+            document.getElementById('matImagePreview').classList.add('hidden');
+            document.getElementById('matImagePlaceholder').classList.remove('hidden');
+            document.getElementById('matImage').value = '';
+        }
+
+        // ============================================================
+        // MATERIAIS MODAL & TABELA
+        // ============================================================
+        function openMaterialModal() {
+            const modal = document.getElementById('materialModal');
+            const inner = document.getElementById('materialModalInner');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
-                modal.querySelector('div').classList.remove('scale-95');
+                inner.classList.remove('scale-95');
+                document.getElementById('matCode').focus();
             }, 10);
-        }
-
-        function closeImageViewer() {
-            const modal = document.getElementById('imageViewerModal');
-            modal.classList.add('opacity-0');
-            modal.querySelector('div').classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                document.getElementById('imageViewerImg').src = '';
-            }, 300);
-        }
-
-        // Upload e Redimensionamento de Imagem no Formulário
-        document.getElementById('matImage').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    // Comprimir e redimensionar a imagem via Canvas para poupar localStorage
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 500;
-                    const MAX_HEIGHT = 500;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                    } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                    }
-                    canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Converte pra Base64 com 80% de qualidade
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                    
-                    document.getElementById('matImageBase64').value = dataUrl;
-                    document.getElementById('matImagePreview').innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover">`;
-                }
-                img.src = event.target.result;
-            }
-            reader.readAsDataURL(file);
-        });
-
-        // Cadastro de Materiais
-        function openMaterialModal() {
-            const modal = document.getElementById('materialModal');
-            const inner = document.getElementById('materialModalInner');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); document.getElementById('matCode').focus(); }, 10);
         }
 
         function closeMaterialModal() {
             const modal = document.getElementById('materialModal');
             const inner = document.getElementById('materialModalInner');
-            modal.classList.add('opacity-0'); inner.classList.add('scale-95');
-            setTimeout(() => { 
-                modal.classList.add('hidden'); modal.classList.remove('flex'); 
-                document.getElementById('materialForm').reset(); 
-                document.getElementById('matImageBase64').value = '';
-                document.getElementById('matImagePreview').innerHTML = '<i class="fas fa-camera text-gray-400"></i>';
+            modal.classList.add('opacity-0');
+            inner.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.getElementById('materialForm').reset();
+                clearImagePreview();
             }, 300);
         }
 
@@ -680,10 +1368,12 @@
                 description: document.getElementById('matDesc').value,
                 unit: document.getElementById('matUnit').value,
                 minStock: parseFloat(document.getElementById('matMinStock').value) || 0,
-                image: document.getElementById('matImageBase64').value || null, // Salva a imagem comprimida
+                image: document.getElementById('matImageBase64').value || null, // Salva a foto
                 createdAt: new Date().toISOString()
             });
-            saveData(); updateAllViews(); closeMaterialModal();
+            saveData();
+            updateAllViews();
+            closeMaterialModal();
         });
 
         function updateMaterialsTable() {
@@ -692,21 +1382,27 @@
             data.materials.forEach(m => {
                 const stock = getMaterialStock(m.id);
                 const isCrit = stock <= m.minStock;
-                // Ícone visual para saber se tem foto
-                const imgIcon = m.image ? `<i class="fas fa-image text-blue-500 ml-2 cursor-pointer" title="Ver foto" onclick="openImageViewer('${m.image}', '${m.code}')"></i>` : '';
                 
+                const imgHtml = m.image 
+                    ? `<img src="${m.image}" alt="${m.code}" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
+                    : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400"><i class="fas fa-camera"></i></div>`;
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-blue-50/30 transition border-b border-gray-50 last:border-0">
+                        <td class="p-4 text-center">${imgHtml}</td>
                         <td class="p-4 text-sm font-mono text-blue-600 font-semibold">${m.code}</td>
-                        <td class="p-4 text-sm text-gray-700 font-medium">${m.description} ${imgIcon}</td>
+                        <td class="p-4 text-sm text-gray-700 font-medium">${m.description}</td>
                         <td class="p-4 text-sm text-gray-500 text-center">${m.unit}</td>
                         <td class="p-4 text-sm">
-                            <span class="px-2.5 py-1 rounded-md text-xs font-bold ${isCrit ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-emerald-700'}">
-                                ${stock}
+                            <span class="px-2.5 py-1 rounded-md text-xs font-bold ${isCrit ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}">
+                                ${stock} ${isCrit && m.minStock > 0 ? '<i class="fas fa-level-down-alt ml-1"></i>' : ''}
                             </span>
                         </td>
+                        <td class="p-4 text-sm text-gray-600 font-mono">R$ ${getMaterialValue(m.id).toFixed(2)}</td>
                         <td class="p-4 text-center">
-                            <button onclick="deleteMaterial('${m.id}')" class="text-rose-400 hover:text-rose-600 p-1.5 rounded transition"><i class="fas fa-trash"></i></button>
+                            <button onclick="deleteMaterial('${m.id}')" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded transition">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -716,11 +1412,115 @@
         function deleteMaterial(id) {
             if (confirm('Autorização exigida: Excluir definitivamente este SKU?')) {
                 data.materials = data.materials.filter(m => m.id !== id);
-                saveData(); updateAllViews();
+                saveData();
+                updateAllViews();
             }
         }
 
-        // ATUALIZAÇÃO DA TABELA DE ESTOQUE (COM FOTO)
+        // ============================================================
+        // LOGICA DE FORMULARIOS (Entrada, Saida, Return)
+        // ============================================================
+        function toggleEntryFields() {
+            const type = document.getElementById('entryType').value;
+            if (type === 'return') {
+                document.getElementById('supplierField').classList.add('hidden');
+                document.getElementById('pepReturnField').classList.remove('hidden');
+                document.getElementById('entrySupplier').required = false;
+                clearMaterialSearch('entryMaterial'); document.getElementById('entryQuantity').removeAttribute('max');
+            } else {
+                document.getElementById('supplierField').classList.remove('hidden');
+                document.getElementById('pepReturnField').classList.add('hidden');
+                document.getElementById('entrySupplier').required = true;
+                clearPepSearch('entryPepReturn'); clearMaterialSearch('entryMaterial'); document.getElementById('entryQuantity').removeAttribute('max');
+            }
+        }
+
+        document.getElementById('entryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const type = document.getElementById('entryType').value;
+            const materialId = document.getElementById('entryMaterial').value;
+            const quantity = parseFloat(document.getElementById('entryQuantity').value);
+            const value = parseFloat(document.getElementById('entryValue').value) || 0;
+
+            if (!materialId) { toast.show('Código do material pendente.', 'warning'); return; }
+            
+            if (type === 'return') {
+                const pep = document.getElementById('entryPepReturn').value;
+                if (!pep) { toast.show('Indique a procedência (PEP).', 'warning'); return; }
+                const allocated = data.pepAllocations[pep]?.[materialId] || 0;
+                if (quantity > allocated) { toast.show(`Overload: O volume (${quantity}) supera a carga do PEP (${allocated}).`, 'error'); return; }
+
+                if (data.pepAllocations[pep] && data.pepAllocations[pep][materialId]) {
+                    data.pepAllocations[pep][materialId] -= quantity;
+                    if (data.pepAllocations[pep][materialId] <= 0) delete data.pepAllocations[pep][materialId];
+                }
+            }
+            
+            data.movements.push({
+                id: Date.now().toString(), type: 'entry', subType: type, materialId, quantity, value,
+                pep: type === 'return' ? document.getElementById('entryPepReturn').value : null,
+                supplier: type === 'supplier' ? document.getElementById('entrySupplier').value : null,
+                document: document.getElementById('entryDocument').value, obs: document.getElementById('entryObs').value,
+                date: new Date().toISOString(), user: 'Eng. Admin'
+            });
+            
+            saveData(); updateAllViews(); this.reset(); clearPepSearch('entryPepReturn'); clearMaterialSearch('entryMaterial');
+            toast.show('Carga validada em estoque.', 'success');
+        });
+
+        document.getElementById('exitForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const materialId = document.getElementById('exitMaterial').value;
+            const quantity = parseFloat(document.getElementById('exitQuantity').value);
+            const pep = document.getElementById('exitPep').value;
+
+            if (!materialId) { toast.show('Defina o material para liberação.', 'warning'); return; }
+            if (!pep) { toast.show('Alvo de PEP não definido.', 'warning'); return; }
+            
+            const available = getMaterialStock(materialId);
+            if (quantity > available) { toast.show(`Quebra de Caixa! Faltam ${quantity - available} UN.`, 'error'); return; }
+            
+            if (!data.pepAllocations[pep]) data.pepAllocations[pep] = {};
+            if (!data.pepAllocations[pep][materialId]) data.pepAllocations[pep][materialId] = 0;
+            data.pepAllocations[pep][materialId] += quantity;
+            
+            data.movements.push({
+                id: Date.now().toString(), type: 'exit', materialId, quantity, pep,
+                requester: document.getElementById('exitRequester').value, dateNeeded: document.getElementById('exitDateNeeded').value,
+                obs: document.getElementById('exitObs').value, date: new Date().toISOString(), user: 'Eng. Admin'
+            });
+            
+            saveData(); updateAllViews(); this.reset(); clearPepSearch('exitPep'); clearMaterialSearch('exitMaterial');
+            toast.show(`Despacho autorizado para ${pep}.`, 'success');
+        });
+
+        document.getElementById('returnForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const pep = document.getElementById('returnPep').value;
+            const materialId = document.getElementById('returnMaterial').value;
+            const quantity = parseFloat(document.getElementById('returnQuantity').value);
+            
+            if (!pep || !materialId) { toast.show('Forneça PEP e SKU.', 'warning'); return; }
+            
+            const allocated = data.pepAllocations[pep]?.[materialId] || 0;
+            if (quantity > allocated) { toast.show(`Incongruência: Máximo permitido para retorno é ${allocated}.`, 'error'); return; }
+            
+            data.pepAllocations[pep][materialId] -= quantity;
+            if (data.pepAllocations[pep][materialId] <= 0) delete data.pepAllocations[pep][materialId];
+            
+            data.movements.push({
+                id: Date.now().toString(), type: 'return', materialId, quantity, pep,
+                condition: document.getElementById('returnCondition').value, reason: document.getElementById('returnReason').value,
+                date: new Date().toISOString(), user: 'Eng. Admin'
+            });
+            
+            saveData(); updateAllViews(); this.reset(); clearReturnPep();
+            toast.show('Logística reversa concluída.', 'success');
+        });
+
+        // ============================================================
+        // VISUALIZAÇÕES DE TABELAS (Estoque, Histórico)
+        // ============================================================
         function updateStockTable() {
             const tbody = document.getElementById('stockTable');
             tbody.innerHTML = '';
@@ -730,61 +1530,150 @@
                 if (searchText && !m.description.toLowerCase().includes(searchText) && !m.code.toLowerCase().includes(searchText)) return;
                 const stock = getMaterialStock(m.id);
                 
-                // Miniatura da foto ou placeholder
+                // Imagem renderizada no estoque com Efeito Zoom ao passar o mouse
                 const imgHtml = m.image 
-                    ? `<img src="${m.image}" onclick="openImageViewer('${m.image}', '${m.code} - ${m.description}')" class="w-10 h-10 rounded shadow-sm cursor-pointer object-cover hover:opacity-80 transition border border-gray-200 mx-auto">` 
-                    : `<div class="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200 mx-auto"><i class="fas fa-box"></i></div>`;
+                    ? `<img src="${m.image}" alt="${m.code}" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
+                    : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400"><i class="fas fa-box"></i></div>`;
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0">
-                        <td class="p-2 text-center">${imgHtml}</td>
+                        <td class="p-4 text-center">${imgHtml}</td>
                         <td class="p-4 text-sm font-mono text-blue-600 font-semibold">${highlightMatch(m.code, searchText)}</td>
                         <td class="p-4 text-sm font-medium text-gray-800">${highlightMatch(m.description, searchText)}</td>
-                        <td class="p-4 text-sm text-center"><span class="bg-gray-100 px-3 py-1.5 rounded text-gray-800 font-bold border border-gray-200">${stock} ${m.unit}</span></td>
+                        <td class="p-4 text-sm"><span class="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold border border-gray-200">${stock} ${m.unit}</span></td>
                     </tr>
                 `;
             });
         }
 
-        // Funções de Abas
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('tab-active'));
-            document.getElementById(`content-${tabName}`).classList.remove('hidden');
-            document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+        function updateHistoryTable() {
+            const tbody = document.getElementById('historyTable');
+            tbody.innerHTML = '';
+            const dateFrom = document.getElementById('historyDateFrom').value;
+            const dateTo = document.getElementById('historyDateTo').value;
             
-            if(tabName === 'stock') updateStockTable();
-            if(tabName === 'materials') updateMaterialsTable();
-            if(tabName === 'dashboard') updateDashboard();
+            let sorted =[...data.movements].sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (dateFrom) sorted = sorted.filter(m => m.date >= dateFrom);
+            if (dateTo) sorted = sorted.filter(m => m.date <= dateTo + 'T23:59:59');
+            
+            sorted.forEach(m => {
+                const mat = data.materials.find(mat => mat.id === m.materialId);
+                const dStr = new Date(m.date).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                let tCls = '', tTxt = '';
+                
+                if(m.type==='entry'){ tCls='text-emerald-600 bg-emerald-50 border-emerald-200'; tTxt=m.subType==='return'?'Devolução (In)':'Entrada'; }
+                else if(m.type==='exit'){ tCls='text-rose-600 bg-rose-50 border-rose-200'; tTxt='Saída (Out)'; }
+                else { tCls='text-purple-600 bg-purple-50 border-purple-200'; tTxt='Retorno'; }
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0" id="hist-row-${m.id}">
+                        <td class="p-3 text-xs text-gray-500 font-mono">${dStr}</td>
+                        <td class="p-3 text-xs"><span class="px-2 py-1 border rounded font-semibold ${tCls}">${tTxt}</span></td>
+                        <td class="p-3 text-sm text-gray-800 font-medium">${mat?mat.code:'---'}</td>
+                        <td class="p-3 text-sm font-bold text-gray-700">${m.quantity}</td>
+                        <td class="p-3 text-xs text-gray-600 font-mono">${m.pep || m.supplier || '-'}</td>
+                        <td class="p-3 text-center"><button class="btn-delete-history" onclick="deleteMovement('${m.id}')"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
         }
 
-        // Dashboard base
-        function updateDashboard() {
-            document.getElementById('totalMaterials').textContent = data.materials.length;
-            let totalVal = 0; let activePeps = new Set();
-            data.materials.forEach(m => totalVal += getMaterialValue(m.id) * getMaterialStock(m.id));
-            Object.keys(data.pepAllocations).forEach(p => { if (Object.keys(data.pepAllocations[p]).length > 0) activePeps.add(p); });
-            document.getElementById('totalValue').textContent = 'R$ ' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-            document.getElementById('activePEPs').textContent = activePeps.size;
+        function deleteMovement(id) {
+            if (confirm('Aviso de Auditoria: Revogar esta transação alterará balanços físicos atrelados. Prosseguir?')) {
+                const mov = data.movements.find(m => m.id === id);
+                if (!mov) return;
+                if (mov.type === 'exit' && mov.pep) {
+                    if (data.pepAllocations[mov.pep]?.[mov.materialId]) {
+                        data.pepAllocations[mov.pep][mov.materialId] -= mov.quantity;
+                        if (data.pepAllocations[mov.pep][mov.materialId] <= 0) delete data.pepAllocations[mov.pep][mov.materialId];
+                    }
+                }
+                if ((mov.type === 'return' || (mov.type === 'entry' && mov.subType === 'return')) && mov.pep) {
+                    if (!data.pepAllocations[mov.pep]) data.pepAllocations[mov.pep] = {};
+                    data.pepAllocations[mov.pep][mov.materialId] = (data.pepAllocations[mov.pep][mov.materialId]||0) + mov.quantity;
+                }
+                data.movements = data.movements.filter(m => m.id !== id);
+                saveData(); updateAllViews();
+            }
         }
 
-        // Export/Import JSON (Para backup com imagens)
+        // Helpers e Export
+        function getMaterialStock(materialId) {
+            let stock = 0;
+            data.movements.forEach(m => {
+                if(m.materialId===materialId){ if(m.type==='entry'||m.type==='return') stock+=m.quantity; else if(m.type==='exit') stock-=m.quantity; }
+            });
+            return stock;
+        }
+        function getMaterialValue(materialId) { const e = data.movements.filter(m => m.materialId===materialId && m.type==='entry' && m.value); return e.length>0?e[e.length-1].value:0; }
+        function getMaterialUnit(materialId) { const m = data.materials.find(x => x.id === materialId); return m ? m.unit : 'UN'; }
+        function updateSelects() {}
+        function filterStock() { updateStockTable(); }
+        function filterHistory() { updateHistoryTable(); }
+
         function exportData() {
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type: 'application/json'}));
-            a.download = `backup_estoque_${new Date().toISOString().split('T')[0]}.json`; a.click();
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}));
+            a.download = `sys_data_${new Date().toISOString().split('T')[0]}.json`; a.click();
+            toast.show('Dump de dados estruturados concluído.');
         }
         function importData(input) {
             const f = input.files[0]; if(!f) return;
             const r = new FileReader();
             r.onload = e => {
-                try { data = JSON.parse(e.target.result); saveData(); updateAllViews(); } 
-                catch(err) { toast.show('Arquivo corrompido.', 'error'); }
+                try {
+                    const imp = JSON.parse(e.target.result);
+                    if(confirm('Isso sobrescreverá a instância ativa. Confirmar bypass?')) { data = imp; saveData(); updateAllViews(); }
+                } catch(err) { toast.show('Falha na integridade do arquivo.', 'error'); }
             };
             r.readAsText(f); input.value = '';
         }
 
-        function filterStock() { updateStockTable(); }
+        function exportToWord() { toast.show('Módulo Word obsoleto substituído pelo JSON, adaptando em breve.', 'warning'); }
+
+        // Histórico PEP Dinâmico
+        function filterHistoryPepDropdown() {
+            const q = document.getElementById('historyPepSearch').value.trim().toLowerCase();
+            const peps = new Set();
+            data.movements.forEach(m => { if(m.pep) peps.add(m.pep); });
+            Object.keys(data.pepAllocations).forEach(p => peps.add(p));
+            let list = Array.from(peps).sort();
+            if(q) list = list.filter(p => p.toLowerCase().includes(q));
+            
+            const drop = document.getElementById('historyPepDropdown'); drop.innerHTML = '';
+            if(list.length===0) drop.innerHTML='<div class="p-2 text-sm text-gray-500">Limpo.</div>';
+            else list.forEach(p => {
+                const d = document.createElement('div'); d.className='pep-dropdown-item'; d.innerHTML = highlightMatch(p, q);
+                d.onclick = () => { document.getElementById('historyPepSearch').value=p; drop.classList.add('hidden'); document.getElementById('selectedHistoryPep').textContent=p; document.getElementById('historyPepContent').classList.remove('hidden'); document.getElementById('historyPepEmpty').classList.add('hidden'); updateHistoryPepTable(p); };
+                drop.appendChild(d);
+            });
+            drop.classList.remove('hidden');
+        }
+        function clearHistoryPepSearch() { document.getElementById('historyPepSearch').value=''; document.getElementById('historyPepContent').classList.add('hidden'); document.getElementById('historyPepEmpty').classList.remove('hidden'); }
+        function updateHistoryPepTable(pep) {
+            const tbody = document.getElementById('historyPepTable'); tbody.innerHTML='';
+            const filter = document.getElementById('historyPepTypeFilter').value;
+            const mvs = data.movements.filter(m => m.pep === pep && (filter==='' || (filter==='exit'&&m.type==='exit') || (filter==='entry'&&m.type!=='exit'))).sort((a,b)=>new Date(b.date)-new Date(a.date));
+            
+            if(mvs.length===0) { tbody.innerHTML='<tr><td colspan="6" class="p-4 text-center text-gray-400">Zero movimentações rastreadas.</td></tr>'; return; }
+            mvs.forEach(m => {
+                const mat = data.materials.find(x=>x.id===m.materialId);
+                const isOut = m.type==='exit';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50 border-b border-gray-100 last:border-0">
+                        <td class="p-3 text-xs text-gray-500 font-mono">${new Date(m.date).toLocaleDateString('pt-BR')}</td>
+                        <td class="p-3 text-xs"><span class="${isOut?'text-rose-600 bg-rose-50':'text-blue-600 bg-blue-50'} px-2 py-1 rounded border ${isOut?'border-rose-200':'border-blue-200'}">${isOut?'Saca':'Devolve'}</span></td>
+                        <td class="p-3 text-sm font-medium text-gray-800">${mat?mat.description:'---'}</td>
+                        <td class="p-3 text-sm font-bold">${m.quantity}</td>
+                        <td class="p-3 text-xs text-gray-500">${m.obs||'-'}</td>
+                        <td class="p-3 text-center"><button class="text-rose-400 hover:text-rose-600" onclick="deleteMovement('${m.id}');setTimeout(()=>updateHistoryPepTable('${pep}'), 100);"><i class="fas fa-times"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+        function exportHistoryPepList() { toast.show('Dossiê em desenvolvimento.', 'warning'); }
+        function exportStockList() { toast.show('Relatório de estoque em desenvolvimento.', 'warning'); }
     </script>
 </body>
 </html>
+```
