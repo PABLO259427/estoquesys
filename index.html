@@ -1,13 +1,7 @@
 
 
 
-A falta de atualização na tabela de Estoque após a confirmação do recebimento pode ocorrer por três motivos principais que foram mapeados e corrigidos agora:
 
-1. **Falha silenciosa do Gráfico (Chart.js):** Se o script do gráfico sofrer algum atraso (por conexão de rede ou aba invisível), ele travava a função responsável por atualizar as outras tabelas (como o Estoque). Isolei cada tabela para que a falha de uma não atrapalhe a outra.
-2. **Esquecimento do clique no Autocomplete:** Se você digitar o código do material e apertar "Confirmar" sem ter clicado na sugestão da lise suspensa, o sistema se perdia. Agora, coloquei um "Auto-selecionar" que identifica o material digitado mesmo que você não clique nele.
-3. **Formato de números (Vírgula x Ponto):** Em alguns navegadores mobile/desktop, digitar `10,50` com vírgula poderia anular a soma. Forcei uma formatação matemática universal.
-
-Substitua todo o seu código pelo código corrigido abaixo:
 
 ```html
 <!DOCTYPE html>
