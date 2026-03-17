@@ -1,5 +1,3 @@
-                                          PABLO LEANDRO MARTINS DUARTE
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1554,7 +1552,44 @@
             r.readAsText(f); input.value = '';
         }
 
-        function exportToWord() { toast.show('Módulo Word obsoleto substituído pelo JSON, adaptando em breve.', 'warning'); }
+        function exportToWord() {
+            const now = new Date().toLocaleString('pt-BR');
+            let rows = '';
+            data.materials.forEach(m => {
+                const stock = getMaterialStock(m.id);
+                const isCrit = stock <= m.minStock && m.minStock > 0;
+                rows += '<tr>' +
+                    '<td style="border:1px solid #ccc;padding:6px;font-family:Consolas,monospace;font-size:11pt;color:#1d4ed8">' + m.code + '</td>' +
+                    '<td style="border:1px solid #ccc;padding:6px;font-size:11pt">' + m.description + '</td>' +
+                    '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:11pt">' + m.unit + '</td>' +
+                    '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-weight:bold;font-size:11pt;color:' + (isCrit?'#dc2626':'#15803d') + '">' + stock + '</td>' +
+                    '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:11pt">' + m.minStock + '</td>' +
+                    '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:11pt;color:' + (isCrit?'#dc2626':'#15803d') + '">' + (isCrit?'CRITICO':'OK') + '</td>' +
+                    '</tr>';
+            });
+            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Relatorio Geral</title></head><body style="font-family:Arial,sans-serif;margin:2cm">' +
+                '<div style="text-align:center;margin-bottom:20px">' +
+                '<h1 style="font-size:18pt;color:#1e3a5f;margin:0">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
+                '<h2 style="font-size:14pt;color:#374151;margin:4px 0">Relatorio Geral de Estoque</h2>' +
+                '<p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ' + now + '</p></div>' +
+                '<table style="width:100%;border-collapse:collapse;margin-top:16px">' +
+                '<thead><tr style="background:#1e3a5f;color:white">' +
+                '<th style="border:1px solid #ccc;padding:8px;text-align:left;font-size:11pt">Codigo</th>' +
+                '<th style="border:1px solid #ccc;padding:8px;text-align:left;font-size:11pt">Descricao</th>' +
+                '<th style="border:1px solid #ccc;padding:8px;text-align:center;font-size:11pt">UN</th>' +
+                '<th style="border:1px solid #ccc;padding:8px;text-align:center;font-size:11pt">Saldo Fisico</th>' +
+                '<th style="border:1px solid #ccc;padding:8px;text-align:center;font-size:11pt">Minimo</th>' +
+                '<th style="border:1px solid #ccc;padding:8px;text-align:center;font-size:11pt">Status</th>' +
+                '</tr></thead><tbody>' + rows + '</tbody></table>' +
+                '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
+                '</body></html>';
+            const blob = new Blob([html], {type: 'application/msword'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'Relatorio_Geral_' + new Date().toISOString().split('T')[0] + '.doc';
+            a.click();
+            toast.show('Relatorio geral exportado para Word.', 'success');
+        }
 
         function filterHistoryPepDropdown() {
             const q = document.getElementById('historyPepSearch').value.trim().toLowerCase();
@@ -1604,9 +1639,137 @@
             });
         }
         
-        function exportHistoryPepList() { toast.show('Dossiê em desenvolvimento.', 'warning'); }
-        function exportStockList() { toast.show('Relatório de estoque em desenvolvimento.', 'warning'); }
+        function exportHistoryPepList() {
+            const pep = document.getElementById('selectedHistoryPep').textContent;
+            if (!pep) { toast.show('Selecione um PEP primeiro.', 'warning'); return; }
+            const now = new Date().toLocaleString('pt-BR');
+            const filter = document.getElementById('historyPepTypeFilter').value;
+            const mvs = data.movements.filter(m => m.pep === pep && (filter==='' || (filter==='exit'&&m.type==='exit') || (filter==='entry'&&m.type!=='exit'))).sort((a,b)=>new Date(a.date)-new Date(b.date));
+            const allocs = data.pepAllocations[pep] || {};
+            let allocRows = '';
+            Object.keys(allocs).forEach(function(matId) {
+                const mat = data.materials.find(function(x){return x.id===matId;});
+                if(mat && allocs[matId] > 0) {
+                    allocRows += '<tr>' +
+                        '<td style="border:1px solid #ccc;padding:6px;font-family:Consolas,monospace;font-size:10pt;color:#1d4ed8">' + mat.code + '</td>' +
+                        '<td style="border:1px solid #ccc;padding:6px;font-size:10pt">' + mat.description + '</td>' +
+                        '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:10pt">' + mat.unit + '</td>' +
+                        '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-weight:bold;font-size:10pt;color:#b45309">' + allocs[matId] + '</td>' +
+                        '</tr>';
+                }
+            });
+            let movRows = '';
+            mvs.forEach(function(m) {
+                const mat = data.materials.find(function(x){return x.id===m.materialId;});
+                const isOut = m.type==='exit';
+                const dataHora = new Date(m.date).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+                const tipoTxt = isOut ? 'Saida' : (m.type==='return'?'Retorno':'Devolucao/Entrada');
+                const corTipo = isOut ? '#dc2626' : '#2563eb';
+                movRows += '<tr>' +
+                    '<td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-family:Consolas,monospace">' + dataHora + '</td>' +
+                    '<td style="border:1px solid #ccc;padding:5px;font-size:10pt;color:' + corTipo + ';font-weight:bold">' + tipoTxt + '</td>' +
+                    '<td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-family:Consolas,monospace;color:#1d4ed8">' + (mat?mat.code:'---') + '</td>' +
+                    '<td style="border:1px solid #ccc;padding:5px;font-size:10pt">' + (mat?mat.description:'---') + '</td>' +
+                    '<td style="border:1px solid #ccc;padding:5px;text-align:center;font-size:10pt;font-weight:bold">' + m.quantity + ' ' + (mat?mat.unit:'') + '</td>' +
+                    '<td style="border:1px solid #ccc;padding:5px;font-size:9pt;color:#6b7280">' + (m.obs||m.reason||m.requester||'-') + '</td>' +
+                    '</tr>';
+            });
+            const allocSection = allocRows ? ('<h3 style="font-size:12pt;color:#1e3a5f;margin-bottom:8px;border-bottom:2px solid #1e3a5f;padding-bottom:4px">Saldo Atual Alocado neste PEP</h3>' +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:24px">' +
+                '<thead><tr style="background:#1e3a5f;color:white">' +
+                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Codigo</th>' +
+                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Descricao</th>' +
+                '<th style="border:1px solid #ccc;padding:7px;text-align:center;font-size:10pt">UN</th>' +
+                '<th style="border:1px solid #ccc;padding:7px;text-align:center;font-size:10pt">Qtd. Alocada</th>' +
+                '</tr></thead><tbody>' + allocRows + '</tbody></table>') : '';
+            const movSection = movRows ? ('<table style="width:100%;border-collapse:collapse">' +
+                '<thead><tr style="background:#1e3a5f;color:white">' +
+                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Data/Hora</th>' +
+                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Tipo</th>' +
+                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Codigo</th>' +
+                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Material</th>' +
+                '<th style="border:1px solid #ccc;padding:7px;text-align:center;font-size:10pt">Quantidade</th>' +
+                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Obs.</th>' +
+                '</tr></thead><tbody>' + movRows + '</tbody></table>') : '<p style="color:#9ca3af;font-style:italic">Nenhuma movimentacao registrada para este PEP.</p>';
+            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Dossie PEP</title></head><body style="font-family:Arial,sans-serif;margin:2cm">' +
+                '<div style="text-align:center;margin-bottom:20px">' +
+                '<h1 style="font-size:18pt;color:#1e3a5f;margin:0">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
+                '<h2 style="font-size:14pt;color:#374151;margin:4px 0">Dossie de Movimentacao por PEP</h2>' +
+                '<p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ' + now + '</p></div>' +
+                '<div style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:6px;padding:12px;margin-bottom:20px">' +
+                '<p style="margin:0;font-size:13pt;font-weight:bold;color:#1e3a5f">PEP: <span style="color:#7c3aed">' + pep + '</span></p>' +
+                '<p style="margin:4px 0 0;font-size:10pt;color:#374151">Total de movimentacoes: <b>' + mvs.length + '</b></p></div>' +
+                allocSection +
+                '<h3 style="font-size:12pt;color:#1e3a5f;margin-bottom:8px;border-bottom:2px solid #1e3a5f;padding-bottom:4px">Historico Completo de Movimentacoes</h3>' +
+                movSection +
+                '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
+                '</body></html>';
+            const blob = new Blob([html], {type: 'application/msword'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'Dossie_PEP_' + pep.replace(/[^a-zA-Z0-9]/g,'_') + '_' + new Date().toISOString().split('T')[0] + '.doc';
+            a.click();
+            toast.show('Dossie do PEP ' + pep + ' exportado para Word.', 'success');
+        }
+        function exportStockList() {
+            const now = new Date().toLocaleString('pt-BR');
+            const searchText = (document.getElementById('stockSearch').value || '').toLowerCase();
+            let rows = '';
+            let totalItens = 0;
+            let totalCriticos = 0;
+            let rowNum = 0;
+            data.materials.forEach(function(m) {
+                if (searchText && !m.description.toLowerCase().includes(searchText) && !m.code.toLowerCase().includes(searchText)) return;
+                const stock = getMaterialStock(m.id);
+                const isCrit = stock <= m.minStock && m.minStock > 0;
+                if(isCrit) totalCriticos++;
+                totalItens++;
+                rowNum++;
+                const bgRow = isCrit ? 'background:#fff5f5' : (rowNum%2===0?'background:#f9fafb':'background:#ffffff');
+                rows += '<tr style="' + bgRow + '">' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;font-family:Consolas,monospace;font-size:10pt;color:#1d4ed8;font-weight:bold">' + m.code + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt">' + m.description + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-size:10pt">' + m.unit + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-weight:bold;font-size:11pt;color:' + (isCrit?'#dc2626':'#15803d') + '">' + stock + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-size:10pt">' + (m.minStock > 0 ? m.minStock : '-') + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-size:10pt;font-weight:bold;color:' + (isCrit?'#dc2626':'#15803d') + '">' + (isCrit?'CRITICO':'OK') + '</td>' +
+                    '</tr>';
+            });
+            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Balanco Fisico Geral</title></head><body style="font-family:Arial,sans-serif;margin:2cm">' +
+                '<div style="text-align:center;margin-bottom:24px">' +
+                '<h1 style="font-size:18pt;color:#1e3a5f;margin:0">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
+                '<h2 style="font-size:15pt;color:#374151;margin:6px 0">Balanco Fisico Geral</h2>' +
+                '<p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ' + now + (searchText ? ' | Filtro: ' + searchText : '') + '</p></div>' +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:20px">' +
+                '<tr>' +
+                '<td style="width:33%;background:#eff6ff;border:1px solid #bfdbfe;padding:12px;text-align:center">' +
+                '<p style="margin:0;font-size:10pt;color:#374151">Total de Itens</p>' +
+                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#1d4ed8">' + totalItens + '</p></td>' +
+                '<td style="width:33%;background:#fef2f2;border:1px solid #fecaca;padding:12px;text-align:center">' +
+                '<p style="margin:0;font-size:10pt;color:#374151">Itens em Nivel Critico</p>' +
+                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#dc2626">' + totalCriticos + '</p></td>' +
+                '<td style="width:33%;background:#f0fdf4;border:1px solid #bbf7d0;padding:12px;text-align:center">' +
+                '<p style="margin:0;font-size:10pt;color:#374151">Itens em Nivel Normal</p>' +
+                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#15803d">' + (totalItens-totalCriticos) + '</p></td>' +
+                '</tr></table>' +
+                '<table style="width:100%;border-collapse:collapse">' +
+                '<thead><tr style="background:#1e3a5f;color:white">' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:11pt">Codigo</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:11pt">Descricao do Material</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Unidade</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Saldo Fisico</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Minimo</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Status</th>' +
+                '</tr></thead><tbody>' + rows + '</tbody></table>' +
+                '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
+                '</body></html>';
+            const blob = new Blob([html], {type: 'application/msword'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'Balanco_Fisico_Geral_' + new Date().toISOString().split('T')[0] + '.doc';
+            a.click();
+            toast.show('Balanco Fisico Geral exportado para Word.', 'success');
+        }
     </script>
 </body>
 </html>
-```
