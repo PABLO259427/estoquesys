@@ -511,12 +511,17 @@
                 <div id="content-history" class="tab-content hidden animate-fade-in p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Timeline de Movimentação</h2>
-                        <div class="flex gap-2 flex-wrap items-center bg-white p-1 rounded-lg border border-gray-200">
-                            <input type="date" id="historyDateFrom" class="px-3 py-1.5 bg-transparent border-none focus:ring-0 text-sm text-gray-600 outline-none">
-                            <span class="text-gray-300">|</span>
-                            <input type="date" id="historyDateTo" class="px-3 py-1.5 bg-transparent border-none focus:ring-0 text-sm text-gray-600 outline-none">
-                            <button onclick="filterHistory()" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition text-sm font-semibold">
-                                <i class="fas fa-filter"></i>
+                        <div class="flex gap-2 flex-wrap items-center">
+                            <div class="flex gap-2 items-center bg-white p-1 rounded-lg border border-gray-200">
+                                <input type="date" id="historyDateFrom" class="px-3 py-1.5 bg-transparent border-none focus:ring-0 text-sm text-gray-600 outline-none">
+                                <span class="text-gray-300">|</span>
+                                <input type="date" id="historyDateTo" class="px-3 py-1.5 bg-transparent border-none focus:ring-0 text-sm text-gray-600 outline-none">
+                                <button onclick="filterHistory()" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition text-sm font-semibold">
+                                    <i class="fas fa-filter"></i>
+                                </button>
+                            </div>
+                            <button onclick="exportTimelineWord()" class="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition flex items-center gap-2 text-sm font-medium">
+                                <i class="fas fa-file-word"></i> Exportar
                             </button>
                         </div>
                     </div>
@@ -1769,6 +1774,80 @@
             a.download = 'Balanco_Fisico_Geral_' + new Date().toISOString().split('T')[0] + '.doc';
             a.click();
             toast.show('Balanco Fisico Geral exportado para Word.', 'success');
+        }
+        
+        function exportTimelineWord() {
+            const now = new Date().toLocaleString('pt-BR');
+            const dateFrom = document.getElementById('historyDateFrom').value;
+            const dateTo = document.getElementById('historyDateTo').value;
+            let movRows = '';
+            let totalMovimentos = 0;
+            let totalEntradas = 0;
+            let totalSaidas = 0;
+            
+            const mvs = data.movements.sort((a,b)=>new Date(a.date)-new Date(b.date));
+            
+            mvs.forEach(function(m) {
+                const mat = data.materials.find(function(x){return x.id===m.materialId;});
+                const movDate = new Date(m.date);
+                const fromDate = dateFrom ? new Date(dateFrom) : null;
+                const toDate = dateTo ? new Date(dateTo + 'T23:59:59') : null;
+                
+                if ((fromDate && movDate < fromDate) || (toDate && movDate > toDate)) return;
+                
+                totalMovimentos++;
+                const isOut = m.type==='exit';
+                if(isOut) totalSaidas++; else totalEntradas++;
+                
+                const dataHora = movDate.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+                const tipoTxt = isOut ? 'Saida' : (m.type==='return'?'Retorno':'Entrada');
+                const corTipo = isOut ? '#dc2626' : '#2563eb';
+                const bgRow = isOut ? '#fff5f5' : '#f0f9ff';
+                
+                movRows += '<tr style="background:' + bgRow + '">' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt;font-family:Consolas,monospace">' + dataHora + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt;color:' + corTipo + ';font-weight:bold">' + tipoTxt + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt;font-family:Consolas,monospace;color:#1d4ed8">' + (mat?mat.code:'---') + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt">' + (mat?mat.description:'---') + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-size:10pt;font-weight:bold">' + m.quantity + ' ' + (mat?mat.unit:'') + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt">' + (m.pep||m.supplier||m.obs||'-') + '</td>' +
+                    '</tr>';
+            });
+            
+            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Timeline Movimentacao</title></head><body style="font-family:Arial,sans-serif;margin:2cm">' +
+                '<div style="text-align:center;margin-bottom:24px">' +
+                '<h1 style="font-size:18pt;color:#1e3a5f;margin:0">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
+                '<h2 style="font-size:15pt;color:#374151;margin:6px 0">Timeline de Movimentacao</h2>' +
+                '<p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ' + now + (dateFrom || dateTo ? ' | Periodo: ' + (dateFrom||'Inicio') + ' a ' + (dateTo||'Hoje') : '') + '</p></div>' +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:20px">' +
+                '<tr>' +
+                '<td style="width:33%;background:#eff6ff;border:1px solid #bfdbfe;padding:12px;text-align:center">' +
+                '<p style="margin:0;font-size:10pt;color:#374151">Total de Movimentacoes</p>' +
+                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#1d4ed8">' + totalMovimentos + '</p></td>' +
+                '<td style="width:33%;background:#f0fdf4;border:1px solid #bbf7d0;padding:12px;text-align:center">' +
+                '<p style="margin:0;font-size:10pt;color:#374151">Entradas/Devolucoes</p>' +
+                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#15803d">' + totalEntradas + '</p></td>' +
+                '<td style="width:33%;background:#fef2f2;border:1px solid #fecaca;padding:12px;text-align:center">' +
+                '<p style="margin:0;font-size:10pt;color:#374151">Saidas</p>' +
+                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#dc2626">' + totalSaidas + '</p></td>' +
+                '</tr></table>' +
+                '<table style="width:100%;border-collapse:collapse">' +
+                '<thead><tr style="background:#1e3a5f;color:white">' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Data/Hora</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Tipo</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Codigo</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Material</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:10pt">Quantidade</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Alvo/Obs</th>' +
+                '</tr></thead><tbody>' + movRows + '</tbody></table>' +
+                '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
+                '</body></html>';
+            const blob = new Blob([html], {type: 'application/msword'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'Timeline_Movimentacao_' + new Date().toISOString().split('T')[0] + '.doc';
+            a.click();
+            toast.show('Timeline de Movimentacao exportada para Word.', 'success');
         }
     </script>
 </body>
