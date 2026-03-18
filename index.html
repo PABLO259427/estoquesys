@@ -1,4 +1,3 @@
-integrated_system.html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1896,6 +1895,79 @@ integrated_system.html
                 });
             }
             drop.classList.remove('hidden');
+        }
+
+        
+        function exportTimelinePDF() {
+            const code = document.getElementById('timelineMaterialSearch').value.trim();
+            if (!code || document.getElementById('timelineResult').classList.contains('hidden')) {
+                toast.show('Selecione um material e gere a timeline primeiro.', 'warning');
+                return;
+            }
+
+            const material = data.materials.find(m => m.code === code);
+            const dateFrom = document.getElementById('timelineDateFrom').value || 'Início';
+            const dateTo = document.getElementById('timelineDateTo').value || 'Hoje';
+            
+            const printWindow = window.open('', '_blank');
+            const timelineHtml = document.getElementById('timelineContainer').innerHTML;
+            
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Relatório de Movimentação - ${material.code}</title>
+                    <script src="https://cdn.tailwindcss.com"></script>
+                    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+                    <style>
+                        @media print { .no-print { display: none; } }
+                        body { font-family: 'Inter', sans-serif; padding: 40px; }
+                        .timeline-item { border-left: 2px solid #e5e7eb; margin-left: 20px; padding-left: 30px; position: relative; padding-bottom: 20px; }
+                        .timeline-dot { position: absolute; left: -9px; top: 0; width: 16px; height: 16px; border-radius: 50%; background: #3b82f6; border: 3px solid white; }
+                    </style>
+                </head>
+                <body>
+                    <div class="mb-8 border-b pb-4 flex justify-between items-end">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Relatório de Movimentação de Material</h1>
+                            <p class="text-gray-600">Sistema de Controle de Estoque PEP</p>
+                        </div>
+                        <div class="text-right text-sm text-gray-500">
+                            <p>Período: ${dateFrom} até ${dateTo}</p>
+                            <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-xl mb-8 flex gap-8">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase">Código do Material</p>
+                            <p class="text-lg font-bold text-blue-600">${material.code}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase">Descrição</p>
+                            <p class="text-lg font-bold text-gray-800">${material.description}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase">Unidade</p>
+                            <p class="text-lg font-bold text-gray-800">${material.unit}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        ${timelineHtml.replace(/relative pl-12 md:pl-20/g, 'timeline-item').replace(/absolute left-2.5 md:left-6.5 top-0 w-4 h-4 rounded-full .* border-4 border-white shadow-sm z-10/g, 'timeline-dot')}
+                    </div>
+
+                    <div class="mt-12 pt-8 border-t text-center text-xs text-gray-400">
+                        <p>Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - Pablo Leandro Martins Duarte</p>
+                    </div>
+                    
+                    <script>
+                        setTimeout(() => { window.print(); window.close(); }, 500);
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            toast.show('Gerando PDF da Timeline...', 'success');
         }
 
         function updateMaterialTimeline() {
