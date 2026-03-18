@@ -1,4 +1,4 @@
-
+integrated_system.html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1903,11 +1903,20 @@
             const dateFrom = document.getElementById('timelineDateFrom').value;
             const dateTo = document.getElementById('timelineDateTo').value;
             
-            const material = data.materials.find(m => m.code === code);
+            let material = data.materials.find(m => m.code.toLowerCase() === code.toLowerCase());
+            
+            // Se não achar pelo código exato, tenta buscar por descrição parcial
+            if (!material && code.length > 2) {
+                material = data.materials.find(m => m.description.toLowerCase().includes(code.toLowerCase()));
+            }
+
             if (!material) {
-                if (code) toast.show('Material não encontrado.', 'warning');
+                if (code) toast.show('Material não encontrado. Tente o código exato ou parte da descrição.', 'warning');
                 return;
             }
+            
+            // Atualiza o campo de busca com o código correto encontrado
+            document.getElementById('timelineMaterialSearch').value = material.code;
 
             document.getElementById('timelineMaterialTitle').textContent = material.code;
             document.getElementById('timelineMaterialDesc').textContent = material.description;
