@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -108,7 +109,6 @@
         .btn-delete-history:hover { background: #fee2e2; color: #b91c1c; }
         
         .img-hover-zoom { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        /* Zoom sutil apenas para indicar que é clicável */
         .img-hover-zoom:hover { transform: scale(1.1); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); z-index: 10; }
     </style>
 </head>
@@ -509,9 +509,15 @@
 
                 <!-- History Tab -->
                 <div id="content-history" class="tab-content hidden animate-fade-in p-6">
-                    <div class="flex justify-between items-center mb-6">
+                    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Timeline de Movimentação</h2>
                         <div class="flex gap-2 flex-wrap items-center">
+                            <!-- Nova Barra de Pesquisa -->
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <input type="text" id="historySearch" placeholder="Filtrar código/material..." class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-48 md:w-56 outline-none transition-shadow" onkeyup="filterHistory()">
+                            </div>
+                            <!-- Filtros de Data Existentes -->
                             <div class="flex gap-2 items-center bg-white p-1 rounded-lg border border-gray-200">
                                 <input type="date" id="historyDateFrom" class="px-3 py-1.5 bg-transparent border-none focus:ring-0 text-sm text-gray-600 outline-none">
                                 <span class="text-gray-300">|</span>
@@ -799,9 +805,6 @@
             }
         }
 
-        // ============================================================
-        // TRY/CATCH NAS ATUALIZAÇÕES (Evita que o Estoque não mostre)
-        // ============================================================
         function updateAllViews() {
             try { updateDashboard(); } catch(e) { console.error('Dashboard Error', e); }
             try { updateMaterialsTable(); } catch(e) { console.error('Materials Error', e); }
@@ -1244,9 +1247,6 @@
             setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); document.getElementById('materialForm').reset(); clearImagePreview(); }, 300);
         }
 
-        // ============================================================
-        // LÓGICA DE ABRIR A FOTO EM TELA CHEIA (MODAL)
-        // ============================================================
         function openImageModal(imgSrc, code) {
             const modal = document.getElementById('imagePreviewModal');
             const img = document.getElementById('largeImagePreview');
@@ -1343,7 +1343,6 @@
             e.preventDefault();
             const type = document.getElementById('entryType').value;
             
-            // Lógica de Prevenção/Fallback caso usuário digite mas não clique no Dropdown
             let materialId = document.getElementById('entryMaterial').value;
             const matSearchTerm = document.getElementById('entryMaterialSearch').value.trim();
             if (!materialId && matSearchTerm) {
@@ -1394,7 +1393,7 @@
             if (!materialId) { toast.show('Defina o material para liberação.', 'warning'); return; }
             
             let pep = document.getElementById('exitPep').value;
-            if(!pep) pep = document.getElementById('exitPepSearch').value.trim(); // Fallback se digitar
+            if(!pep) pep = document.getElementById('exitPepSearch').value.trim(); 
             if (!pep) { toast.show('Alvo de PEP não definido.', 'warning'); return; }
             
             const quantity = parseFloat(document.getElementById('exitQuantity').value.toString().replace(',', '.'));
@@ -1476,10 +1475,19 @@
             tbody.innerHTML = '';
             const dateFrom = document.getElementById('historyDateFrom').value;
             const dateTo = document.getElementById('historyDateTo').value;
+            const searchText = (document.getElementById('historySearch')?.value || '').toLowerCase();
             
             let sorted =[...data.movements].sort((a, b) => new Date(b.date) - new Date(a.date));
             if (dateFrom) sorted = sorted.filter(m => m.date >= dateFrom);
             if (dateTo) sorted = sorted.filter(m => m.date <= dateTo + 'T23:59:59');
+            
+            if (searchText) {
+                sorted = sorted.filter(m => {
+                    const mat = data.materials.find(mat => mat.id === m.materialId);
+                    if (!mat) return false;
+                    return mat.code.toLowerCase().includes(searchText) || mat.description.toLowerCase().includes(searchText);
+                });
+            }
             
             sorted.forEach(m => {
                 const mat = data.materials.find(mat => mat.id === m.materialId);
@@ -1490,11 +1498,14 @@
                 else if(m.type==='exit'){ tCls='text-rose-600 bg-rose-50 border-rose-200'; tTxt='Saída (Out)'; }
                 else { tCls='text-purple-600 bg-purple-50 border-purple-200'; tTxt='Retorno'; }
                 
+                const displayCode = mat ? highlightMatch(mat.code, searchText) : '---';
+                const displayDesc = mat ? `<br><span class="text-[11px] text-gray-500 font-normal">${highlightMatch(mat.description, searchText)}</span>` : '';
+                
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0" id="hist-row-${m.id}">
                         <td class="p-3 text-xs text-gray-500 font-mono">${dStr}</td>
                         <td class="p-3 text-xs"><span class="px-2 py-1 border rounded font-semibold ${tCls}">${tTxt}</span></td>
-                        <td class="p-3 text-sm text-gray-800 font-medium">${mat?mat.code:'---'}</td>
+                        <td class="p-3 text-sm text-gray-800 font-medium leading-tight">${displayCode}${displayDesc}</td>
                         <td class="p-3 text-sm font-bold text-gray-700">${m.quantity}</td>
                         <td class="p-3 text-xs text-gray-600 font-mono">${m.pep || m.supplier || '-'}</td>
                         <td class="p-3 text-center"><button class="btn-delete-history" onclick="deleteMovement('${m.id}')"><i class="fas fa-trash"></i></button></td>
@@ -1526,7 +1537,6 @@
             let stock = 0;
             data.movements.forEach(m => {
                 if(m.materialId === materialId){ 
-                    // Correção forçada para números independentemente de bugs passados
                     if(m.type==='entry'||m.type==='return') stock += Number(m.quantity); 
                     else if(m.type==='exit') stock -= Number(m.quantity); 
                 }
@@ -1625,7 +1635,6 @@
                 const mat = data.materials.find(x=>x.id===m.materialId);
                 const isOut = m.type==='exit';
                 
-                // Formata com Data, Ano e Hora:Minuto
                 const dataHora = new Date(m.date).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
                 
                 tbody.innerHTML += `
@@ -1716,6 +1725,7 @@
             a.click();
             toast.show('Dossie do PEP ' + pep + ' exportado para Word.', 'success');
         }
+
         function exportStockList() {
             const now = new Date().toLocaleString('pt-BR');
             const searchText = (document.getElementById('stockSearch').value || '').toLowerCase();
@@ -1780,6 +1790,7 @@
             const now = new Date().toLocaleString('pt-BR');
             const dateFrom = document.getElementById('historyDateFrom').value;
             const dateTo = document.getElementById('historyDateTo').value;
+            const searchText = (document.getElementById('historySearch')?.value || '').toLowerCase();
             let movRows = '';
             let totalMovimentos = 0;
             let totalEntradas = 0;
@@ -1794,6 +1805,7 @@
                 const toDate = dateTo ? new Date(dateTo + 'T23:59:59') : null;
                 
                 if ((fromDate && movDate < fromDate) || (toDate && movDate > toDate)) return;
+                if (searchText && (!mat || (!mat.code.toLowerCase().includes(searchText) && !mat.description.toLowerCase().includes(searchText)))) return;
                 
                 totalMovimentos++;
                 const isOut = m.type==='exit';
@@ -1852,3 +1864,4 @@
     </script>
 </body>
 </html>
+```
