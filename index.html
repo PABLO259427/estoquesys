@@ -1,3 +1,14 @@
+
+Esta é uma excelente adição para dar contexto rápido ao saldo atual (ex: saber por que houve a última entrada ou para qual finalidade foi a última saída sem precisar mudar de aba).
+
+Realizei as seguintes alterações:
+1.  **Interface (Estoque):** Adicionei o cabeçalho "Última Observação" na tabela de Estoque.
+2.  **Lógica JavaScript:** Atualizei a função `updateStockTable` para filtrar a movimentação mais recente de cada material e exibir seu campo `obs` ou `reason`.
+3.  **Relatório (Word):** Atualizei a função de exportação do Balanço Físico para que essa nova coluna também apareça no documento impresso.
+
+Aqui está o código completo e atualizado:
+
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -498,6 +509,7 @@
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Código</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Material</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Saldo Físico</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Última Observação</th>
                                 </tr>
                             </thead>
                             <tbody id="stockTable" class="divide-y divide-gray-100 skeleton-target">
@@ -1482,8 +1494,16 @@
             
             data.materials.forEach(m => {
                 if (searchText && !m.description.toLowerCase().includes(searchText) && !m.code.toLowerCase().includes(searchText)) return;
+                
                 const stock = getMaterialStock(m.id);
                 
+                // Buscar a última observação registrada para este material
+                const lastMov = [...data.movements]
+                    .filter(mov => mov.materialId === m.id)
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                
+                const lastObs = lastMov ? (lastMov.obs || lastMov.reason || '-') : '-';
+
                 const imgHtml = m.image 
                     ? `<img src="${m.image}" alt="${m.code}" onclick="openImageModal('${m.image}', '${m.code}')" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
                     : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400"><i class="fas fa-box"></i></div>`;
@@ -1494,6 +1514,7 @@
                         <td class="p-4 text-sm font-mono text-blue-600 font-semibold">${highlightMatch(m.code, searchText)}</td>
                         <td class="p-4 text-sm font-medium text-gray-800">${highlightMatch(m.description, searchText)}</td>
                         <td class="p-4 text-sm"><span class="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold border border-gray-200">${stock} ${m.unit}</span></td>
+                        <td class="p-4 text-xs text-gray-500 italic max-w-xs truncate" title="${lastObs}">${lastObs}</td>
                     </tr>
                 `;
             });
@@ -1766,6 +1787,13 @@
                 if (searchText && !m.description.toLowerCase().includes(searchText) && !m.code.toLowerCase().includes(searchText)) return;
                 const stock = getMaterialStock(m.id);
                 const isCrit = stock <= m.minStock && m.minStock > 0;
+                
+                // Buscar a última observação para o relatório
+                const lastMov = [...data.movements]
+                    .filter(function(mov) { return mov.materialId === m.id; })
+                    .sort(function(a, b) { return new Date(b.date) - new Date(a.date); })[0];
+                const lastObs = lastMov ? (lastMov.obs || lastMov.reason || '-') : '-';
+
                 if(isCrit) totalCriticos++;
                 totalItens++;
                 rowNum++;
@@ -1775,7 +1803,7 @@
                     '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt">' + m.description + '</td>' +
                     '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-size:10pt">' + m.unit + '</td>' +
                     '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-weight:bold;font-size:11pt;color:' + (isCrit?'#dc2626':'#15803d') + '">' + stock + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-size:10pt">' + (m.minStock > 0 ? m.minStock : '-') + '</td>' +
+                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:9pt;color:#6b7280;font-style:italic">' + lastObs + '</td>' +
                     '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-size:10pt;font-weight:bold;color:' + (isCrit?'#dc2626':'#15803d') + '">' + (isCrit?'CRITICO':'OK') + '</td>' +
                     '</tr>';
             });
@@ -1802,7 +1830,7 @@
                 '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:11pt">Descricao do Material</th>' +
                 '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Unidade</th>' +
                 '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Saldo Fisico</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Minimo</th>' +
+                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:11pt">Ultima Obs.</th>' +
                 '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Status</th>' +
                 '</tr></thead><tbody>' + rows + '</tbody></table>' +
                 '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
@@ -1893,5 +1921,4 @@
     </script>
 </body>
 </html>
-
 ```
