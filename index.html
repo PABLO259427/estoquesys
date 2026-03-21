@@ -1270,18 +1270,48 @@
             }, 300);
         }
 
+        /**
+         * Lógica de Verificação Inteligente de Duplicidade
+         */
         document.getElementById('materialForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // 1. Obter e normalizar o código
+            const rawCode = document.getElementById('matCode').value;
+            const normalizedCode = rawCode.trim().toUpperCase();
+
+            // 2. Verificar se o código já existe no banco de dados (data.materials)
+            const codeExists = data.materials.some(material => material.code === normalizedCode);
+
+            if (codeExists) {
+                // 3. Emitir alerta imediato e focar no campo
+                toast.show(`Alerta de Duplicidade: O código "${normalizedCode}" já está cadastrado no sistema.`, 'error');
+                document.getElementById('matCode').classList.add('ring-2', 'ring-rose-500');
+                document.getElementById('matCode').focus();
+                
+                // Remover destaque após 3 segundos
+                setTimeout(() => {
+                    document.getElementById('matCode').classList.remove('ring-2', 'ring-rose-500');
+                }, 3000);
+
+                return; // Interrompe o processo de salvamento
+            }
+
+            // Se não houver duplicidade, prosseguir com o cadastro
             data.materials.push({
                 id: Date.now().toString(),
-                code: document.getElementById('matCode').value.toUpperCase(),
+                code: normalizedCode,
                 description: document.getElementById('matDesc').value,
                 unit: document.getElementById('matUnit').value,
                 minStock: parseFloat(document.getElementById('matMinStock').value.toString().replace(',', '.')) || 0,
                 image: document.getElementById('matImageBase64').value || null,
                 createdAt: new Date().toISOString()
             });
-            saveData(); updateAllViews(); closeMaterialModal();
+            
+            saveData(); 
+            updateAllViews(); 
+            closeMaterialModal();
+            toast.show(`Material ${normalizedCode} cadastrado com sucesso!`, 'success');
         });
 
         function updateMaterialsTable() {
@@ -1864,4 +1894,5 @@
     </script>
 </body>
 </html>
+
 ```
