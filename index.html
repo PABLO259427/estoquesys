@@ -2177,5 +2177,132 @@
         }
         function filterTransformadorHistorico() { updateTransformadorHistoricoTable(); }
     </script>
-</body>
+</body> 
+<script>
+    // --- ESTADO DO SISTEMA (Banco de Dados Local) ---
+    let db = JSON.parse(localStorage.getItem('inventory_db')) || {
+        materials: [], // Cadastro de itens
+        movements: [], // Histórico de entradas/saídas
+        peps: []       // Lista de projetos ativos
+    };
+
+    // --- FUNÇÃO CENTRAL DE SALVAMENTO ---
+    function saveData() {
+        localStorage.setItem('inventory_db', JSON.stringify(db));
+        updateDashboard(); // Atualiza os números do Command Center
+        renderHistory();   // Atualiza a tabela de histórico
+    }
+
+    // --- LÓGICA DE ENTRADA (RECEBIMENTO) ---
+    document.getElementById('entryForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const movement = {
+            id: Date.now(),
+            type: 'ENTRADA',
+            date: new Date().toLocaleString('pt-BR'),
+            material: document.getElementById('entryMaterialSearch').value,
+            quantity: parseFloat(document.getElementById('entryQuantity').value),
+            origin: document.getElementById('entrySupplier').value || 'Almoxarifado',
+            document: document.getElementById('entryDocument').value,
+            valueUnit: parseFloat(document.getElementById('entryValue').value) || 0
+        };
+
+        db.movements.push(movement);
+        saveData();
+        
+        showToast("Sucesso!", "Material recebido no estoque.", "success");
+        this.reset();
+    });
+
+    // --- LÓGICA DE SAÍDA (LIBERAÇÃO PEP) ---
+    document.getElementById('exitForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const quantity = parseFloat(document.getElementById('exitQuantity').value);
+        const pep = document.getElementById('exitPepSearch').value;
+
+        const movement = {
+            id: Date.now(),
+            type: 'SAÍDA',
+            date: new Date().toLocaleString('pt-BR'),
+            material: document.getElementById('exitMaterialSearch').value,
+            quantity: quantity,
+            destination: pep,
+            requester: document.getElementById('exitRequester').value
+        };
+
+        db.movements.push(movement);
+        saveData();
+
+        showToast("Liberação Concluída", `Material enviado para o PEP ${pep}`, "warning");
+        this.reset();
+    });
+
+    // --- ATUALIZAÇÃO DO DASHBOARD (COMMAND CENTER) ---
+    function updateDashboard() {
+        // Cálculo de Capital Imobilizado (Exemplo simples)
+        const totalVal = db.movements.reduce((acc, mov) => {
+            return mov.type === 'ENTRADA' ? acc + (mov.quantity * mov.valueUnit) : acc;
+        }, 0);
+
+        document.getElementById('totalValue').innerText = `R$ ${totalVal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('activePEPs').innerText = [...new Set(db.movements.map(m => m.destination).filter(Boolean))].length;
+        document.getElementById('totalMaterials').innerText = db.movements.length;
+        
+        renderCharts(); // Chama a atualização do Chart.js
+    }
+
+    // --- FUNÇÃO DE TOAST (ORIGINAL DO SEU LAYOUT) ---
+    function showToast(title, message, type) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast-panel animate-slide-in p-4 rounded-xl border-l-4 shadow-2xl pointer-events-auto min-w-[300px] ${type === 'success' ? 'border-emerald-500' : 'border-rose-500'}`;
+        toast.innerHTML = `
+            <div class="flex items-start gap-3">
+                <div class="text-white mt-1"><i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i></div>
+                <div>
+                    <h4 class="text-white font-bold text-sm">${title}</h4>
+                    <p class="text-slate-400 text-xs">${message}</p>
+                </div>
+            </div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // --- INICIALIZAÇÃO DO GRÁFICO (Chart.js) ---
+    let movementChart;
+    function renderCharts() {
+        const ctx = document.getElementById('movementChart').getContext('2d');
+        if (movementChart) movementChart.destroy();
+
+        // Agrupando dados fictícios para os últimos 7 dias baseados no DB
+        movementChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                datasets: [{
+                    label: 'Fluxo de Materiais',
+                    data: [12, 19, 3, 5, 2, 3, db.movements.length], // O último ponto reflete o real
+                    borderColor: '#60a5fa',
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(96, 165, 250, 0.1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } }
+            }
+        });
+    }
+
+    // Iniciar sistema
+    window.onload = () => {
+        updateDashboard();
+    };
+</script>
 </html>
