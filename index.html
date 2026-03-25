@@ -4,281 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Controle de Estoque por PEP</title>
-    <script src="https://cdn.tailwindcss.com">
-        // ===== DADOS DE TRANSFORMADORES =====
-        // Integrando com o objeto 'data' existente
-        if (!data.transformers) data.transformers = [];
-        if (!data.transformerMovements) data.transformerMovements = [];
-
-        // ===== FUNÇÕES DE TRANSFORMADORES =====
-        function openTransformerModal() {
-            const modal = document.getElementById('transformerModal');
-            const inner = document.getElementById('transformerModalInner');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); document.getElementById('transformerSerialNumber').focus(); }, 10);
-        }
-
-        function closeTransformerModal() {
-            const modal = document.getElementById('transformerModal');
-            const inner = document.getElementById('transformerModalInner');
-            modal.classList.add('opacity-0'); inner.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); document.getElementById('transformerForm').reset(); }, 300);
-        }
-
-        function openTransformerHistoryModal(transformerId) {
-            const transformer = data.transformers.find(t => t.id === transformerId);
-            if (!transformer) return;
-            const modal = document.getElementById('transformerHistoryModal');
-            const inner = document.getElementById('transformerHistoryModalInner');
-            const movements = data.transformerMovements.filter(m => m.transformerId === transformerId).sort((a, b) => new Date(b.date) - new Date(a.date));
-            let historyHTML = `<div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"><p class="text-sm text-blue-800"><strong>Transformador:</strong> ${transformer.serialNumber} (${transformer.sapCode})</p><p class="text-sm text-blue-800"><strong>Status Atual:</strong> ${transformer.status === 'active' ? '🟢 Em Operação' : transformer.status === 'maintenance' ? '🟡 Em Manutenção' : '🔴 Inativo'}</p></div>`;
-            if (movements.length === 0) { historyHTML += '<div class="text-center py-8 text-gray-500"><i class="fas fa-inbox text-3xl mb-2 opacity-50"></i><p>Sem movimentações registradas</p></div>'; }
-            else { historyHTML += '<div class="timeline">'; movements.forEach(m => { const date = new Date(m.date).toLocaleString('pt-BR'); const typeClass = m.type === 'entry' ? 'entry' : m.type === 'exit' ? 'exit' : 'return'; const typeLabel = m.type === 'entry' ? '📥 Entrada' : m.type === 'exit' ? '📤 Saída' : '↩️ Devolução'; historyHTML += `<div class="timeline-item ${typeClass}"><div class="bg-white p-4 rounded-lg border border-gray-200"><div class="flex justify-between items-start mb-2"><span class="font-semibold text-gray-800">${typeLabel}</span><span class="text-xs text-gray-500">${date}</span></div>${m.pep ? `<p class="text-sm text-gray-700"><strong>PEP:</strong> ${m.pep}</p>` : ''}${m.reason ? `<p class="text-sm text-gray-700"><strong>Motivo:</strong> ${m.reason}</p>` : ''}${m.observations ? `<p class="text-sm text-gray-600 italic mt-2">📝 ${m.observations}</p>` : ''}</div></div>`; }); historyHTML += '</div>'; }
-            document.getElementById('transformerHistoryContent').innerHTML = historyHTML;
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); }, 10);
-        }
-
-        function closeTransformerHistoryModal() {
-            const modal = document.getElementById('transformerHistoryModal');
-            const inner = document.getElementById('transformerHistoryModalInner');
-            modal.classList.add('opacity-0'); inner.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
-        }
-
-        document.getElementById('transformerForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const serialNumber = document.getElementById('transformerSerialNumber').value.trim().toUpperCase();
-            if (data.transformers.some(t => t.serialNumber === serialNumber)) { toast.show(`Alerta: O número de série "${serialNumber}" já existe!`, 'error'); return; }
-            data.transformers.push({ id: Date.now().toString(), serialNumber: serialNumber, sapCode: document.getElementById('transformerSapCode').value.trim().toUpperCase(), power: parseFloat(document.getElementById('transformerPower').value), voltagePrimary: document.getElementById('transformerVoltagePrimary').value, voltageSecondary: document.getElementById('transformerVoltageSecondary').value, manufactureDate: document.getElementById('transformerManufactureDate').value, supplier: document.getElementById('transformerSupplier').value, status: 'inactive', observations: document.getElementById('transformerObservations').value, createdAt: new Date().toISOString(), currentPep: null });
-            saveData(); updateTransformersView(); closeTransformerModal(); toast.show(`Transformador ${serialNumber} cadastrado!`, 'success');
-        });
-
-        function updateTransformersView() {
-            const container = document.getElementById('transformersContainer');
-            if (!container) return;
-            const searchText = (document.getElementById('transformerSearch')?.value || '').toLowerCase();
-            const statusFilter = document.getElementById('transformerStatusFilter')?.value || '';
-            let filtered = data.transformers.filter(t => {
-                const matchesSearch = !searchText || t.serialNumber.toLowerCase().includes(searchText) || t.sapCode.toLowerCase().includes(searchText) || (t.currentPep && t.currentPep.toLowerCase().includes(searchText));
-                const matchesStatus = !statusFilter || t.status === statusFilter;
-                return matchesSearch && matchesStatus;
-            });
-            container.innerHTML = filtered.map(t => `
-                <div class="transformer-card bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-                    <div class="flex justify-between items-start mb-4">
-                        <div><h3 class="font-bold text-gray-800">Nº ${t.serialNumber}</h3><p class="text-xs text-gray-500 font-mono">${t.sapCode}</p></div>
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${t.status === 'active' ? 'transformer-status-active' : t.status === 'maintenance' ? 'transformer-status-maintenance' : 'transformer-status-inactive'}">${t.status === 'active' ? '🟢 Em Operação' : t.status === 'maintenance' ? '🟡 Manutenção' : '🔴 Inativo'}</span>
-                    </div>
-                    <div class="space-y-2 text-sm mb-4">
-                        <p><strong>${t.power} kVA</strong> | ${t.voltagePrimary} → ${t.voltageSecondary}</p>
-                        ${t.currentPep ? `<p class="text-blue-600 font-semibold"><i class="fas fa-map-pin mr-1"></i>PEP: ${t.currentPep}</p>` : '<p class="text-gray-500">Sem alocação</p>'}
-                    </div>
-                    <div class="flex gap-2 pt-3 border-t border-gray-100">
-                        <button onclick="openTransformerHistoryModal('${t.id}')" class="flex-1 px-3 py-2 bg-purple-50 text-purple-600 rounded hover:bg-purple-100 transition text-xs font-semibold"><i class="fas fa-history mr-1"></i>Histórico</button>
-                        <button onclick="deleteTransformer('${t.id}')" class="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition text-xs font-semibold"><i class="fas fa-trash mr-1"></i>Deletar</button>
-                    </div>
-                </div>
-            `).join('');
-            if (filtered.length === 0) container.innerHTML = '<div class="col-span-full text-center py-12 text-gray-500"><i class="fas fa-inbox text-4xl mb-3 opacity-50"></i><p>Nenhum transformador encontrado</p></div>';
-        }
-
-        function filterTransformers() { updateTransformersView(); }
-        function deleteTransformer(id) { if (confirm('Deletar este transformador?')) { data.transformers = data.transformers.filter(t => t.id !== id); data.transformerMovements = data.transformerMovements.filter(m => m.transformerId !== id); saveData(); updateTransformersView(); toast.show('Deletado!', 'success'); } }
-
-        // ===== MOVIMENTAÇÃO DE TRANSFORMADORES =====
-        document.getElementById('transformerEntryForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const serial = document.getElementById('entryTransformerSerial').value.trim().toUpperCase();
-            let transformer = data.transformers.find(t => t.serialNumber === serial);
-            if (!transformer) { toast.show('Transformador não encontrado!', 'error'); return; }
-            data.transformerMovements.push({ id: Date.now().toString(), transformerId: transformer.id, type: 'entry', date: new Date(document.getElementById('entryTransformerDate').value || new Date()).toISOString(), supplier: document.getElementById('entryTransformerSupplier').value, document: document.getElementById('entryTransformerDocument').value, observations: document.getElementById('entryTransformerObs').value });
-            transformer.status = 'inactive'; saveData(); updateTransformersView(); this.reset(); document.getElementById('entryTransformerDate').valueAsDate = new Date(); toast.show(`Entrada registrada: ${serial}`, 'success');
-        });
-
-        document.getElementById('transformerExitForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const transformerId = document.getElementById('exitTransformerId').value;
-            const pep = document.getElementById('exitTransformerPep').value.trim();
-            if (!transformerId || !pep) { toast.show('Selecione o transformador e o PEP!', 'warning'); return; }
-            const transformer = data.transformers.find(t => t.id === transformerId);
-            data.transformerMovements.push({ id: Date.now().toString(), transformerId: transformerId, type: 'exit', date: new Date(document.getElementById('exitTransformerDate').value || new Date()).toISOString(), pep: pep, observations: document.getElementById('exitTransformerObs').value });
-            transformer.status = 'active'; transformer.currentPep = pep; saveData(); updateTransformersView(); clearExitTransformer(); this.reset(); document.getElementById('exitTransformerDate').valueAsDate = new Date(); toast.show(`Alocado para PEP ${pep}`, 'success');
-        });
-
-        document.getElementById('transformerReturnForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const transformerId = document.getElementById('returnTransformerId').value;
-            const reason = document.getElementById('returnTransformerReason').value;
-            if (!transformerId || !reason) { toast.show('Selecione o transformador e o motivo!', 'warning'); return; }
-            const transformer = data.transformers.find(t => t.id === transformerId);
-            data.transformerMovements.push({ id: Date.now().toString(), transformerId: transformerId, type: 'return', date: new Date(document.getElementById('returnTransformerDate').value || new Date()).toISOString(), reason: reason, observations: document.getElementById('returnTransformerObs').value });
-            transformer.status = 'inactive'; transformer.currentPep = null; saveData(); updateTransformersView(); clearReturnTransformer(); this.reset(); document.getElementById('returnTransformerDate').valueAsDate = new Date(); toast.show(`Devolução registrada!`, 'success');
-        });
-
-        function filterExitTransformers() {
-            const query = document.getElementById('exitTransformerSearch').value.toLowerCase();
-            const dropdown = document.getElementById('exitTransformerDropdown');
-            const filtered = data.transformers.filter(t => t.status === 'inactive' && (t.serialNumber.toLowerCase().includes(query) || t.sapCode.toLowerCase().includes(query)));
-            dropdown.innerHTML = filtered.map(t => `<div class="pep-dropdown-item" onclick="selectExitTransformer('${t.id}', '${t.serialNumber}', '${t.sapCode}')"><strong>${t.serialNumber}</strong> - ${t.sapCode}</div>`).join('');
-            if (filtered.length === 0) dropdown.innerHTML = '<div class="pep-dropdown-empty">Nenhum inativo</div>';
-            dropdown.classList.remove('hidden');
-        }
-        function selectExitTransformer(id, serial, sap) { document.getElementById('exitTransformerId').value = id; document.getElementById('exitTransformerSearch').value = serial; document.getElementById('exitTransformerSelected').innerHTML = `<i class="fas fa-check-circle text-blue-500 mr-1"></i> ${serial}`; document.getElementById('exitTransformerDropdown').classList.add('hidden'); }
-        function clearExitTransformer() { document.getElementById('exitTransformerId').value = ''; document.getElementById('exitTransformerSearch').value = ''; document.getElementById('exitTransformerSelected').textContent = ''; document.getElementById('exitTransformerDropdown').classList.add('hidden'); }
-        function showExitTransformers() { filterExitTransformers(); }
-
-        function filterReturnTransformers() {
-            const query = document.getElementById('returnTransformerSearch').value.toLowerCase();
-            const dropdown = document.getElementById('returnTransformerDropdown');
-            const filtered = data.transformers.filter(t => t.status === 'active' && (t.serialNumber.toLowerCase().includes(query) || (t.currentPep && t.currentPep.toLowerCase().includes(query))));
-            dropdown.innerHTML = filtered.map(t => `<div class="pep-dropdown-item" onclick="selectReturnTransformer('${t.id}', '${t.serialNumber}', '${t.currentPep}')"><strong>${t.serialNumber}</strong> - PEP: ${t.currentPep}</div>`).join('');
-            if (filtered.length === 0) dropdown.innerHTML = '<div class="pep-dropdown-empty">Nenhum em operação</div>';
-            dropdown.classList.remove('hidden');
-        }
-        function selectReturnTransformer(id, serial, pep) { document.getElementById('returnTransformerId').value = id; document.getElementById('returnTransformerSearch').value = serial; document.getElementById('returnTransformerSelected').innerHTML = `<i class="fas fa-check-circle text-blue-500 mr-1"></i> ${serial} (PEP: ${pep})`; document.getElementById('returnTransformerDropdown').classList.add('hidden'); }
-        function clearReturnTransformer() { document.getElementById('returnTransformerId').value = ''; document.getElementById('returnTransformerSearch').value = ''; document.getElementById('returnTransformerSelected').textContent = ''; document.getElementById('returnTransformerDropdown').classList.add('hidden'); }
-        function showReturnTransformers() { filterReturnTransformers(); }
-    
-    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js">
-        // ===== DADOS DE TRANSFORMADORES =====
-        // Integrando com o objeto 'data' existente
-        if (!data.transformers) data.transformers = [];
-        if (!data.transformerMovements) data.transformerMovements = [];
-
-        // ===== FUNÇÕES DE TRANSFORMADORES =====
-        function openTransformerModal() {
-            const modal = document.getElementById('transformerModal');
-            const inner = document.getElementById('transformerModalInner');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); document.getElementById('transformerSerialNumber').focus(); }, 10);
-        }
-
-        function closeTransformerModal() {
-            const modal = document.getElementById('transformerModal');
-            const inner = document.getElementById('transformerModalInner');
-            modal.classList.add('opacity-0'); inner.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); document.getElementById('transformerForm').reset(); }, 300);
-        }
-
-        function openTransformerHistoryModal(transformerId) {
-            const transformer = data.transformers.find(t => t.id === transformerId);
-            if (!transformer) return;
-            const modal = document.getElementById('transformerHistoryModal');
-            const inner = document.getElementById('transformerHistoryModalInner');
-            const movements = data.transformerMovements.filter(m => m.transformerId === transformerId).sort((a, b) => new Date(b.date) - new Date(a.date));
-            let historyHTML = `<div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"><p class="text-sm text-blue-800"><strong>Transformador:</strong> ${transformer.serialNumber} (${transformer.sapCode})</p><p class="text-sm text-blue-800"><strong>Status Atual:</strong> ${transformer.status === 'active' ? '🟢 Em Operação' : transformer.status === 'maintenance' ? '🟡 Em Manutenção' : '🔴 Inativo'}</p></div>`;
-            if (movements.length === 0) { historyHTML += '<div class="text-center py-8 text-gray-500"><i class="fas fa-inbox text-3xl mb-2 opacity-50"></i><p>Sem movimentações registradas</p></div>'; }
-            else { historyHTML += '<div class="timeline">'; movements.forEach(m => { const date = new Date(m.date).toLocaleString('pt-BR'); const typeClass = m.type === 'entry' ? 'entry' : m.type === 'exit' ? 'exit' : 'return'; const typeLabel = m.type === 'entry' ? '📥 Entrada' : m.type === 'exit' ? '📤 Saída' : '↩️ Devolução'; historyHTML += `<div class="timeline-item ${typeClass}"><div class="bg-white p-4 rounded-lg border border-gray-200"><div class="flex justify-between items-start mb-2"><span class="font-semibold text-gray-800">${typeLabel}</span><span class="text-xs text-gray-500">${date}</span></div>${m.pep ? `<p class="text-sm text-gray-700"><strong>PEP:</strong> ${m.pep}</p>` : ''}${m.reason ? `<p class="text-sm text-gray-700"><strong>Motivo:</strong> ${m.reason}</p>` : ''}${m.observations ? `<p class="text-sm text-gray-600 italic mt-2">📝 ${m.observations}</p>` : ''}</div></div>`; }); historyHTML += '</div>'; }
-            document.getElementById('transformerHistoryContent').innerHTML = historyHTML;
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); }, 10);
-        }
-
-        function closeTransformerHistoryModal() {
-            const modal = document.getElementById('transformerHistoryModal');
-            const inner = document.getElementById('transformerHistoryModalInner');
-            modal.classList.add('opacity-0'); inner.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
-        }
-
-        document.getElementById('transformerForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const serialNumber = document.getElementById('transformerSerialNumber').value.trim().toUpperCase();
-            if (data.transformers.some(t => t.serialNumber === serialNumber)) { toast.show(`Alerta: O número de série "${serialNumber}" já existe!`, 'error'); return; }
-            data.transformers.push({ id: Date.now().toString(), serialNumber: serialNumber, sapCode: document.getElementById('transformerSapCode').value.trim().toUpperCase(), power: parseFloat(document.getElementById('transformerPower').value), voltagePrimary: document.getElementById('transformerVoltagePrimary').value, voltageSecondary: document.getElementById('transformerVoltageSecondary').value, manufactureDate: document.getElementById('transformerManufactureDate').value, supplier: document.getElementById('transformerSupplier').value, status: 'inactive', observations: document.getElementById('transformerObservations').value, createdAt: new Date().toISOString(), currentPep: null });
-            saveData(); updateTransformersView(); closeTransformerModal(); toast.show(`Transformador ${serialNumber} cadastrado!`, 'success');
-        });
-
-        function updateTransformersView() {
-            const container = document.getElementById('transformersContainer');
-            if (!container) return;
-            const searchText = (document.getElementById('transformerSearch')?.value || '').toLowerCase();
-            const statusFilter = document.getElementById('transformerStatusFilter')?.value || '';
-            let filtered = data.transformers.filter(t => {
-                const matchesSearch = !searchText || t.serialNumber.toLowerCase().includes(searchText) || t.sapCode.toLowerCase().includes(searchText) || (t.currentPep && t.currentPep.toLowerCase().includes(searchText));
-                const matchesStatus = !statusFilter || t.status === statusFilter;
-                return matchesSearch && matchesStatus;
-            });
-            container.innerHTML = filtered.map(t => `
-                <div class="transformer-card bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-                    <div class="flex justify-between items-start mb-4">
-                        <div><h3 class="font-bold text-gray-800">Nº ${t.serialNumber}</h3><p class="text-xs text-gray-500 font-mono">${t.sapCode}</p></div>
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${t.status === 'active' ? 'transformer-status-active' : t.status === 'maintenance' ? 'transformer-status-maintenance' : 'transformer-status-inactive'}">${t.status === 'active' ? '🟢 Em Operação' : t.status === 'maintenance' ? '🟡 Manutenção' : '🔴 Inativo'}</span>
-                    </div>
-                    <div class="space-y-2 text-sm mb-4">
-                        <p><strong>${t.power} kVA</strong> | ${t.voltagePrimary} → ${t.voltageSecondary}</p>
-                        ${t.currentPep ? `<p class="text-blue-600 font-semibold"><i class="fas fa-map-pin mr-1"></i>PEP: ${t.currentPep}</p>` : '<p class="text-gray-500">Sem alocação</p>'}
-                    </div>
-                    <div class="flex gap-2 pt-3 border-t border-gray-100">
-                        <button onclick="openTransformerHistoryModal('${t.id}')" class="flex-1 px-3 py-2 bg-purple-50 text-purple-600 rounded hover:bg-purple-100 transition text-xs font-semibold"><i class="fas fa-history mr-1"></i>Histórico</button>
-                        <button onclick="deleteTransformer('${t.id}')" class="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition text-xs font-semibold"><i class="fas fa-trash mr-1"></i>Deletar</button>
-                    </div>
-                </div>
-            `).join('');
-            if (filtered.length === 0) container.innerHTML = '<div class="col-span-full text-center py-12 text-gray-500"><i class="fas fa-inbox text-4xl mb-3 opacity-50"></i><p>Nenhum transformador encontrado</p></div>';
-        }
-
-        function filterTransformers() { updateTransformersView(); }
-        function deleteTransformer(id) { if (confirm('Deletar este transformador?')) { data.transformers = data.transformers.filter(t => t.id !== id); data.transformerMovements = data.transformerMovements.filter(m => m.transformerId !== id); saveData(); updateTransformersView(); toast.show('Deletado!', 'success'); } }
-
-        // ===== MOVIMENTAÇÃO DE TRANSFORMADORES =====
-        document.getElementById('transformerEntryForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const serial = document.getElementById('entryTransformerSerial').value.trim().toUpperCase();
-            let transformer = data.transformers.find(t => t.serialNumber === serial);
-            if (!transformer) { toast.show('Transformador não encontrado!', 'error'); return; }
-            data.transformerMovements.push({ id: Date.now().toString(), transformerId: transformer.id, type: 'entry', date: new Date(document.getElementById('entryTransformerDate').value || new Date()).toISOString(), supplier: document.getElementById('entryTransformerSupplier').value, document: document.getElementById('entryTransformerDocument').value, observations: document.getElementById('entryTransformerObs').value });
-            transformer.status = 'inactive'; saveData(); updateTransformersView(); this.reset(); document.getElementById('entryTransformerDate').valueAsDate = new Date(); toast.show(`Entrada registrada: ${serial}`, 'success');
-        });
-
-        document.getElementById('transformerExitForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const transformerId = document.getElementById('exitTransformerId').value;
-            const pep = document.getElementById('exitTransformerPep').value.trim();
-            if (!transformerId || !pep) { toast.show('Selecione o transformador e o PEP!', 'warning'); return; }
-            const transformer = data.transformers.find(t => t.id === transformerId);
-            data.transformerMovements.push({ id: Date.now().toString(), transformerId: transformerId, type: 'exit', date: new Date(document.getElementById('exitTransformerDate').value || new Date()).toISOString(), pep: pep, observations: document.getElementById('exitTransformerObs').value });
-            transformer.status = 'active'; transformer.currentPep = pep; saveData(); updateTransformersView(); clearExitTransformer(); this.reset(); document.getElementById('exitTransformerDate').valueAsDate = new Date(); toast.show(`Alocado para PEP ${pep}`, 'success');
-        });
-
-        document.getElementById('transformerReturnForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const transformerId = document.getElementById('returnTransformerId').value;
-            const reason = document.getElementById('returnTransformerReason').value;
-            if (!transformerId || !reason) { toast.show('Selecione o transformador e o motivo!', 'warning'); return; }
-            const transformer = data.transformers.find(t => t.id === transformerId);
-            data.transformerMovements.push({ id: Date.now().toString(), transformerId: transformerId, type: 'return', date: new Date(document.getElementById('returnTransformerDate').value || new Date()).toISOString(), reason: reason, observations: document.getElementById('returnTransformerObs').value });
-            transformer.status = 'inactive'; transformer.currentPep = null; saveData(); updateTransformersView(); clearReturnTransformer(); this.reset(); document.getElementById('returnTransformerDate').valueAsDate = new Date(); toast.show(`Devolução registrada!`, 'success');
-        });
-
-        function filterExitTransformers() {
-            const query = document.getElementById('exitTransformerSearch').value.toLowerCase();
-            const dropdown = document.getElementById('exitTransformerDropdown');
-            const filtered = data.transformers.filter(t => t.status === 'inactive' && (t.serialNumber.toLowerCase().includes(query) || t.sapCode.toLowerCase().includes(query)));
-            dropdown.innerHTML = filtered.map(t => `<div class="pep-dropdown-item" onclick="selectExitTransformer('${t.id}', '${t.serialNumber}', '${t.sapCode}')"><strong>${t.serialNumber}</strong> - ${t.sapCode}</div>`).join('');
-            if (filtered.length === 0) dropdown.innerHTML = '<div class="pep-dropdown-empty">Nenhum inativo</div>';
-            dropdown.classList.remove('hidden');
-        }
-        function selectExitTransformer(id, serial, sap) { document.getElementById('exitTransformerId').value = id; document.getElementById('exitTransformerSearch').value = serial; document.getElementById('exitTransformerSelected').innerHTML = `<i class="fas fa-check-circle text-blue-500 mr-1"></i> ${serial}`; document.getElementById('exitTransformerDropdown').classList.add('hidden'); }
-        function clearExitTransformer() { document.getElementById('exitTransformerId').value = ''; document.getElementById('exitTransformerSearch').value = ''; document.getElementById('exitTransformerSelected').textContent = ''; document.getElementById('exitTransformerDropdown').classList.add('hidden'); }
-        function showExitTransformers() { filterExitTransformers(); }
-
-        function filterReturnTransformers() {
-            const query = document.getElementById('returnTransformerSearch').value.toLowerCase();
-            const dropdown = document.getElementById('returnTransformerDropdown');
-            const filtered = data.transformers.filter(t => t.status === 'active' && (t.serialNumber.toLowerCase().includes(query) || (t.currentPep && t.currentPep.toLowerCase().includes(query))));
-            dropdown.innerHTML = filtered.map(t => `<div class="pep-dropdown-item" onclick="selectReturnTransformer('${t.id}', '${t.serialNumber}', '${t.currentPep}')"><strong>${t.serialNumber}</strong> - PEP: ${t.currentPep}</div>`).join('');
-            if (filtered.length === 0) dropdown.innerHTML = '<div class="pep-dropdown-empty">Nenhum em operação</div>';
-            dropdown.classList.remove('hidden');
-        }
-        function selectReturnTransformer(id, serial, pep) { document.getElementById('returnTransformerId').value = id; document.getElementById('returnTransformerSearch').value = serial; document.getElementById('returnTransformerSelected').innerHTML = `<i class="fas fa-check-circle text-blue-500 mr-1"></i> ${serial} (PEP: ${pep})`; document.getElementById('returnTransformerDropdown').classList.add('hidden'); }
-        function clearReturnTransformer() { document.getElementById('returnTransformerId').value = ''; document.getElementById('returnTransformerSearch').value = ''; document.getElementById('returnTransformerSelected').textContent = ''; document.getElementById('returnTransformerDropdown').classList.add('hidden'); }
-        function showReturnTransformers() { filterReturnTransformers(); }
-    
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -382,7 +110,7 @@
         .img-hover-zoom { transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .img-hover-zoom:hover { transform: scale(1.1); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); z-index: 10; }
     
-        /* Estilos para Transformadores */
+        /* ===== ESTILOS PARA TRANSFORMADORES ===== */
         .transformer-card { border-left: 4px solid #667eea; transition: all 0.3s ease; cursor: pointer; }
         .transformer-card:hover { box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15); transform: translateY(-2px); }
         .transformer-status-active { background: #d1fae5; color: #065f46; }
@@ -395,7 +123,7 @@
         .timeline-item.entry::before { background: #10b981; box-shadow: 0 0 0 2px #10b981; }
         .timeline-item.exit::before { background: #ef4444; box-shadow: 0 0 0 2px #ef4444; }
         .timeline-item.return::before { background: #3b82f6; box-shadow: 0 0 0 2px #3b82f6; }
-    
+
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -475,15 +203,13 @@
                     <button onclick="switchTab('transformerReturn')" id="tab-transformerReturn" class="tab-btn px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800 transition whitespace-nowrap">
                         <i class="fas fa-undo mr-2"></i>Devolução Trafo
                     </button>
-    
-                </nav>
+</nav>
             </div>
 
             <!-- Tab Contents -->
             <div class="p-0">
-
                 <!-- Transformadores Tab -->
-                <div id="content-transformers" class="tab-content hidden animate-fade-in p-6">
+                <div id="content-transformers" class="tab-content animate-fade-in p-6">
                     <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6">
                         <div>
                             <h2 class="text-xl font-bold text-gray-800">Rastreabilidade de Transformadores</h2>
@@ -493,6 +219,8 @@
                             <i class="fas fa-plus"></i> Novo Transformador
                         </button>
                     </div>
+                    
+                    <!-- Filtros -->
                     <div class="mb-6 flex gap-3 flex-wrap items-center">
                         <div class="relative flex-1 min-w-[250px]">
                             <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
@@ -505,7 +233,43 @@
                             <option value="maintenance">Em Manutenção</option>
                         </select>
                     </div>
-                    <div id="transformersContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+                    <!-- Grid de Transformadores -->
+                    <div id="transformersContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Transformadores serão renderizados aqui -->
+                    </div>
+                </div>
+
+                <!-- Transformadores Tab -->
+                <div id="content-transformers" class="tab-content animate-fade-in p-6">
+                    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">Rastreabilidade de Transformadores</h2>
+                            <p class="text-sm text-gray-600 mt-1">Identidade única de cada ativo por número de série</p>
+                        </div>
+                        <button onclick="openTransformerModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-md">
+                            <i class="fas fa-plus"></i> Novo Transformador
+                        </button>
+                    </div>
+                    
+                    <!-- Filtros -->
+                    <div class="mb-6 flex gap-3 flex-wrap items-center">
+                        <div class="relative flex-1 min-w-[250px]">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="transformerSearch" placeholder="Buscar por nº série, código SAP ou PEP..." class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full outline-none transition-shadow" onkeyup="filterTransformers()">
+                        </div>
+                        <select id="transformerStatusFilter" class="px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm outline-none" onchange="filterTransformers()">
+                            <option value="">Todos os Status</option>
+                            <option value="active">Em Operação</option>
+                            <option value="inactive">Inativo</option>
+                            <option value="maintenance">Em Manutenção</option>
+                        </select>
+                    </div>
+
+                    <!-- Grid de Transformadores -->
+                    <div id="transformersContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Transformadores serão renderizados aqui -->
+                    </div>
                 </div>
 
                 <!-- Transformer Entry Tab -->
@@ -523,6 +287,7 @@
                                     <input type="text" id="entryTransformerSupplier" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: Siemens">
                                 </div>
                             </div>
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Documento (NF)</label>
@@ -533,10 +298,12 @@
                                     <input type="date" id="entryTransformerDate" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 </div>
                             </div>
+
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
-                                <textarea id="entryTransformerObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Notas técnicas..."></textarea>
+                                <textarea id="entryTransformerObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Notas técnicas, condições de recebimento..."></textarea>
                             </div>
+
                             <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg hover:from-green-700 hover:to-green-800 transition shadow-md">
                                 <i class="fas fa-check-circle mr-2"></i> Confirmar Entrada
                             </button>
@@ -560,6 +327,7 @@
                                 <input type="hidden" id="exitTransformerId">
                                 <p class="mt-1 text-xs text-gray-500" id="exitTransformerSelected"></p>
                             </div>
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">PEP Destino *</label>
@@ -570,10 +338,12 @@
                                     <input type="date" id="exitTransformerDate" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 </div>
                             </div>
+
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
-                                <textarea id="exitTransformerObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Local de instalação..."></textarea>
+                                <textarea id="exitTransformerObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Local de instalação, responsável..."></textarea>
                             </div>
+
                             <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white font-semibold rounded-lg hover:from-orange-700 hover:to-orange-800 transition shadow-md">
                                 <i class="fas fa-arrow-up mr-2"></i> Confirmar Saída
                             </button>
@@ -597,6 +367,7 @@
                                 <input type="hidden" id="returnTransformerId">
                                 <p class="mt-1 text-xs text-gray-500" id="returnTransformerSelected"></p>
                             </div>
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Motivo da Devolução *</label>
@@ -614,18 +385,23 @@
                                     <input type="date" id="returnTransformerDate" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 </div>
                             </div>
+
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Observações Técnicas</label>
-                                <textarea id="returnTransformerObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Descrição do problema..."></textarea>
+                                <textarea id="returnTransformerObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Descrição do problema, ações tomadas..."></textarea>
                             </div>
+
                             <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-purple-800 transition shadow-md">
                                 <i class="fas fa-undo mr-2"></i> Confirmar Devolução
                             </button>
                         </form>
                     </div>
                 </div>
-    
-                <!-- Dashboard / Command Center -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard / Command Center -->
                 <div id="content-dashboard" class="tab-content dark-glass text-white p-6 animate-fade-in min-h-[600px]">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
@@ -2088,23 +1864,22 @@
             r.readAsText(f); input.value = '';
         }
 
-        
         function exportToWord() {
             const now = new Date().toLocaleString('pt-BR');
             
             // 1. Materiais Comuns
             let materialRows = '';
             data.materials.forEach(m => {
-                const stock = calculateStock(m.sapCode);
+                const stock = getMaterialStock(m.id);
                 materialRows += `<tr>
-                    <td style="border:1px solid #ccc;padding:6px;font-size:10pt">${m.sapCode}</td>
+                    <td style="border:1px solid #ccc;padding:6px;font-size:10pt">${m.code}</td>
                     <td style="border:1px solid #ccc;padding:6px;font-size:10pt">${m.description}</td>
                     <td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:10pt">${m.unit}</td>
                     <td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:10pt">${stock}</td>
                 </tr>`;
             });
 
-            // 2. Transformadores (Ativos)
+            // 2. Transformadores (Ativos Rastreáveis)
             let transformerRows = '';
             if (data.transformers && data.transformers.length > 0) {
                 data.transformers.forEach(t => {
@@ -2129,7 +1904,7 @@
                 <h2 style="font-size:14pt;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:5px">1. INVENTÁRIO DE MATERIAIS (CONSUMÍVEIS)</h2>
                 <table style="width:100%;border-collapse:collapse;margin-top:10px;margin-bottom:30px">
                     <thead><tr style="background:#f3f4f6;color:#374151">
-                        <th style="border:1px solid #ccc;padding:8px;text-align:left;font-size:10pt">Código SAP</th>
+                        <th style="border:1px solid #ccc;padding:8px;text-align:left;font-size:10pt">Código</th>
                         <th style="border:1px solid #ccc;padding:8px;text-align:left;font-size:10pt">Descrição</th>
                         <th style="border:1px solid #ccc;padding:8px;text-align:center;font-size:10pt">Unid.</th>
                         <th style="border:1px solid #ccc;padding:8px;text-align:center;font-size:10pt">Saldo</th>
@@ -2161,7 +1936,6 @@
             a.click();
             toast.show('Relatório unificado exportado para Word!', 'success');
         }
-    
 
         function filterHistoryPepDropdown() {
             const q = document.getElementById('historyPepSearch').value.trim().toLowerCase();
@@ -2274,49 +2048,7 @@
                 '<h3 style="font-size:12pt;color:#1e3a5f;margin-bottom:8px;border-bottom:2px solid #1e3a5f;padding-bottom:4px">Historico Completo de Movimentacoes</h3>' +
                 movSection +
                 '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
-                '
-    <!-- Modal para Novo Transformador -->
-    <div id="transformerModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 opacity-0 transition-opacity duration-300">
-        <div id="transformerModalInner" class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scale-95 transition-transform duration-300">
-            <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
-                <h3 class="text-xl font-bold"><i class="fas fa-bolt mr-2"></i>Cadastro de Transformador</h3>
-                <button onclick="closeTransformerModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i class="fas fa-times"></i></button>
-            </div>
-            <form id="transformerForm" class="p-6 space-y-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Número de Série *</label><input type="text" id="transformerSerialNumber" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 0210019" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Código SAP *</label><input type="text" id="transformerSapCode" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 75KVA-380V" required></div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Potência (kVA) *</label><input type="number" id="transformerPower" step="0.1" min="0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 75" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tensão Primária (V) *</label><input type="text" id="transformerVoltagePrimary" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 13.8kV" required></div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tensão Secundária (V) *</label><input type="text" id="transformerVoltageSecondary" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 380V" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Data de Fabricação</label><input type="date" id="transformerManufactureDate" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></div>
-                </div>
-                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Fornecedor</label><input type="text" id="transformerSupplier" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: Siemens..."></div>
-                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label><textarea id="transformerObservations" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Notas técnicas..."></textarea></div>
-                <div class="flex gap-3 pt-4">
-                    <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition"><i class="fas fa-save mr-2"></i> Salvar Transformador</button>
-                    <button type="button" onclick="closeTransformerModal()" class="flex-1 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal para Histórico do Transformador -->
-    <div id="transformerHistoryModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 opacity-0 transition-opacity duration-300">
-        <div id="transformerHistoryModalInner" class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto scale-95 transition-transform duration-300">
-            <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 flex justify-between items-center">
-                <h3 class="text-xl font-bold"><i class="fas fa-history mr-2"></i>Histórico do Transformador</h3>
-                <button onclick="closeTransformerHistoryModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-6"><div id="transformerHistoryContent" class="space-y-4"></div></div>
-        </div>
-    </div>
-    
-</body></html>';
+                '</body></html>';
             const blob = new Blob([html], {type: 'application/msword'});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -2383,49 +2115,7 @@
                 '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Status</th>' +
                 '</tr></thead><tbody>' + rows + '</tbody></table>' +
                 '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
-                '
-    <!-- Modal para Novo Transformador -->
-    <div id="transformerModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 opacity-0 transition-opacity duration-300">
-        <div id="transformerModalInner" class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scale-95 transition-transform duration-300">
-            <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
-                <h3 class="text-xl font-bold"><i class="fas fa-bolt mr-2"></i>Cadastro de Transformador</h3>
-                <button onclick="closeTransformerModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i class="fas fa-times"></i></button>
-            </div>
-            <form id="transformerForm" class="p-6 space-y-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Número de Série *</label><input type="text" id="transformerSerialNumber" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 0210019" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Código SAP *</label><input type="text" id="transformerSapCode" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 75KVA-380V" required></div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Potência (kVA) *</label><input type="number" id="transformerPower" step="0.1" min="0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 75" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tensão Primária (V) *</label><input type="text" id="transformerVoltagePrimary" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 13.8kV" required></div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tensão Secundária (V) *</label><input type="text" id="transformerVoltageSecondary" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 380V" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Data de Fabricação</label><input type="date" id="transformerManufactureDate" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></div>
-                </div>
-                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Fornecedor</label><input type="text" id="transformerSupplier" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: Siemens..."></div>
-                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label><textarea id="transformerObservations" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Notas técnicas..."></textarea></div>
-                <div class="flex gap-3 pt-4">
-                    <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition"><i class="fas fa-save mr-2"></i> Salvar Transformador</button>
-                    <button type="button" onclick="closeTransformerModal()" class="flex-1 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal para Histórico do Transformador -->
-    <div id="transformerHistoryModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 opacity-0 transition-opacity duration-300">
-        <div id="transformerHistoryModalInner" class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto scale-95 transition-transform duration-300">
-            <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 flex justify-between items-center">
-                <h3 class="text-xl font-bold"><i class="fas fa-history mr-2"></i>Histórico do Transformador</h3>
-                <button onclick="closeTransformerHistoryModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-6"><div id="transformerHistoryContent" class="space-y-4"></div></div>
-        </div>
-    </div>
-    
-</body></html>';
+                '</body></html>';
             const blob = new Blob([html], {type: 'application/msword'});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -2501,49 +2191,7 @@
                 '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Alvo/Obs</th>' +
                 '</tr></thead><tbody>' + movRows + '</tbody></table>' +
                 '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
-                '
-    <!-- Modal para Novo Transformador -->
-    <div id="transformerModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 opacity-0 transition-opacity duration-300">
-        <div id="transformerModalInner" class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scale-95 transition-transform duration-300">
-            <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
-                <h3 class="text-xl font-bold"><i class="fas fa-bolt mr-2"></i>Cadastro de Transformador</h3>
-                <button onclick="closeTransformerModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i class="fas fa-times"></i></button>
-            </div>
-            <form id="transformerForm" class="p-6 space-y-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Número de Série *</label><input type="text" id="transformerSerialNumber" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 0210019" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Código SAP *</label><input type="text" id="transformerSapCode" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 75KVA-380V" required></div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Potência (kVA) *</label><input type="number" id="transformerPower" step="0.1" min="0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 75" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tensão Primária (V) *</label><input type="text" id="transformerVoltagePrimary" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 13.8kV" required></div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tensão Secundária (V) *</label><input type="text" id="transformerVoltageSecondary" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 380V" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Data de Fabricação</label><input type="date" id="transformerManufactureDate" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></div>
-                </div>
-                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Fornecedor</label><input type="text" id="transformerSupplier" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: Siemens..."></div>
-                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label><textarea id="transformerObservations" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Notas técnicas..."></textarea></div>
-                <div class="flex gap-3 pt-4">
-                    <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition"><i class="fas fa-save mr-2"></i> Salvar Transformador</button>
-                    <button type="button" onclick="closeTransformerModal()" class="flex-1 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal para Histórico do Transformador -->
-    <div id="transformerHistoryModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 opacity-0 transition-opacity duration-300">
-        <div id="transformerHistoryModalInner" class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto scale-95 transition-transform duration-300">
-            <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 flex justify-between items-center">
-                <h3 class="text-xl font-bold"><i class="fas fa-history mr-2"></i>Histórico do Transformador</h3>
-                <button onclick="closeTransformerHistoryModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-6"><div id="transformerHistoryContent" class="space-y-4"></div></div>
-        </div>
-    </div>
-    
-</body></html>';
+                '</body></html>';
             const blob = new Blob([html], {type: 'application/msword'});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -2551,169 +2199,67 @@
             a.click();
             toast.show('Timeline de Movimentacao exportada para Word.', 'success');
         }
-    
-        // ===== DADOS DE TRANSFORMADORES =====
-        // Integrando com o objeto 'data' existente
-        if (!data.transformers) data.transformers = [];
-        if (!data.transformerMovements) data.transformerMovements = [];
-
-        // ===== FUNÇÕES DE TRANSFORMADORES =====
-        function openTransformerModal() {
-            const modal = document.getElementById('transformerModal');
-            const inner = document.getElementById('transformerModalInner');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); document.getElementById('transformerSerialNumber').focus(); }, 10);
-        }
-
-        function closeTransformerModal() {
-            const modal = document.getElementById('transformerModal');
-            const inner = document.getElementById('transformerModalInner');
-            modal.classList.add('opacity-0'); inner.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); document.getElementById('transformerForm').reset(); }, 300);
-        }
-
-        function openTransformerHistoryModal(transformerId) {
-            const transformer = data.transformers.find(t => t.id === transformerId);
-            if (!transformer) return;
-            const modal = document.getElementById('transformerHistoryModal');
-            const inner = document.getElementById('transformerHistoryModalInner');
-            const movements = data.transformerMovements.filter(m => m.transformerId === transformerId).sort((a, b) => new Date(b.date) - new Date(a.date));
-            let historyHTML = `<div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"><p class="text-sm text-blue-800"><strong>Transformador:</strong> ${transformer.serialNumber} (${transformer.sapCode})</p><p class="text-sm text-blue-800"><strong>Status Atual:</strong> ${transformer.status === 'active' ? '🟢 Em Operação' : transformer.status === 'maintenance' ? '🟡 Em Manutenção' : '🔴 Inativo'}</p></div>`;
-            if (movements.length === 0) { historyHTML += '<div class="text-center py-8 text-gray-500"><i class="fas fa-inbox text-3xl mb-2 opacity-50"></i><p>Sem movimentações registradas</p></div>'; }
-            else { historyHTML += '<div class="timeline">'; movements.forEach(m => { const date = new Date(m.date).toLocaleString('pt-BR'); const typeClass = m.type === 'entry' ? 'entry' : m.type === 'exit' ? 'exit' : 'return'; const typeLabel = m.type === 'entry' ? '📥 Entrada' : m.type === 'exit' ? '📤 Saída' : '↩️ Devolução'; historyHTML += `<div class="timeline-item ${typeClass}"><div class="bg-white p-4 rounded-lg border border-gray-200"><div class="flex justify-between items-start mb-2"><span class="font-semibold text-gray-800">${typeLabel}</span><span class="text-xs text-gray-500">${date}</span></div>${m.pep ? `<p class="text-sm text-gray-700"><strong>PEP:</strong> ${m.pep}</p>` : ''}${m.reason ? `<p class="text-sm text-gray-700"><strong>Motivo:</strong> ${m.reason}</p>` : ''}${m.observations ? `<p class="text-sm text-gray-600 italic mt-2">📝 ${m.observations}</p>` : ''}</div></div>`; }); historyHTML += '</div>'; }
-            document.getElementById('transformerHistoryContent').innerHTML = historyHTML;
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); }, 10);
-        }
-
-        function closeTransformerHistoryModal() {
-            const modal = document.getElementById('transformerHistoryModal');
-            const inner = document.getElementById('transformerHistoryModalInner');
-            modal.classList.add('opacity-0'); inner.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
-        }
-
-        document.getElementById('transformerForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const serialNumber = document.getElementById('transformerSerialNumber').value.trim().toUpperCase();
-            if (data.transformers.some(t => t.serialNumber === serialNumber)) { toast.show(`Alerta: O número de série "${serialNumber}" já existe!`, 'error'); return; }
-            data.transformers.push({ id: Date.now().toString(), serialNumber: serialNumber, sapCode: document.getElementById('transformerSapCode').value.trim().toUpperCase(), power: parseFloat(document.getElementById('transformerPower').value), voltagePrimary: document.getElementById('transformerVoltagePrimary').value, voltageSecondary: document.getElementById('transformerVoltageSecondary').value, manufactureDate: document.getElementById('transformerManufactureDate').value, supplier: document.getElementById('transformerSupplier').value, status: 'inactive', observations: document.getElementById('transformerObservations').value, createdAt: new Date().toISOString(), currentPep: null });
-            saveData(); updateTransformersView(); closeTransformerModal(); toast.show(`Transformador ${serialNumber} cadastrado!`, 'success');
-        });
-
-        function updateTransformersView() {
-            const container = document.getElementById('transformersContainer');
-            if (!container) return;
-            const searchText = (document.getElementById('transformerSearch')?.value || '').toLowerCase();
-            const statusFilter = document.getElementById('transformerStatusFilter')?.value || '';
-            let filtered = data.transformers.filter(t => {
-                const matchesSearch = !searchText || t.serialNumber.toLowerCase().includes(searchText) || t.sapCode.toLowerCase().includes(searchText) || (t.currentPep && t.currentPep.toLowerCase().includes(searchText));
-                const matchesStatus = !statusFilter || t.status === statusFilter;
-                return matchesSearch && matchesStatus;
-            });
-            container.innerHTML = filtered.map(t => `
-                <div class="transformer-card bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-                    <div class="flex justify-between items-start mb-4">
-                        <div><h3 class="font-bold text-gray-800">Nº ${t.serialNumber}</h3><p class="text-xs text-gray-500 font-mono">${t.sapCode}</p></div>
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${t.status === 'active' ? 'transformer-status-active' : t.status === 'maintenance' ? 'transformer-status-maintenance' : 'transformer-status-inactive'}">${t.status === 'active' ? '🟢 Em Operação' : t.status === 'maintenance' ? '🟡 Manutenção' : '🔴 Inativo'}</span>
-                    </div>
-                    <div class="space-y-2 text-sm mb-4">
-                        <p><strong>${t.power} kVA</strong> | ${t.voltagePrimary} → ${t.voltageSecondary}</p>
-                        ${t.currentPep ? `<p class="text-blue-600 font-semibold"><i class="fas fa-map-pin mr-1"></i>PEP: ${t.currentPep}</p>` : '<p class="text-gray-500">Sem alocação</p>'}
-                    </div>
-                    <div class="flex gap-2 pt-3 border-t border-gray-100">
-                        <button onclick="openTransformerHistoryModal('${t.id}')" class="flex-1 px-3 py-2 bg-purple-50 text-purple-600 rounded hover:bg-purple-100 transition text-xs font-semibold"><i class="fas fa-history mr-1"></i>Histórico</button>
-                        <button onclick="deleteTransformer('${t.id}')" class="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition text-xs font-semibold"><i class="fas fa-trash mr-1"></i>Deletar</button>
-                    </div>
-                </div>
-            `).join('');
-            if (filtered.length === 0) container.innerHTML = '<div class="col-span-full text-center py-12 text-gray-500"><i class="fas fa-inbox text-4xl mb-3 opacity-50"></i><p>Nenhum transformador encontrado</p></div>';
-        }
-
-        function filterTransformers() { updateTransformersView(); }
-        function deleteTransformer(id) { if (confirm('Deletar este transformador?')) { data.transformers = data.transformers.filter(t => t.id !== id); data.transformerMovements = data.transformerMovements.filter(m => m.transformerId !== id); saveData(); updateTransformersView(); toast.show('Deletado!', 'success'); } }
-
-        // ===== MOVIMENTAÇÃO DE TRANSFORMADORES =====
-        document.getElementById('transformerEntryForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const serial = document.getElementById('entryTransformerSerial').value.trim().toUpperCase();
-            let transformer = data.transformers.find(t => t.serialNumber === serial);
-            if (!transformer) { toast.show('Transformador não encontrado!', 'error'); return; }
-            data.transformerMovements.push({ id: Date.now().toString(), transformerId: transformer.id, type: 'entry', date: new Date(document.getElementById('entryTransformerDate').value || new Date()).toISOString(), supplier: document.getElementById('entryTransformerSupplier').value, document: document.getElementById('entryTransformerDocument').value, observations: document.getElementById('entryTransformerObs').value });
-            transformer.status = 'inactive'; saveData(); updateTransformersView(); this.reset(); document.getElementById('entryTransformerDate').valueAsDate = new Date(); toast.show(`Entrada registrada: ${serial}`, 'success');
-        });
-
-        document.getElementById('transformerExitForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const transformerId = document.getElementById('exitTransformerId').value;
-            const pep = document.getElementById('exitTransformerPep').value.trim();
-            if (!transformerId || !pep) { toast.show('Selecione o transformador e o PEP!', 'warning'); return; }
-            const transformer = data.transformers.find(t => t.id === transformerId);
-            data.transformerMovements.push({ id: Date.now().toString(), transformerId: transformerId, type: 'exit', date: new Date(document.getElementById('exitTransformerDate').value || new Date()).toISOString(), pep: pep, observations: document.getElementById('exitTransformerObs').value });
-            transformer.status = 'active'; transformer.currentPep = pep; saveData(); updateTransformersView(); clearExitTransformer(); this.reset(); document.getElementById('exitTransformerDate').valueAsDate = new Date(); toast.show(`Alocado para PEP ${pep}`, 'success');
-        });
-
-        document.getElementById('transformerReturnForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const transformerId = document.getElementById('returnTransformerId').value;
-            const reason = document.getElementById('returnTransformerReason').value;
-            if (!transformerId || !reason) { toast.show('Selecione o transformador e o motivo!', 'warning'); return; }
-            const transformer = data.transformers.find(t => t.id === transformerId);
-            data.transformerMovements.push({ id: Date.now().toString(), transformerId: transformerId, type: 'return', date: new Date(document.getElementById('returnTransformerDate').value || new Date()).toISOString(), reason: reason, observations: document.getElementById('returnTransformerObs').value });
-            transformer.status = 'inactive'; transformer.currentPep = null; saveData(); updateTransformersView(); clearReturnTransformer(); this.reset(); document.getElementById('returnTransformerDate').valueAsDate = new Date(); toast.show(`Devolução registrada!`, 'success');
-        });
-
-        function filterExitTransformers() {
-            const query = document.getElementById('exitTransformerSearch').value.toLowerCase();
-            const dropdown = document.getElementById('exitTransformerDropdown');
-            const filtered = data.transformers.filter(t => t.status === 'inactive' && (t.serialNumber.toLowerCase().includes(query) || t.sapCode.toLowerCase().includes(query)));
-            dropdown.innerHTML = filtered.map(t => `<div class="pep-dropdown-item" onclick="selectExitTransformer('${t.id}', '${t.serialNumber}', '${t.sapCode}')"><strong>${t.serialNumber}</strong> - ${t.sapCode}</div>`).join('');
-            if (filtered.length === 0) dropdown.innerHTML = '<div class="pep-dropdown-empty">Nenhum inativo</div>';
-            dropdown.classList.remove('hidden');
-        }
-        function selectExitTransformer(id, serial, sap) { document.getElementById('exitTransformerId').value = id; document.getElementById('exitTransformerSearch').value = serial; document.getElementById('exitTransformerSelected').innerHTML = `<i class="fas fa-check-circle text-blue-500 mr-1"></i> ${serial}`; document.getElementById('exitTransformerDropdown').classList.add('hidden'); }
-        function clearExitTransformer() { document.getElementById('exitTransformerId').value = ''; document.getElementById('exitTransformerSearch').value = ''; document.getElementById('exitTransformerSelected').textContent = ''; document.getElementById('exitTransformerDropdown').classList.add('hidden'); }
-        function showExitTransformers() { filterExitTransformers(); }
-
-        function filterReturnTransformers() {
-            const query = document.getElementById('returnTransformerSearch').value.toLowerCase();
-            const dropdown = document.getElementById('returnTransformerDropdown');
-            const filtered = data.transformers.filter(t => t.status === 'active' && (t.serialNumber.toLowerCase().includes(query) || (t.currentPep && t.currentPep.toLowerCase().includes(query))));
-            dropdown.innerHTML = filtered.map(t => `<div class="pep-dropdown-item" onclick="selectReturnTransformer('${t.id}', '${t.serialNumber}', '${t.currentPep}')"><strong>${t.serialNumber}</strong> - PEP: ${t.currentPep}</div>`).join('');
-            if (filtered.length === 0) dropdown.innerHTML = '<div class="pep-dropdown-empty">Nenhum em operação</div>';
-            dropdown.classList.remove('hidden');
-        }
-        function selectReturnTransformer(id, serial, pep) { document.getElementById('returnTransformerId').value = id; document.getElementById('returnTransformerSearch').value = serial; document.getElementById('returnTransformerSelected').innerHTML = `<i class="fas fa-check-circle text-blue-500 mr-1"></i> ${serial} (PEP: ${pep})`; document.getElementById('returnTransformerDropdown').classList.add('hidden'); }
-        function clearReturnTransformer() { document.getElementById('returnTransformerId').value = ''; document.getElementById('returnTransformerSearch').value = ''; document.getElementById('returnTransformerSelected').textContent = ''; document.getElementById('returnTransformerDropdown').classList.add('hidden'); }
-        function showReturnTransformers() { filterReturnTransformers(); }
-    
     </script>
 
-    <!-- Modal para Novo Transformador -->
+<!-- Modal para Novo Transformador -->
     <div id="transformerModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 opacity-0 transition-opacity duration-300">
         <div id="transformerModalInner" class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scale-95 transition-transform duration-300">
             <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
                 <h3 class="text-xl font-bold"><i class="fas fa-bolt mr-2"></i>Cadastro de Transformador</h3>
                 <button onclick="closeTransformerModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i class="fas fa-times"></i></button>
             </div>
+            
             <form id="transformerForm" class="p-6 space-y-5">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Número de Série *</label><input type="text" id="transformerSerialNumber" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 0210019" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Código SAP *</label><input type="text" id="transformerSapCode" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 75KVA-380V" required></div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Número de Série *</label>
+                        <input type="text" id="transformerSerialNumber" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 0210019" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Código SAP *</label>
+                        <input type="text" id="transformerSapCode" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 75KVA-380V" required>
+                    </div>
                 </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Potência (kVA) *</label><input type="number" id="transformerPower" step="0.1" min="0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 75" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tensão Primária (V) *</label><input type="text" id="transformerVoltagePrimary" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 13.8kV" required></div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Potência (kVA) *</label>
+                        <input type="number" id="transformerPower" step="0.1" min="0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 75" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tensão Primária (V) *</label>
+                        <input type="text" id="transformerVoltagePrimary" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 13.8kV" required>
+                    </div>
                 </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tensão Secundária (V) *</label><input type="text" id="transformerVoltageSecondary" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 380V" required></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Data de Fabricação</label><input type="date" id="transformerManufactureDate" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tensão Secundária (V) *</label>
+                        <input type="text" id="transformerVoltageSecondary" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: 380V" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Data de Fabricação</label>
+                        <input type="date" id="transformerManufactureDate" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
                 </div>
-                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Fornecedor</label><input type="text" id="transformerSupplier" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: Siemens..."></div>
-                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label><textarea id="transformerObservations" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Notas técnicas..."></textarea></div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Fornecedor</label>
+                    <input type="text" id="transformerSupplier" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: Siemens, ABB, Schneider...">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
+                    <textarea id="transformerObservations" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Notas técnicas, histórico, etc..."></textarea>
+                </div>
+
                 <div class="flex gap-3 pt-4">
-                    <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition"><i class="fas fa-save mr-2"></i> Salvar Transformador</button>
-                    <button type="button" onclick="closeTransformerModal()" class="flex-1 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">Cancelar</button>
+                    <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition">
+                        <i class="fas fa-save mr-2"></i> Salvar Transformador
+                    </button>
+                    <button type="button" onclick="closeTransformerModal()" class="flex-1 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">
+                        Cancelar
+                    </button>
                 </div>
             </form>
         </div>
@@ -2726,8 +2272,15 @@
                 <h3 class="text-xl font-bold"><i class="fas fa-history mr-2"></i>Histórico do Transformador</h3>
                 <button onclick="closeTransformerHistoryModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-6"><div id="transformerHistoryContent" class="space-y-4"></div></div>
+            
+            <div class="p-6">
+                <div id="transformerHistoryContent" class="space-y-4">
+                    <!-- Timeline será renderizada aqui -->
+                </div>
+            </div>
         </div>
     </div>
+
     
 </body>
+</html>
