@@ -113,55 +113,16 @@
 </head>
 <body class="p-4 md:p-8">
     
-   <div class="app-container">
-    <aside class="sidebar shadow-2xl">
-        <div class="px-6 mb-8 text-white">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                    <i class="fas fa-satellite-dish"></i>
-                </div>
-                <span class="font-bold tracking-tight">PEP LOGISTICS</span>
-            </div>
-        </div>
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
-        <nav class="flex-1 space-y-1">
-            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn tab-btn-vertical tab-active">
-                <i class="fas fa-chart-line w-6"></i> Command Center
-            </button>
-            <button onclick="switchTab('materials')" id="tab-materials" class="tab-btn tab-btn-vertical">
-                <i class="fas fa-box w-6"></i> Materiais
-            </button>
-            <button onclick="switchTab('entry')" id="tab-entry" class="tab-btn tab-btn-vertical">
-                <i class="fas fa-arrow-down w-6"></i> Entrada
-            </button>
-            <button onclick="switchTab('exit')" id="tab-exit" class="tab-btn tab-btn-vertical">
-                <i class="fas fa-arrow-up w-6"></i> Saída PEP
-            </button>
-            <button onclick="switchTab('return')" id="tab-return" class="tab-btn tab-btn-vertical">
-                <i class="fas fa-undo w-6"></i> Devolução
-            </button>
-            <button onclick="switchTab('stock')" id="tab-stock" class="tab-btn tab-btn-vertical">
-                <i class="fas fa-warehouse w-6"></i> Estoque
-            </button>
-            <button onclick="switchTab('history')" id="tab-history" class="tab-btn tab-btn-vertical">
-                <i class="fas fa-history w-6"></i> Histórico
-            </button>
-            <button onclick="switchTab('transformadores')" id="tab-transformadores" class="tab-btn tab-btn-vertical">
-                <i class="fas fa-microchip w-6"></i> Transformadores
-            </button>
-        </nav>
-
-        <div class="px-6 mt-auto">
-            <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
-                <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Operador</p>
-                <p class="text-xs text-slate-300 truncate">Pablo Leandro</p>
-            </div>
-        </div>
-    </aside>
-
-    <main class="p-8 overflow-y-auto max-h-screen custom-scrollbar">
-        </main>
-</div>
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="glass-panel rounded-2xl p-6 mb-6 shadow-xl">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
+                        <i class="fas fa-satellite-dish"></i>
+                    </div>
                     <div>
                         <h1 class="text-2xl font-bold text-gray-800">Pablo Leandro Martins Duarte</h1>
                         <p class="text-sm text-gray-600">Controle de Estoque PEP - Smart Logistics & Command Center</p>
@@ -2216,132 +2177,5 @@
         }
         function filterTransformadorHistorico() { updateTransformadorHistoricoTable(); }
     </script>
-</body> 
-<script>
-    // --- ESTADO DO SISTEMA (Banco de Dados Local) ---
-    let db = JSON.parse(localStorage.getItem('inventory_db')) || {
-        materials: [], // Cadastro de itens
-        movements: [], // Histórico de entradas/saídas
-        peps: []       // Lista de projetos ativos
-    };
-
-    // --- FUNÇÃO CENTRAL DE SALVAMENTO ---
-    function saveData() {
-        localStorage.setItem('inventory_db', JSON.stringify(db));
-        updateDashboard(); // Atualiza os números do Command Center
-        renderHistory();   // Atualiza a tabela de histórico
-    }
-
-    // --- LÓGICA DE ENTRADA (RECEBIMENTO) ---
-    document.getElementById('entryForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const movement = {
-            id: Date.now(),
-            type: 'ENTRADA',
-            date: new Date().toLocaleString('pt-BR'),
-            material: document.getElementById('entryMaterialSearch').value,
-            quantity: parseFloat(document.getElementById('entryQuantity').value),
-            origin: document.getElementById('entrySupplier').value || 'Almoxarifado',
-            document: document.getElementById('entryDocument').value,
-            valueUnit: parseFloat(document.getElementById('entryValue').value) || 0
-        };
-
-        db.movements.push(movement);
-        saveData();
-        
-        showToast("Sucesso!", "Material recebido no estoque.", "success");
-        this.reset();
-    });
-
-    // --- LÓGICA DE SAÍDA (LIBERAÇÃO PEP) ---
-    document.getElementById('exitForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const quantity = parseFloat(document.getElementById('exitQuantity').value);
-        const pep = document.getElementById('exitPepSearch').value;
-
-        const movement = {
-            id: Date.now(),
-            type: 'SAÍDA',
-            date: new Date().toLocaleString('pt-BR'),
-            material: document.getElementById('exitMaterialSearch').value,
-            quantity: quantity,
-            destination: pep,
-            requester: document.getElementById('exitRequester').value
-        };
-
-        db.movements.push(movement);
-        saveData();
-
-        showToast("Liberação Concluída", `Material enviado para o PEP ${pep}`, "warning");
-        this.reset();
-    });
-
-    // --- ATUALIZAÇÃO DO DASHBOARD (COMMAND CENTER) ---
-    function updateDashboard() {
-        // Cálculo de Capital Imobilizado (Exemplo simples)
-        const totalVal = db.movements.reduce((acc, mov) => {
-            return mov.type === 'ENTRADA' ? acc + (mov.quantity * mov.valueUnit) : acc;
-        }, 0);
-
-        document.getElementById('totalValue').innerText = `R$ ${totalVal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-        document.getElementById('activePEPs').innerText = [...new Set(db.movements.map(m => m.destination).filter(Boolean))].length;
-        document.getElementById('totalMaterials').innerText = db.movements.length;
-        
-        renderCharts(); // Chama a atualização do Chart.js
-    }
-
-    // --- FUNÇÃO DE TOAST (ORIGINAL DO SEU LAYOUT) ---
-    function showToast(title, message, type) {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast-panel animate-slide-in p-4 rounded-xl border-l-4 shadow-2xl pointer-events-auto min-w-[300px] ${type === 'success' ? 'border-emerald-500' : 'border-rose-500'}`;
-        toast.innerHTML = `
-            <div class="flex items-start gap-3">
-                <div class="text-white mt-1"><i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i></div>
-                <div>
-                    <h4 class="text-white font-bold text-sm">${title}</h4>
-                    <p class="text-slate-400 text-xs">${message}</p>
-                </div>
-            </div>
-        `;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 4000);
-    }
-
-    // --- INICIALIZAÇÃO DO GRÁFICO (Chart.js) ---
-    let movementChart;
-    function renderCharts() {
-        const ctx = document.getElementById('movementChart').getContext('2d');
-        if (movementChart) movementChart.destroy();
-
-        // Agrupando dados fictícios para os últimos 7 dias baseados no DB
-        movementChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-                datasets: [{
-                    label: 'Fluxo de Materiais',
-                    data: [12, 19, 3, 5, 2, 3, db.movements.length], // O último ponto reflete o real
-                    borderColor: '#60a5fa',
-                    tension: 0.4,
-                    fill: true,
-                    backgroundColor: 'rgba(96, 165, 250, 0.1)'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } }
-            }
-        });
-    }
-
-    // Iniciar sistema
-    window.onload = () => {
-        updateDashboard();
-    };
-</script>
+</body>
 </html>
