@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -175,6 +174,9 @@
                     </button>
                     <button onclick="switchTab('historypep')" id="tab-historypep" class="tab-btn px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800 transition whitespace-nowrap">
                         <i class="fas fa-folder-open mr-2"></i>Histórico PEP
+                    </button>
+                    <button onclick="switchTab('transformadores')" id="tab-transformadores" class="tab-btn px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800 transition whitespace-nowrap">
+                        <i class="fas fa-microchip mr-2"></i>Transformadores
                     </button>
                 </nav>
             </div>
@@ -613,7 +615,134 @@
                         <p class="text-gray-400 text-sm mt-1">Busque um projeto na barra acima para auditar</p>
                     </div>
                 </div>
+                
+                <!-- Transformadores Tab -->
+                <div id="content-transformadores" class="tab-content hidden animate-fade-in p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">Gestão de Transformadores</h2>
+                        <button onclick="openTransformadorModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-md">
+                            <i class="fas fa-plus"></i> Novo Transformador
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="transformadorSearch" placeholder="Filtrar por código ou série..." class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full outline-none transition-shadow" onkeyup="filterTransformadores()">
+                        </div>
+                        <div>
+                            <input type="date" id="transformadorDateFrom" class="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full outline-none transition-shadow" onchange="filterTransformadores()">
+                        </div>
+                        <div>
+                            <input type="date" id="transformadorDateTo" class="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full outline-none transition-shadow" onchange="filterTransformadores()">
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar bg-white rounded-xl shadow-sm border border-gray-100">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-gray-50 shadow-sm z-10">
+                                <tr class="border-b border-gray-200">
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Data/Hora</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Código</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Série</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Descrição</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Nota Fiscal</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Status</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transformadoresTable" class="divide-y divide-gray-100 skeleton-target">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Histórico de Movimentação de Transformadores -->
+                <div id="content-transformadores-historico" class="tab-content hidden animate-fade-in p-6" style="display:none;">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">Histórico de Movimentações - Transformadores</h2>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="transformadorHistoricoSearch" placeholder="Filtrar por código ou série..." class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full outline-none transition-shadow" onkeyup="filterTransformadorHistorico()">
+                        </div>
+                        <div>
+                            <input type="date" id="transformadorHistoricoDateFrom" class="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full outline-none transition-shadow" onchange="filterTransformadorHistorico()">
+                        </div>
+                        <div>
+                            <input type="date" id="transformadorHistoricoDateTo" class="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full outline-none transition-shadow" onchange="filterTransformadorHistorico()">
+                        </div>
+                        <select id="transformadorHistoricoTipo" class="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm outline-none transition-shadow" onchange="filterTransformadorHistorico()">
+                            <option value="">Todos os Tipos</option>
+                            <option value="entrada">Entrada</option>
+                            <option value="saida">Saída</option>
+                            <option value="retorno">Retorno</option>
+                        </select>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar bg-white rounded-xl shadow-sm border border-gray-100">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-gray-50 shadow-sm z-10">
+                                <tr class="border-b border-gray-200">
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Data/Hora</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Tipo</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Código</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Série</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Descrição</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">De/Para</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Obs.</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Apagar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transformadorHistoricoTable" class="divide-y divide-gray-100 skeleton-target">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
+        </div>
+    </div>
+
+    <!-- Modal for Transformador Creation -->
+    <div id="transformadorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[200]">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-3">Novo Transformador</h3>
+            <form id="transformadorForm" class="space-y-4">
+                <input type="hidden" id="transformadorId">
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Codigo</label><input type="text" id="transformadorCodigo" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Serie</label><input type="text" id="transformadorSerie" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Descricao</label><input type="text" id="transformadorDescricao" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Nota Fiscal</label><input type="text" id="transformadorNotaFiscal" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Data/Hora</label><input type="datetime-local" id="transformadorDataHora" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div class="flex gap-2 pt-4"><button type="button" onclick="closeTransformadorModal()" class="flex-1 px-4 py-2 bg-gray-200 rounded-lg">Cancelar</button><button type="button" onclick="saveTransformador()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg">Salvar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Transformador Movement -->
+    <div id="movimentacaoTransformadorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[200]">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-3">Registrar Movimentacao</h3>
+            <form id="movimentacaoTransformadorForm" class="space-y-4">
+                <input type="hidden" id="movimentacaoTransformadorId">
+                <div class="bg-gray-50 p-3 rounded-lg text-xs"><p>Codigo: <span id="movimentacaoTransformadorCodigo" class="font-bold text-blue-600"></span></p><p>Serie: <span id="movimentacaoTransformadorSerie" class="font-bold"></span></p><p>Descricao: <span id="movimentacaoTransformadorDescricao" class="font-bold"></span></p></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tipo</label><select id="movimentacaoTipo" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required><option value="">Selecione...</option><option value="entrada">Entrada</option><option value="saida">Saida</option><option value="retorno">Retorno</option></select></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">De (Origem)</label><input type="text" id="movimentacaoDe" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Para (Destino)</label><input type="text" id="movimentacaoPara" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Observacao</label><textarea id="movimentacaoObs" class="w-full px-4 py-2 border border-gray-300 rounded-lg" rows="2"></textarea></div>
+                <div class="flex gap-2 pt-4"><button type="button" onclick="closeMovimentacaoTransformadorModal()" class="flex-1 px-4 py-2 bg-gray-200 rounded-lg">Cancelar</button><button type="button" onclick="saveMovimentacaoTransformador()" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg">Registrar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Transformador Details -->
+    <div id="detalhesTransformadorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[200]">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3"><h3 class="text-xl font-bold text-gray-800" id="detalhesTransformadorTitulo">Detalhes</h3><button type="button" onclick="closeDetalhesTransformadorModal()" class="text-gray-500"><i class="fas fa-times"></i></button></div>
+            <div class="overflow-x-auto"><table class="w-full text-left border-collapse text-sm"><thead class="bg-gray-50"><tr class="border-b border-gray-200"><th class="p-3 font-semibold">Data/Hora</th><th class="p-3 font-semibold">Tipo</th><th class="p-3 font-semibold">De</th><th class="p-3 font-semibold">Para</th><th class="p-3 font-semibold">Obs.</th><th class="p-3 font-semibold text-center">Acao</th></tr></thead><tbody id="detalhesTransformadorMovimentos" class="divide-y divide-gray-100"></tbody></table></div>
         </div>
     </div>
 
@@ -1055,6 +1184,7 @@
                         const pep = document.getElementById('historyPepSearch').value;
                         if (pep) updateHistoryPepTable(pep);
                     }
+                    if (tabName === 'transformadores') updateTransformadoresTable();
                 });
             } else {
                 if (tabName === 'dashboard') {
@@ -1908,7 +2038,144 @@
             a.click();
             toast.show('Timeline de Movimentacao exportada para Word.', 'success');
         }
+        // ==================== TRANSFORMADORES ====================
+        function openTransformadorModal() { document.getElementById('transformadorModal').classList.remove('hidden'); document.getElementById('transformadorModal').classList.add('flex'); }
+        function closeTransformadorModal() { document.getElementById('transformadorModal').classList.add('hidden'); document.getElementById('transformadorModal').classList.remove('flex'); }
+        function saveTransformador() {
+            const codigo = document.getElementById('transformadorCodigo').value.trim();
+            const serie = document.getElementById('transformadorSerie').value.trim();
+            const descricao = document.getElementById('transformadorDescricao').value.trim();
+            const notaFiscal = document.getElementById('transformadorNotaFiscal').value.trim();
+            const dataHora = document.getElementById('transformadorDataHora').value;
+            if (!codigo || !serie || !descricao || !notaFiscal || !dataHora) { toast.show('Preencha todos os campos!', 'error'); return; }
+            if (!data.transformadores) data.transformadores = [];
+            if (!data.transformadorMovimentos) data.transformadorMovimentos = [];
+            const id = 'trf_' + Date.now();
+            data.transformadores.push({ id, codigo, serie, descricao, notaFiscal, dataCadastro: dataHora, status: 'em_estoque' });
+            data.transformadorMovimentos.push({ id: 'mov_' + Date.now(), transformadorId: id, tipo: 'entrada', data: dataHora, de: notaFiscal, para: 'Estoque', observacao: 'Cadastro inicial' });
+            saveData(); updateTransformadoresTable(); closeTransformadorModal(); toast.show('Transformador salvo!', 'success');
+        }
+        function updateTransformadoresTable() {
+            const tbody = document.getElementById('transformadoresTable');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (!data.transformadores) data.transformadores = [];
+            const searchText = (document.getElementById('transformadorSearch')?.value || '').toLowerCase();
+            const dateFrom = document.getElementById('transformadorDateFrom')?.value;
+            const dateTo = document.getElementById('transformadorDateTo')?.value;
+            let filtered = data.transformadores;
+            if (searchText) filtered = filtered.filter(t => t.codigo.toLowerCase().includes(searchText) || t.serie.toLowerCase().includes(searchText));
+            if (dateFrom) filtered = filtered.filter(t => t.dataCadastro >= dateFrom);
+            if (dateTo) filtered = filtered.filter(t => t.dataCadastro <= dateTo + 'T23:59:59');
+            filtered.sort((a, b) => new Date(b.dataCadastro) - new Date(a.dataCadastro));
+            if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Nenhum transformador cadastrado.</td></tr>'; return; }
+            filtered.forEach(t => {
+                const dataStr = new Date(t.dataCadastro).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                const statusClass = t.status === 'em_estoque' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-700 border-orange-200';
+                const statusText = t.status === 'em_estoque' ? 'Em Estoque' : 'Em Campo';
+                tbody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0"><td class="p-4 text-xs text-gray-500 font-mono">${dataStr}</td><td class="p-4 text-sm font-mono font-bold text-blue-600">${t.codigo}</td><td class="p-4 text-sm font-mono text-gray-700">${t.serie}</td><td class="p-4 text-sm text-gray-800">${t.descricao}</td><td class="p-4 text-sm text-gray-600">${t.notaFiscal}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-semibold border ${statusClass}">${statusText}</span></td><td class="p-4 text-center"><button onclick="viewTransformadorMovimentos('${t.id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Ver movimentações"><i class="fas fa-history"></i></button><button onclick="registrarMovimentacaoTransformador('${t.id}')" class="text-purple-600 hover:text-purple-800 mr-2" title="Registrar movimentação"><i class="fas fa-exchange-alt"></i></button><button onclick="deleteTransformador('${t.id}')" class="text-red-600 hover:text-red-800" title="Deletar"><i class="fas fa-trash"></i></button></td></tr>`;
+            });
+        }
+        function filterTransformadores() { updateTransformadoresTable(); }
+        function deleteTransformador(id) {
+            if (confirm('Tem certeza que deseja deletar este transformador?')) {
+                if (!data.transformadores) data.transformadores = [];
+                if (!data.transformadorMovimentos) data.transformadorMovimentos = [];
+                data.transformadores = data.transformadores.filter(t => t.id !== id);
+                data.transformadorMovimentos = data.transformadorMovimentos.filter(m => m.transformadorId !== id);
+                saveData(); updateTransformadoresTable(); toast.show('Transformador deletado!', 'success');
+            }
+        }
+        function registrarMovimentacaoTransformador(transformadorId) {
+            const transformador = data.transformadores.find(t => t.id === transformadorId);
+            if (!transformador) return;
+            const modal = document.getElementById('movimentacaoTransformadorModal');
+            if (!modal) return;
+            document.getElementById('movimentacaoTransformadorId').value = transformadorId;
+            document.getElementById('movimentacaoTransformadorCodigo').value = transformador.codigo;
+            document.getElementById('movimentacaoTransformadorSerie').value = transformador.serie;
+            document.getElementById('movimentacaoTransformadorDescricao').value = transformador.descricao;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function closeMovimentacaoTransformadorModal() { const modal = document.getElementById('movimentacaoTransformadorModal'); if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); } }
+        function saveMovimentacaoTransformador() {
+            const transformadorId = document.getElementById('movimentacaoTransformadorId').value;
+            const tipo = document.getElementById('movimentacaoTipo').value;
+            const de = document.getElementById('movimentacaoDe').value.trim();
+            const para = document.getElementById('movimentacaoPara').value.trim();
+            const obs = document.getElementById('movimentacaoObs').value.trim();
+            if (!tipo || !de || !para) { toast.show('Preencha todos os campos obrigatórios!', 'error'); return; }
+            if (!data.transformadorMovimentos) data.transformadorMovimentos = [];
+            const transformador = data.transformadores.find(t => t.id === transformadorId);
+            if (!transformador) return;
+            data.transformadorMovimentos.push({ id: 'mov_' + Date.now(), transformadorId, tipo, data: new Date().toISOString(), de, para, observacao: obs });
+            if (tipo === 'saida') transformador.status = 'em_campo';
+            else if (tipo === 'retorno') transformador.status = 'em_estoque';
+            saveData(); updateTransformadoresTable(); updateTransformadorHistoricoTable(); closeMovimentacaoTransformadorModal(); toast.show('Movimentação registrada!', 'success');
+        }
+        function viewTransformadorMovimentos(transformadorId) {
+            const transformador = data.transformadores.find(t => t.id === transformadorId);
+            if (!transformador) return;
+            const modal = document.getElementById('detalhesTransformadorModal');
+            if (!modal) return;
+            document.getElementById('detalhesTransformadorTitulo').textContent = transformador.codigo + ' - Série: ' + transformador.serie;
+            const tbody = document.getElementById('detalhesTransformadorMovimentos');
+            tbody.innerHTML = '';
+            if (!data.transformadorMovimentos) data.transformadorMovimentos = [];
+            const movimentos = data.transformadorMovimentos.filter(m => m.transformadorId === transformadorId).sort((a, b) => new Date(b.data) - new Date(a.data));
+            if (movimentos.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Nenhuma movimentação registrada.</td></tr>'; } else {
+                movimentos.forEach(m => {
+                    const dataStr = new Date(m.data).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                    const tipoClass = m.tipo === 'saida' ? 'text-red-600 bg-red-50 border-red-200' : (m.tipo === 'entrada' ? 'text-green-600 bg-green-50 border-green-200' : 'text-blue-600 bg-blue-50 border-blue-200');
+                    const tipoText = m.tipo === 'saida' ? 'Saída' : (m.tipo === 'entrada' ? 'Entrada' : 'Retorno');
+                    tbody.innerHTML += `<tr class="hover:bg-gray-50 border-b border-gray-100 last:border-0"><td class="p-3 text-xs text-gray-500 font-mono">${dataStr}</td><td class="p-3 text-xs"><span class="px-2 py-1 rounded border font-semibold ${tipoClass}">${tipoText}</span></td><td class="p-3 text-sm text-gray-700">${m.de}</td><td class="p-3 text-sm text-gray-700">${m.para}</td><td class="p-3 text-xs text-gray-600">${m.observacao || '-'}</td><td class="p-3 text-center"><button class="text-red-600 hover:text-red-800" onclick="deleteMovimentacaoTransformador('${m.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                });
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function closeDetalhesTransformadorModal() { const modal = document.getElementById('detalhesTransformadorModal'); if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); } }
+        function deleteMovimentacaoTransformador(movimentoId) {
+            if (confirm('Tem certeza que deseja deletar esta movimentação?')) {
+                if (!data.transformadorMovimentos) data.transformadorMovimentos = [];
+                data.transformadorMovimentos = data.transformadorMovimentos.filter(m => m.id !== movimentoId);
+                saveData();
+                const detalhesModal = document.getElementById('detalhesTransformadorModal');
+                if (!detalhesModal.classList.contains('hidden')) {
+                    const titulo = document.getElementById('detalhesTransformadorTitulo').textContent;
+                    const transformadorId = data.transformadores.find(t => t.codigo === titulo.split(' - ')[0])?.id;
+                    if (transformadorId) viewTransformadorMovimentos(transformadorId);
+                }
+                toast.show('Movimentação deletada!', 'success');
+            }
+        }
+        function updateTransformadorHistoricoTable() {
+            const tbody = document.getElementById('transformadorHistoricoTable');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (!data.transformadorMovimentos) data.transformadorMovimentos = [];
+            const searchText = (document.getElementById('transformadorHistoricoSearch')?.value || '').toLowerCase();
+            const dateFrom = document.getElementById('transformadorHistoricoDateFrom')?.value;
+            const dateTo = document.getElementById('transformadorHistoricoDateTo')?.value;
+            const tipo = document.getElementById('transformadorHistoricoTipo')?.value;
+            let filtered = data.transformadorMovimentos;
+            if (searchText) { filtered = filtered.filter(m => { const transformador = data.transformadores.find(t => t.id === m.transformadorId); return transformador && (transformador.codigo.toLowerCase().includes(searchText) || transformador.serie.toLowerCase().includes(searchText)); }); }
+            if (dateFrom) filtered = filtered.filter(m => m.data >= dateFrom);
+            if (dateTo) filtered = filtered.filter(m => m.data <= dateTo + 'T23:59:59');
+            if (tipo) filtered = filtered.filter(m => m.tipo === tipo);
+            filtered.sort((a, b) => new Date(b.data) - new Date(a.data));
+            if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Nenhuma movimentação registrada.</td></tr>'; return; }
+            filtered.forEach(m => {
+                const transformador = data.transformadores.find(t => t.id === m.transformadorId);
+                if (!transformador) return;
+                const dataStr = new Date(m.data).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                const tipoClass = m.tipo === 'saida' ? 'text-red-600 bg-red-50 border-red-200' : (m.tipo === 'entrada' ? 'text-green-600 bg-green-50 border-green-200' : 'text-blue-600 bg-blue-50 border-blue-200');
+                const tipoText = m.tipo === 'saida' ? 'Saída' : (m.tipo === 'entrada' ? 'Entrada' : 'Retorno');
+                tbody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0"><td class="p-3 text-xs text-gray-500 font-mono">${dataStr}</td><td class="p-3 text-xs"><span class="px-2 py-1 rounded border font-semibold ${tipoClass}">${tipoText}</span></td><td class="p-3 text-sm font-mono font-bold text-blue-600">${transformador.codigo}</td><td class="p-3 text-sm font-mono text-gray-700">${transformador.serie}</td><td class="p-3 text-sm text-gray-800">${transformador.descricao}</td><td class="p-3 text-sm text-gray-700">${m.de} → ${m.para}</td><td class="p-3 text-xs text-gray-600">${m.observacao || '-'}</td><td class="p-3 text-center"><button class="text-red-600 hover:text-red-800" onclick="deleteMovimentacaoTransformador('${m.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+            });
+        }
+        function filterTransformadorHistorico() { updateTransformadorHistoricoTable(); }
     </script>
 </body>
 </html>
-```
