@@ -113,16 +113,55 @@
 </head>
 <body class="p-4 md:p-8">
     
-    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+   <div class="app-container">
+    <aside class="sidebar shadow-2xl">
+        <div class="px-6 mb-8 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <i class="fas fa-satellite-dish"></i>
+                </div>
+                <span class="font-bold tracking-tight">PEP LOGISTICS</span>
+            </div>
+        </div>
 
-    <div class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <div class="glass-panel rounded-2xl p-6 mb-6 shadow-xl">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
-                        <i class="fas fa-satellite-dish"></i>
-                    </div>
+        <nav class="flex-1 space-y-1">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn tab-btn-vertical tab-active">
+                <i class="fas fa-chart-line w-6"></i> Command Center
+            </button>
+            <button onclick="switchTab('materials')" id="tab-materials" class="tab-btn tab-btn-vertical">
+                <i class="fas fa-box w-6"></i> Materiais
+            </button>
+            <button onclick="switchTab('entry')" id="tab-entry" class="tab-btn tab-btn-vertical">
+                <i class="fas fa-arrow-down w-6"></i> Entrada
+            </button>
+            <button onclick="switchTab('exit')" id="tab-exit" class="tab-btn tab-btn-vertical">
+                <i class="fas fa-arrow-up w-6"></i> Saída PEP
+            </button>
+            <button onclick="switchTab('return')" id="tab-return" class="tab-btn tab-btn-vertical">
+                <i class="fas fa-undo w-6"></i> Devolução
+            </button>
+            <button onclick="switchTab('stock')" id="tab-stock" class="tab-btn tab-btn-vertical">
+                <i class="fas fa-warehouse w-6"></i> Estoque
+            </button>
+            <button onclick="switchTab('history')" id="tab-history" class="tab-btn tab-btn-vertical">
+                <i class="fas fa-history w-6"></i> Histórico
+            </button>
+            <button onclick="switchTab('transformadores')" id="tab-transformadores" class="tab-btn tab-btn-vertical">
+                <i class="fas fa-microchip w-6"></i> Transformadores
+            </button>
+        </nav>
+
+        <div class="px-6 mt-auto">
+            <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Operador</p>
+                <p class="text-xs text-slate-300 truncate">Pablo Leandro</p>
+            </div>
+        </div>
+    </aside>
+
+    <main class="p-8 overflow-y-auto max-h-screen custom-scrollbar">
+        </main>
+</div>
                     <div>
                         <h1 class="text-2xl font-bold text-gray-800">Pablo Leandro Martins Duarte</h1>
                         <p class="text-sm text-gray-600">Controle de Estoque PEP - Smart Logistics & Command Center</p>
