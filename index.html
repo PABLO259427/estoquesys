@@ -87,7 +87,92 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
         
-        .tab-active { border-bottom: 2px solid #667eea; color: #667eea; font-weight: 600; }
+        .tab-active { 
+            border-bottom: 2px solid #667eea; 
+            color: #667eea; 
+            font-weight: 600; 
+        }
+
+        .vertical-tabs-layout {
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            align-items: stretch;
+        }
+
+        .vertical-tabs-layout > .border-b {
+            border-bottom: none !important;
+            border-right: 1px solid #e5e7eb;
+            background: rgba(249, 250, 251, 0.85);
+            min-height: 100%;
+        }
+
+        .vertical-tabs-layout > .border-b nav {
+            display: flex !important;
+            flex-direction: column;
+            overflow-x: hidden !important;
+            overflow-y: auto;
+            max-height: 100%;
+            padding: 10px 0;
+        }
+
+        .vertical-tabs-layout .tab-btn {
+            width: 100%;
+            text-align: left;
+            justify-content: flex-start;
+            border-bottom: none !important;
+            border-left: 3px solid transparent;
+            padding: 14px 18px;
+        }
+
+        .vertical-tabs-layout .tab-btn i {
+            width: 18px;
+            text-align: center;
+        }
+
+        .vertical-tabs-layout .tab-btn.tab-active {
+            border-left-color: #667eea;
+            background: rgba(102, 126, 234, 0.08);
+            color: #667eea;
+        }
+
+        .vertical-tabs-layout > .p-0 {
+            min-width: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .vertical-tabs-layout {
+                grid-template-columns: 220px minmax(0, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .vertical-tabs-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .vertical-tabs-layout > .border-b {
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb !important;
+            }
+
+            .vertical-tabs-layout > .border-b nav {
+                flex-direction: row;
+                overflow-x: auto !important;
+                overflow-y: hidden;
+                padding: 0;
+            }
+
+            .vertical-tabs-layout .tab-btn {
+                border-left: none;
+                border-bottom: 3px solid transparent !important;
+                white-space: nowrap;
+            }
+
+            .vertical-tabs-layout .tab-btn.tab-active {
+                border-left-color: transparent;
+                border-bottom-color: #667eea !important;
+            }
+        }
         
         .movement-in { color: #10b981; }
         .movement-out { color: #ef4444; }
@@ -147,7 +232,7 @@
         </div>
 
         <!-- Main Content -->
-        <div class="glass-panel rounded-2xl shadow-xl overflow-hidden min-h-[600px]">
+        <div class="glass-panel vertical-tabs-layout rounded-2xl shadow-xl overflow-hidden min-h-[600px]">
             <!-- Navigation Tabs -->
             <div class="border-b border-gray-200 bg-gray-50/50">
                 <nav class="flex overflow-x-auto custom-scrollbar">
