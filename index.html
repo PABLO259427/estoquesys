@@ -1514,6 +1514,15 @@
         }
 
         function getSucataMaterialLabel(materialId) {
+            const categoryLabels = {
+                'cat_ferragem': 'Ferragem',
+                'cat_louca': 'Louça',
+                'cat_ferragem_louca': 'Ferragem e Louça',
+                'cat_cabos_cobertos': 'Cabos Cobertos',
+                'cat_cabos_al_nu': 'Cabos AL Nu',
+                'cat_cordoalha': 'Cordoalha'
+            };
+            if (categoryLabels[materialId]) return categoryLabels[materialId];
             const mat = data.materials.find(m => m.id === materialId);
             return mat ? `${mat.code} - ${mat.description}` : 'Não informado';
         }
@@ -1526,7 +1535,15 @@
         function updateSucataMaterialOptions() {
             const select = document.getElementById('sucataMaterialId');
             if (!select) return;
-            let html = '<option value="">Não vincular material</option>';
+            let html = `
+                <option value="">Não vincular material</option>
+                <option value="cat_ferragem">Ferragem</option>
+                <option value="cat_louca">Louça</option>
+                <option value="cat_ferragem_louca">Ferragem e Louça</option>
+                <option value="cat_cabos_cobertos">Cabos Cobertos</option>
+                <option value="cat_cabos_al_nu">Cabos AL Nu</option>
+                <option value="cat_cordoalha">Cordoalha</option>
+            `;
             data.materials.forEach(mat => {
                 html += `<option value="${mat.id}">${escapeHtml(mat.code)} - ${escapeHtml(mat.description)}</option>`;
             });
