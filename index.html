@@ -305,6 +305,33 @@
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div class="bg-amber-500/10 rounded-xl p-5 border border-amber-500/20 shadow-inner">
+                            <p class="text-xs text-amber-200 uppercase tracking-wider font-semibold mb-1">PEPs Separadas</p>
+                            <h3 class="text-3xl font-light text-amber-300 dashboard-skeleton" id="dashboardSeparatedPeps">0</h3>
+                        </div>
+                        <div class="bg-rose-500/10 rounded-xl p-5 border border-rose-500/20 shadow-inner">
+                            <p class="text-xs text-rose-200 uppercase tracking-wider font-semibold mb-1">PEPs Atrasadas</p>
+                            <h3 class="text-3xl font-light text-rose-300 dashboard-skeleton" id="dashboardLatePeps">0</h3>
+                        </div>
+                        <div class="bg-sky-500/10 rounded-xl p-5 border border-sky-500/20 shadow-inner">
+                            <p class="text-xs text-sky-200 uppercase tracking-wider font-semibold mb-1">Programadas Próximas</p>
+                            <h3 class="text-3xl font-light text-sky-300 dashboard-skeleton" id="dashboardUpcomingPeps">0</h3>
+                        </div>
+                        <div class="bg-emerald-500/10 rounded-xl p-5 border border-emerald-500/20 shadow-inner">
+                            <p class="text-xs text-emerald-200 uppercase tracking-wider font-semibold mb-1">PEPs Retiradas</p>
+                            <h3 class="text-3xl font-light text-emerald-300 dashboard-skeleton" id="dashboardRetrievedPeps">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800/40 rounded-xl p-5 border border-slate-700/50 mb-8">
+                        <div class="flex items-center justify-between gap-4 mb-4">
+                            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider"><i class="fas fa-calendar-check text-sky-400 mr-2"></i>Painel de Programação das PEPs</h3>
+                            <span class="text-xs text-slate-400">vermelho = atrasada · amarelo = separada · azul = próxima · verde = retirada</span>
+                        </div>
+                        <div id="pepSchedulePanel" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 dashboard-skeleton-list"></div>
+                    </div>
+
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-slate-800/40 rounded-xl p-6 border border-slate-700/50">
                             <h3 class="text-sm font-semibold mb-4 text-slate-300 uppercase tracking-wider"><i class="fas fa-wave-square text-blue-400 mr-2"></i> Ritmo de Movimentação (7 Dias)</h3>
@@ -492,9 +519,31 @@
                                     <input type="text" id="exitRequester" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" placeholder="Nome do responsável">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
-                                    <input type="text" id="exitObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" placeholder="Destinação exata...">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Status da PEP</label>
+                                    <select id="exitPepStatus" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500">
+                                        <option value="separado">Separado</option>
+                                        <option value="retirado">Retirado</option>
+                                    </select>
+                                    <p class="mt-1 text-xs text-gray-500">Use <b>Separado</b> para reserva pronta e <b>Retirado</b> quando a equipe já levou o material.</p>
                                 </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Data da Separação</label>
+                                    <input type="date" id="exitSeparationDate" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500">
+                                    <p class="mt-1 text-xs text-gray-500">Quando o material foi separado no estoque.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Data da Programação</label>
+                                    <input type="date" id="exitProgramDate" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500">
+                                    <p class="mt-1 text-xs text-gray-500">Data prevista para retirada da PEP.</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
+                                <input type="text" id="exitObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" placeholder="Destinação exata...">
                             </div>
                             
                             <button type="submit" class="w-full py-3.5 mt-2 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition font-bold flex items-center justify-center gap-2 shadow-lg shadow-rose-500/30">
@@ -1168,16 +1217,48 @@
             }, 300);
         }
 
-        let data = { materials:[], movements:[], pepAllocations: {}, sucata: { entries: [], certificates: [] }, trash: { entries: [], certificates: [] } };
+        let data = { materials:[], movements:[], pepAllocations: {}, pepStatus: {}, sucata: { entries: [], certificates: [] }, trash: { entries: [], certificates: [] } };
         const COMPANY_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAABDCAYAAABgHpvkAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAABZ0RVh0Q3JlYXRpb24gVGltZQAwNi8xOC8xOeUeWuAAAAAcdEVYdFNvZnR3YXJlAEFkb2JlIEZpcmV3b3JrcyBDUzbovLKMAAAeYUlEQVR4nO2debzdZJ3/3885twuYtrQdQJDdAh3AAYVGASUEEYFhF5eRVeX3cyZVR1AIiij8ECQFBmUJg+IC+ANXBgQRHCFNAdGUZdgX2QqyCFKgN4W2t72ZP75JT865SU5y7jntbTmf1+u8bm6W53myPN/nu39VFEX0CobpbgU8BgyMsqkVwBLgdeBlYEHc7l3A7b5nvTTK9vvoo48MqDWEQKQRxb/lwJvA34CHgHnALb5nPdjFvvro422NNZFAtMOfgcuAK3zPWrYK++2jj7UOtdU9gB7g/cAPgPsN0/3E6h5MH32syVgbCUSCbYGfG6Z7uWG6667uwfTRx5qItZlAJDgamGuY7vqreyB99LGmodc6iBnAX3rWQTX8D/BB37MW97KTPUx3vIJ1gfGA6mVffawxiBiOXvH92SMmm2G6NWDMLl69Vh7+HTiVzjiVGjABmAxsAGwCbAls2OFYdkJ0E5/u8PpMGKa7I/AR4APADAXTAQ0YR59A9CF4nZp6D7Aw49jGwAPIgjLm0FMOottQGz05fo+ZN+8I7A8cCczooJkP+55162jHYpjuzsBZwD6jbauPtR4hsIXvWa+2HjBMdzPgacaouN8RBzFo6xMVTAEmAesgq2XPUCOiroaj6N+ff4qTX5oPzDdM1wFs4LSKzZ0MjIpAGKZ7HHAJq9Z828eai+WI707R8THJQZT6wENbfzewF7A7sJ0Stmg9RNbuORs9jGI4qjP02mZf1OAiAN+zlgCnG6b7KnBhheb2Mkx3K9+znupkLIbpHoGIKn30URrRmsSqp1DI1oS2vl9o6zcBjwDfB44BZgHvAt7Bqpexh1t3+J51EXBthTbqwL6ddG6Y7ibIc+ijjyoYQLiELCxnDHOimQMLbX0qwkJ/ctUOp2N8EziI8nLcboDbQT82wjWVxZvAIuAtmolbFmFdFftWZZu93j+WxlK0H2CRUmqKYbqtC5xCxPTXWVNEjNDWtwRuBGau+uF0Bt+zHjBM9zHgH0tesk3VPmJnqzKemSuAS4GfAY8Di4aHh5fWhmsRwPLasBJaUaNGjQbdkO1araaa90FDfFUqtb3yWNT4NuPjjWOqsa1ar2vZzvzAh4cjlMr7+FVLu8lIVGosjWONe8jsH0BJa/J/qtOiyVdqwkaNflR6r8p8BiOescrpRongEMVnZ50fgVKTEL3XehltvADsAAzl3MdqRROBCG19Q+RGtlgtoxkdHqc8gXinYbrjK8ZqzETMrUUIgf18z7q94Jw1Uhbto3MYphsC70S4hVYM+Z714ioeUmmsZMkH7VkAv2DNJA4Az1U4dwriX1EFG5c45+w2xKGPtycmAHmL0ZBhuj21Ao4GKzkIhZoN7LEaxzJaZDmh5GEiYp6tgnYEZQi4qmKbHcMw3fGAjgSnbY8QMA3hUBYhBPN+4E7fs+7toP2TKEcU04iApcBrwF8Rru4h37PerNp/xnhqiGg4E1nE1qe8FW1JRHTGPG92oRetYbo7IM9yM2AanTu7XeB71oLU/6rDdnJhmO5hdD5flyPfyAvAE8DDvme9nHXiAEBo6+siir6xjgkFx1ZUaKdG9zXHi4j4e5fbHIHYff3/Ah+nJLdnmO5DwNXAZb5n/a1kV18ANu1kjC14wTDdm4ELOyRUW8VjOQDYehTjOA/IJBCG6R4LfBnYcRTtp3E9ktQoQZLDpJv4Z+CzXWprUfyOzvQ96770gWSSHEJ7+boIrwFPAS8iK/mbND8QhUxK1fKruu/hUYwxja5T9Bg984YzzItroM4ATkA4oCrYHvg2cIJhuqf7nnVBiWtepzsEYmPgM8Axhul+zfesOWUvNEz3eOAMxKQ+GiwiY4J+yHCp1fgJYr7vJpqtFaIL7fb31s2YosnIgnOIYbrH+551cXIgIRCd5k34E/AfwC2aE1Rh8XuB1R330CuiE1tQ1HXA3qNsahrwPcN03+t71me6MLQqqAGOYbrLfM/6btGJe+x5MUqpn9D9ids8oBpn9qiPZu5U9e7b6DLGARcZpjvZ96zvANRCW98O2LmDxr6lOcGumhP8cgwQh7UWsQLrBkZPHNI41jDdK7rYXhWca5huoaiglLqa7k7cERyIYbpbACd1sY80Wn0aeiFiFInbo8VZhul+EITSHQL8Q8UGvq85wf/r+rD6yMKlgNnmnGcAH0nvV0NEij0Qj9c8HGWY7hO+Z1V9jxHwIKKMbMU4hEspEk3qwL8jeoURMEz3NOBTbcYwjIizr8XjaDf5FjPSz+BjtNdDvQ68FF+fdo7I+4E8/7ClnV5wD38B7qY84VGIaDoN2KjE+ScDBwwgWvAqZpZFwNcqnN9HhzBMd29Efs/DEsS78/txbEr6Wg34NyTiNG8inGaY7i98z3q0wrCWAx/Ns93H1pUdgO8CH8ppY1/DdOu+ZzUplg3T3RL4RkHfy4BvAb8CnvM9K4tIlcV2BceeB04EbvY9qxvccddFDN+zzgXOrXqdYbrrAJsDRwBfJ19v9gHDdI0BJDVbFeXajX2RYpWhaHUPgX19z7oj66DvWSFwjmG6DyAiSj3jNIXk6ziiwpgiChaU2PnsHsN0PwM8SjZx2hzhbp5t2f+vOeNM8Cnfs/6rwliLkGe2HgIO7MTiUoC02+hqhe9ZbyHv5VTDdBeQH3i4HnDMAGI6qjL4W/IOhLY+BfEv6Ka8pYAhzQlGxNKvzTBMdzdg14JTvpBHHNLwPesmw3TPBk7JOeVww3RP9j2riqNZ2+9lWbT0yfFqwjNk5+wYQNjclQTC2PNihVIHFTR5QxeJQxH+3GXiAM2+5mMGvmddFluKsripGrDHANUpWxE7ej69CfC6DwmwejvhyIJjD/uedXmFtv4D+BLZrr7jgUOBMqZPKPmx3zn3eAzTfZH8pD7NikOlNi84F8TLd1XgsR60OZatGPPIJhAK2LSqs1CEVLbKwzpUi3Ysi9Hawdco7G5cyECtXkQQf1WlPd+zFhqmOw9xrsnCbpQnEFD+Yy+KdWkVa2dQrDTcwjDddsraLChgeUR05zxvdpmAqF7kLO25iLHHnq5SaqXoNg2Zi0XiWjKuzQuOj69KIJYhTlB5GJGvoUuo4iW5xmOgVp+M5ODMw/wOmr2LfAJR9JG0oorJrsqkaKdZH43VbBgJlnqlxLm9iKrsmYhhmO5OwOeU4qNIztaueghXbWyY3hGBPhqYTDHX1Ekt0r+26a8sekUgqgbPVUFI+THnJXYZDbouYsQcw/mIybhnGLOZbN7mqFNsWepklSti99uxomn0ilUeK99iL7jVrosYSnEl1axPHaFq7MBYVrasbnTTW24JxRNa66DNohX6rQ7aK4Mq38pofBq6iV5wyEXPofI3E0dy9pw4wNih2msDal0LyIlYiGIh+YRga6CtiTPjmjy8UKGdXokYvYyEraI47wUH0U4HUZVIfLlNW88Bb1BM7AaQ0PlC7rFPIMqj3YczCUlE8/poO/LnWkNxiPZmOafsA/ykYrNFVpH7Co61olca+WfaHD8FMclVhUL0CmXfSy84iKJnpqrQB8N034nkAcnCuYjj09O+ZxWKoYbpTkGeeVYavJXoE4jyaOc9mnilLmhzXln8Dtgv59iBhulukJfkoxWG6W4PvLfglD9UGFcVjXwVQvIo8oyn5Rx/ehVl6+qFsrRINJ8Cal0khKEMtiM7UOsW37NOrDCmUnqnMVnNZ4xiAe0nxle72N815MvlGuBUaOsC8j+I54AqE68XkYmJa3iR2JRnou028lbn0aCIUK6HlIUsi+k5+/+nQhvQyLHS9qQ+yuEp2nMHHzFM98Ju5Bj0Pet5JIYiD8caplsU2IRhuhMN0/0pUvQoD27F5L1QnjOoKor8uODY4Ybp5gV/dYIlOfs/ZJhutzI1JXiTYiXsGRXayht31TKUpQh9X8QoCd+zlhum+2vgK21O/QKwt2G6VyIh2AsQ9nFZFEXDjHwpClgxb+7sLB3HacBh5E+0MwzT3RU4m4g/+XNF7jRMdxpSHOgUiqMWn6WaByX0iIOIW/4NikfIzk4+AbjJMN1vI4TzRWBxFEUryoxnOIqGbvebIsyLiP0PDdPdC/glEtr+d2BJ/P7aQQFD8+Y2KnlHKgpVpF4gP63CHobp3oJwhY8i+pKlcTWu5fPmzk73+3xOG/sbpntUFPHTeXOtMu9nsMQ5axWBWBXBMOch+SCzYhrSmAmcGW8vQxx1liql8hSdVyFh203wPevBOHnsOQV97Q/sj2KBYbovI5GWW9BG+RTjmA4SyvZKB4E/11phmO5s8munrouEr5+FfOCLlVJlHJsGa4rdkfwRK7sjP4ANxIx4BKK0fAN4SylVVoF5MHBP8s+8W2djmO4dwD8VXLNX/BtC7m1J3N+XgHSQ2sMIcWz1PB0HXKEUpxqm+wLFZvIIicFpG8KwNhGInsP3rBcN0z2KaqX+xpOveEuwfkGf5xqm+y6KTVsg7tJVXKaP8z1rboXzE/Q0rsD3LM8w3W/S3rV6Eu0JdYKljNTB3Ao8ALynzbU1YGr8K4usnKGXIfk52iFJupOgSWnqe9YSw3QvRxK6ZGFrRpfctwlrkw5ildQW8D3rOkRhVjY7dBkUroK+Zx2PpEfrho3+NeBw37N+2OH1vfKDWAnfs84AvtPJtTkYIf/HyWqOpJmr6BZGPB/fs+4B/rODtrK4lrOQkgI9x9pEIPK0u12H71k3IprnSygOXutmn+cghZN/02ETQ8CVwE6+Z/16FENZJbkNfM/6OnA4PZwIvmfdj+Tc8HrVRwu+SLO40BF8zxpEfGEeHPWI2qDbBKIsy1cVZeTpd/eo70z4nvWS71kWogT8KpJIp0y0YBZKuU77nnWv71kHA+8D5iAOTkWy5mLgNoQd3cH3rKN9z2rN4pSHPJa6TBhxuzagBMcXE7IdgWMRv5BOkwZNJoeb8T3rMd+z9gIORHJOdKMMXqbo7nvWct+zDkMU2Y+UbCuzxEFcmOcDCDdRFIg3KnRbB/FzJJlmt1H4AAzTnUg1W3LXNPHxizoPOM8w3UlIwtaNEI5mMjKhksQ8WX0qpAJWlT7vBe4FbMN0N0dkzk0QQhohbPMC4DHfszqJ/ATJV7h+y5gVwomUZcvPQOpiZFluHirTQJxr83Lg8tj7b2vEwzRdWavoXSpExCjU2vuedQNwQ1ykeRtE0Ts97qPo/bX2BVKtqqiviw3TdZFvdmZ8LwMZ7dco8A3xPWsxcIphumfGbc1AiHK9xFhLQQ2eNGuY8rLiEmCG5gR5ppbVAsN0DwKuq3DJq8C7fc96o0dD6qOPtQJriw6iatnAhcPRcFnX1j76eNtijScQhumeT/XCP0/dNvcLYy6JaB99jDWssX4QhunORGzlH+/g8tzM3FXxuv0+1RrlXY9qkTZnfnJspew6xbk7lyi9Ye9co+FjMDzFuZtF9i4sY5kal6HPy2tr0J7FMMOZImNExHrOPaUJY2pMACoiGl7PuSfz3GftGUxhStP5U5y7hwFes99LjVoNiBayMNrSebq5n6/uzIr6ClWnroAoubc37J2z7mNluzljhnjhU6jhyc5dyf6VbRW9h9b7rlGLJjnZGf5etXdkgIGmMUZE0XrOPSy0d6JOvRb3N2K8gyfvwnAUKdo817KIM8pvgMzpcDjir5PnBG3fdcs7Tt8HA9SjNYZAxIrIjRFT38eQimCd+D4sA342mrGEtv4JJBP0zAEGWi03LyEeccsGGPgx8MHUdcdpTjA3o73v1Kl/ggaBOBG4pkZt+kQmemTkMwhtfQXiwn0/8D3NCe4HUKhN6tT/QDbxj0JbX4Q4CJ2rOUGTmSy09c2A/xOPeaM69XE0V5Q6m1QdhdDWdwGOBnaZxrTpNCvaVGjrR2lO8MdxjDsSOB2I1mf95aGtH6o5wUotfr1e36BO/VZEoftTpDgOdeq/Y2SMgQptfQjJYeEBl2pOsDKqtU79X5BCxSDp2G4I7VlT4/YnxeMeBPbUnKBJBxXaeh347zr1JMx+OVLy8K+pc/YEPg3sNIEJ6zFSIbg/8Ph4xp8AzI6f+WJgH80JVvrOqKg2sy4u4wr4Vmjrf6a8A96PNCc4Lx7PXoj7//tpmPqHaoqnQ1v/LXCW5gQrc22Etj4AHI/48mxUp55nkXoEok90ktU6lyrF7H5eDoOqSEqFTUK089OADamWHi0LP61YA6IJoa3/hOK6kZvRUPpuQbP59QhgblN7J+kTUHyW5urqiXlwACmjVyQK7gIcEdr63poT3I54bm5beBNiJj0ktPVdNCd4AiC09Z2Bmyn2J1lZyi+09SMQv4p2kYrEbW6V2n8eMpES1JH4ixqyCCTYuuW6NLZFShL+W2jrB2tOkCzz01LXJP3XEXN0umbm3kCrP8gsRpY5XHlNaOtfoX01q8R9ecOWsZ+BuOmn202+jamIxasobiaNGfF4ZgMXtRxbFre9Tfw7KLR1I2VYuBrxL2mHdwD1bnMQh9E9AtELhFRXaDYulheSEIcXgAuROgoraEyUt2jkjGz1UdgvtPXxmhM09is+SDNxgGaPybeQl3UrcEWqn+kIF7M7Esh0DuL0swJZ+QaAGxHbfnKNhjjYHIgktzkBsEJbXwcJTEqIw68Rq9AbNBOAh+LnsDWSsEYhnn7/icQ2LGk5P5m0rZ6i+8UELclDsQLx2ZhEc77NJHLxIcTsmohr6wJ7Ap9HTMpXhba+neYEQy3PrvU5pgnExxhJID7W8v/yuD9CW9+VBnFYgrz7AHnH6Xt+InVtGp8Lbf2CFNeWPj4xvu5faCzA2yNVz0De4TXxtgIeDG19Js3E4QyE+xpECMPpgIEQoUuBA0Jbfx8N4vB6fP1TZC/6C4ElA4gnYNm6EzWKV7OxbhmYHYdRV8agrdeVsGYg92kkq28JPIx8yO9C2Pd0MFLywp5BJnBexN99mhM0FcsJT5p1Pko9jRDl94a2PplmojS/9RrgotDWn0HiNraP9x2MpEwH+LHmBO3CnS0aIsyXNSe4sM35Cd5E8k9sC5wX2vqOmhNA+2zpL2lO0OpB+rNYJDgOWVEPYuSEz8K9SPKcfUJb1zQnCAFCW6/FbYA4Mc2Mt5PJc0Lq/6M0Jyhbm+S1+LcVQmD2jfen73dCLO6sFH1jji4hEIHmBD9PNxra+vmpf8/XnCC98L0Y2vp+SGToZsA/h7Y+HSEcCU7VnKCV+xiBGuI5VlZxNZ7epifvJc7yPavjkvdK2L+EJby1AnEAIRBJUpaVq9SgrY8DDoj/vZ5iZ57WkvJoc+YP08h0lUTnpT+8vPeaiGnJuWl2/7sFYyC0dQV8OP530fAwFxed34IB5KN/DYlsTAoTRxQTiDxd05Wp7QNTbRXhvxEiNZ3mPBk7IxNoCQ13dgUsHzxJr9HQJS2oQBxAOIWT478fDW19n3h/OvQ/a8zpeZaVUzPJjbGMjHemOcFbNOvadqe56nhWVqoRGEA+3i0pJ9srpADJw2UaH0P4Vgdl7luxZWp7VmjrN5Etf79CxLHanCDNQg4jPvgHIqzelzUnGFLy0jZBXvKNCIuZh1po6yqKIoaHI2r12rpKLDgJF/BqBK8oeT8Jdgtt/V9pZs33o1GU57b4b1pWdkNbD3Pu7ZI4Z0OiJxhfq3FTaOt5znYna06QrnM5HhE7HETh+e3QnnUVqLfozPPvbzQUu5vG+9q18wxixToW4d4SYnBY/Pee+Jc8syGlmE6Ds5sW2vrvyOekP685wTOp/6cibuI/QnQQ5yERpMuQ76KyTi209URhD/B8FEV5nsZp08h74jEkODO09fczMlnwYuCBCK6c5ATRAPAn4COIBrkMZpIfrz/W8AIiVlQJz85DWgx7FymFXQaOo1nGnIZorJchLN+uSALWRLy4C4mrKIplOQL4qFJK1esqQsSRtO7iyklOsDwUriTBPvEvC/chtVSh+d3vXjCGO7Q5wbWhrSfczETk28nDRQhLn8Y0pFboCcDGoL6iOcFZMZGpimU0CERZn54BRKY/Fth30NYnTHKCpYhVDISTS6wbiVI+cbcGWdn3JR/TaU7AW0Pe1TeAo4AdQlv/dBRxreo8aH4CDY7yrUnCSWYhXUZwQ80JXgxt3UFyj0ygwEVAwcdDW//sADLZv0R5AnEo4JY8d3UhROLvz/Q9q1vp1NOy/T2IUi8Lg4wsbDNFc4JXQlu/E1EcHYwQiES8uBZ5mUVm28lki3crgP8PfC3j2N9oZCCaTiNfxCXA8ZpMDFrG+z2yK3cp4PcxcUiUf4OIcjQrg7JCzKmteIfmBEOhrZ+KKM/s0NavidvK07/kYQINzqVsMaHpiFL1TWB9BbuEtv48DZ1DEiCWQNFY7WvIszmffILUGgyngMmaEzwe2vp5CKE4UynujsfQSYDjUhoh7FNDW5+oOUFWKrp0sNwggOYEJ4e2/huEsG9Ms2k6UWJPRb7NSweiiPlK8STNrGkR9g5tfc8sez6rt6jOUmS1uha4ajSmzBykdQ7Pak5wdoVrE3nvVwiB2DO0dYPGhP0v5EMpWgV/jxC99DNeCjysOUFegNyPNCf4OkCspHoUmYQ7pogDiCb7/fH2DzQnyA2kGrRn1RTqBWITouYEVfIpQuMef4CEP++ARCRWzYsJ8oEnzyMhau2+wSkxgZqL6F4OoJHb42nNCf4S+zokbY2L4EUlrPgGwFLNCeZUGGOauzkb+Bxi/v4mspBVJhCaEyyJidrGiDl1M7LD4melth9NXf9H4I9ZbYe2fgiNkPSDa5PmBMNUFxmuCG19w4z9vXa8WoqYZxYgbPk1iFPMocA2vmft6nuW0wPiAGJqeybe/nBsZiqLhDO4DhE9tqOhWHo4VnhOade/5gS/1JzgF6nfdQXEAVIER3OCVxHTF4huIl3T8bep7ZOKBjHJmT9MwxN1Umjr7TJdZY5Jc4KIRhbwQylOuprHHXw+tZ0ogdsRiIRYJxzgkUj4NTSSBKe56YFJTrAi1f7moa1/sk0frUjueTHCQYA4W7Wat6sgMRHXyNBdhbY+lYYIEVE+c3k6v8lQMqGvpmFSKYNNgXmxZ2Ci6GLR8gkHrVsf0upquJusRIR8IEsRW/biKGJw3lyrF0VWc6GJfP9tZBWfBMwNbf0yGoqyBCERV2hCeBOMHzxplpo0Z/5zoa3/CdGIJ+HpSRRqO61yZl6ANmh9DZcgk2Fb4LTQ1q/SnOAVhK0+BXFWOjp2272NkX4Nd8RKx/MRPcs6wPmhrW+PENChlvOv1ZygVYGWJlo3h7b+e4StLVLWbR77oCSKw3UQLX5ilnwWSTVQBslzvhGZDOkq6omvQVrUS+7nOzQUmVeEtr478CRC8NP3fHVMjNNIc4Y/QkT6HRmd099liMftAPCN2JflesRCNBPhUBKp4FeaEzwNENq6Rb4z3HSanaguHQDQnOCR0Navp2EqKoNtECJxA0Jg7rj3tmCVpMFaXdCc4IehrW+LvJgNyU96ejVC0BLz1DSFGoew0b8m5X5Ng51LE4jkA1U0lKNlCYSiwck1ER3NCVaEtn4iorlfD7hw0YmzPjX5nPlLYtbyNwjxODj+teJM4F7NCZ4Obf1wxDFnKkIssrAAcVNOT7hWQvgVmnUV6ftM7n0GIz0GE9wNfDrlNp3uK3kOigYrPxVAc4KXQ1u/nYYS92UabLeWul7F598V2vqxiP5iIiIeZeFOJJ1A1vtEcwJCW/8qYm5NMMKETTPxGGnidoKnQls/BsmVMYAoHkckPkaeTzoX5hzK+T1dA5ycFgmORxQXVVeqA+LfUOyA8wxiPViIKN5WeqNVgAIe1JxgNKnRegLNCU6KlTyfRIhk68N+mYZNfz5yL39P1e28BlmJ6sCLRNHd8f6QxgearLpLEVZyXUomWEG4rHnIR/NYxvivjzmf7YBNazW1GaJTeTz2tPsMsAdCAFtjMR5OtXNjaOv/hFgDZiETL71SKhrZmZ5N3VtThTLNCR4Mbf10GtaQ9H3ejihZs5LWvAR4EVwWiwAJnkv1lfS/DJmQk1rav4QGMfhtysM1Ge9yUoWNNSe4PFY0H41wgFMYyaUlyXQej9uIaPY/QHOCP4S2fjGNamdPMhILU/eRdRzNCa4Kbf1hhCPZFdFJjEMc+Z5AuNMLWvRN1yE6kKw5OYxwxLciuqjlSlLvC+JVIU87v6rxW80JDmh/2pqB0NaJvQbHFEJbV7E+oI81HLHeYRwQak7QlVypTQQi7uQYpMLR6rRIAPxMc4Iix6E++uijxxhhVot99/eme0Vo++ijjzUUmXZ3zQluReSjiyjvgNJHH32sZch1zNGc4DXNCb6ImGMuItu7ro8++liLMUIHkYfQ1jXE9vxhpET6Vojmejyike+2zqKvg+ijj9WM0p6Pcdz87+IfsUlsN4TDmIGYWKYjZqPxrH4lZx999DFK/C9EAi/qbN+SxgAAAABJRU5ErkJggg==";
+
+        function getOverdueSeparatedPeps() {
+            if (!data.pepStatus) return [];
+            return Object.entries(data.pepStatus).filter(([pep, meta]) => {
+                const baseDate = meta?.separationDate ? new Date(meta.separationDate + 'T00:00:00') : (meta?.updatedAt ? new Date(meta.updatedAt) : null);
+                if (!meta || meta.status !== 'separado' || !baseDate) return false;
+                const diffDays = Math.floor((Date.now() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
+                return diffDays >= 14;
+            }).map(([pep, meta]) => {
+                const baseDate = meta?.separationDate ? new Date(meta.separationDate + 'T00:00:00') : (meta?.updatedAt ? new Date(meta.updatedAt) : null);
+                const diffDays = baseDate ? Math.floor((Date.now() - baseDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                return { pep, diffDays };
+            }).sort((a, b) => b.diffDays - a.diffDays);
+        }
+
+        function showOverduePepAlert(force = false) {
+            const overdue = getOverdueSeparatedPeps();
+            if (overdue.length === 0) return;
+
+            const currentKey = overdue.map(item => `${item.pep}:${item.diffDays}`).join('|');
+            if (!force && window.__lastOverduePepAlertKey === currentKey) return;
+            window.__lastOverduePepAlertKey = currentKey;
+
+            const top = overdue.slice(0, 3).map(item => `${item.pep} (${item.diffDays} dias)`).join(' | ');
+            const extra = overdue.length > 3 ? ` | +${overdue.length - 3} PEP(s)` : '';
+            toast.show(`ALERTA: PEP(s) separada(s) há mais de 14 dias: ${top}${extra}`, 'error');
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             updateAllViews();
             setupKeyboardShortcuts();
+            setTimeout(() => showOverduePepAlert(), 600);
             
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('exitDateNeeded').value = today;
+            const sepField = document.getElementById('exitSeparationDate');
+            const progField = document.getElementById('exitProgramDate');
+            if (sepField) sepField.value = today;
+            if (progField) progField.value = today;
 
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('#entryPepReturnWrapper')) document.getElementById('entryPepReturnDropdown').classList.add('hidden');
@@ -1208,11 +1289,12 @@
                     data.materials = parsed.materials ||[];
                     data.movements = parsed.movements ||[];
                     data.pepAllocations = parsed.pepAllocations || {};
+                    data.pepStatus = parsed.pepStatus || {};
                     data.sucata = parsed.sucata || { entries: [], certificates: [] };
                     data.trash = parsed.trash || { entries: [], certificates: [] };
                 }
             } catch (e) {
-                data = { materials:[], movements:[], pepAllocations: {}, sucata: { entries: [], certificates: [] }, trash: { entries: [], certificates: [] } };
+                data = { materials:[], movements:[], pepAllocations: {}, pepStatus: {}, sucata: { entries: [], certificates: [] }, trash: { entries: [], certificates: [] } };
             }
         }
 
@@ -1233,6 +1315,7 @@
             try { updateStockTable(); } catch(e) { console.error('Stock Error', e); }
             try { updateHistoryTable(); } catch(e) { console.error('History Error', e); }
             try { updateSucataViews(); } catch(e) { console.error('Sucata Error', e); }
+            try { showOverduePepAlert(); } catch(e) { console.error('PEP Alert Error', e); }
         }
 
         function getAvailablePeps() { return Object.keys(data.pepAllocations).sort(); }
@@ -1491,6 +1574,132 @@
         }
 
 
+
+        function normalizePepStatus(status) {
+            return status === 'retirado' ? 'retirado' : 'separado';
+        }
+
+        function formatDateBR(value) {
+            if (!value) return '-';
+            const date = new Date(value + 'T00:00:00');
+            if (isNaN(date.getTime())) return value;
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        function getPepStatusMeta(pep) {
+            const meta = data.pepStatus?.[pep];
+            if (!meta) return { status: 'separado', createdAt: null, updatedAt: null, separationDate: null, programDate: null };
+            if (typeof meta === 'string') return { status: normalizePepStatus(meta), createdAt: null, updatedAt: null, separationDate: null, programDate: null };
+            return {
+                status: normalizePepStatus(meta.status),
+                createdAt: meta.createdAt || null,
+                updatedAt: meta.updatedAt || null,
+                separationDate: meta.separationDate || null,
+                programDate: meta.programDate || null
+            };
+        }
+
+        function getPepProgramState(meta) {
+            if (!meta) return 'normal';
+            if (meta.status === 'retirado') return 'retirado';
+            if (meta.programDate) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const prog = new Date(meta.programDate + 'T00:00:00');
+                const diffDays = Math.floor((prog.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                if (diffDays < 0) return 'atrasado';
+                if (diffDays <= 3) return 'proximo';
+            }
+            return 'separado';
+        }
+
+        function getPepProgramStateLabel(state) {
+            const labels = {
+                atrasado: 'Atrasada',
+                proximo: 'Próxima',
+                retirado: 'Retirada',
+                separado: 'Separada',
+                normal: 'Normal'
+            };
+            return labels[state] || 'Normal';
+        }
+
+        function getPepStatusBadge(status, state = null) {
+            const resolvedState = state || (status === 'retirado' ? 'retirado' : 'separado');
+            if (resolvedState === 'atrasado') return '<span class="px-2 py-1 rounded border text-xs font-semibold text-rose-700 bg-rose-50 border-rose-200">Separado · Atrasado</span>';
+            if (resolvedState === 'proximo') return '<span class="px-2 py-1 rounded border text-xs font-semibold text-sky-700 bg-sky-50 border-sky-200">Separado · Próximo</span>';
+            if (resolvedState === 'retirado') return '<span class="px-2 py-1 rounded border text-xs font-semibold text-emerald-700 bg-emerald-50 border-emerald-200">Retirado</span>';
+            return '<span class="px-2 py-1 rounded border text-xs font-semibold text-amber-700 bg-amber-50 border-amber-200">Separado</span>';
+        }
+
+        function setPepStatus(pep, status, preserveCreatedAt = true, separationDate = null, programDate = null) {
+            if (!pep) return;
+            const nowIso = new Date().toISOString();
+            const current = getPepStatusMeta(pep);
+            data.pepStatus[pep] = {
+                status: normalizePepStatus(status),
+                createdAt: preserveCreatedAt && current.createdAt ? current.createdAt : nowIso,
+                updatedAt: nowIso,
+                separationDate: separationDate || current.separationDate || null,
+                programDate: programDate || current.programDate || null
+            };
+            saveData();
+            updateAllViews();
+            const selectedPep = document.getElementById('selectedHistoryPep');
+            if (selectedPep && selectedPep.textContent === pep) updateHistoryPepTable(pep);
+            toast.show(`PEP ${pep} marcada como ${normalizePepStatus(status)}.`, 'success');
+        }
+
+        function updatePepSchedulePanel() {
+            const panel = document.getElementById('pepSchedulePanel');
+            if (!panel) return;
+            const peps = Object.keys(data.pepAllocations).filter(pep => Object.keys(data.pepAllocations[pep] || {}).length > 0).sort();
+            panel.innerHTML = '';
+            if (peps.length === 0) {
+                panel.innerHTML = '<div class="md:col-span-2 xl:col-span-4 text-center text-slate-400 py-4">Nenhuma PEP com material alocado.</div>';
+                return;
+            }
+
+            const stateCount = { separado: 0, atrasado: 0, proximo: 0, retirado: 0 };
+
+            peps.forEach(pep => {
+                const meta = getPepStatusMeta(pep);
+                const state = getPepProgramState(meta);
+                if (stateCount[state] !== undefined) stateCount[state] += 1;
+
+                let stateClasses = 'border-amber-500/20 bg-amber-500/10';
+                let stateIcon = 'fa-box-open text-amber-300';
+                if (state === 'atrasado') { stateClasses = 'border-rose-500/25 bg-rose-500/10'; stateIcon = 'fa-triangle-exclamation text-rose-300'; }
+                if (state === 'proximo') { stateClasses = 'border-sky-500/25 bg-sky-500/10'; stateIcon = 'fa-calendar-day text-sky-300'; }
+                if (state === 'retirado') { stateClasses = 'border-emerald-500/25 bg-emerald-500/10'; stateIcon = 'fa-circle-check text-emerald-300'; }
+
+                panel.innerHTML += `
+                    <div class="rounded-xl border ${stateClasses} p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="font-mono text-sm font-bold text-white">${pep}</p>
+                                <p class="text-[11px] text-slate-300 uppercase tracking-wider">${getPepProgramStateLabel(state)}</p>
+                            </div>
+                            <i class="fas ${stateIcon} text-lg"></i>
+                        </div>
+                        <div class="mt-3 space-y-1 text-xs text-slate-300">
+                            <p><span class="text-slate-400">Separação:</span> ${formatDateBR(meta.separationDate)}</p>
+                            <p><span class="text-slate-400">Programação:</span> ${formatDateBR(meta.programDate)}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const separatedNode = document.getElementById('dashboardSeparatedPeps');
+            const lateNode = document.getElementById('dashboardLatePeps');
+            const upcomingNode = document.getElementById('dashboardUpcomingPeps');
+            const retrievedNode = document.getElementById('dashboardRetrievedPeps');
+            if (separatedNode) separatedNode.textContent = stateCount.separado;
+            if (lateNode) lateNode.textContent = stateCount.atrasado;
+            if (upcomingNode) upcomingNode.textContent = stateCount.proximo;
+            if (retrievedNode) retrievedNode.textContent = stateCount.retirado;
+        }
+
         function ensureSucataData() {
             if (!data.sucata) data.sucata = { entries: [], certificates: [] };
             if (!Array.isArray(data.sucata.entries)) data.sucata.entries = [];
@@ -1514,15 +1723,6 @@
         }
 
         function getSucataMaterialLabel(materialId) {
-            const categoryLabels = {
-                'cat_ferragem': 'Ferragem',
-                'cat_louca': 'Louça',
-                'cat_ferragem_louca': 'Ferragem e Louça',
-                'cat_cabos_cobertos': 'Cabos Cobertos',
-                'cat_cabos_al_nu': 'Cabos AL Nu',
-                'cat_cordoalha': 'Cordoalha'
-            };
-            if (categoryLabels[materialId]) return categoryLabels[materialId];
             const mat = data.materials.find(m => m.id === materialId);
             return mat ? `${mat.code} - ${mat.description}` : 'Não informado';
         }
@@ -1535,15 +1735,7 @@
         function updateSucataMaterialOptions() {
             const select = document.getElementById('sucataMaterialId');
             if (!select) return;
-            let html = `
-                <option value="">Não vincular material</option>
-                <option value="cat_ferragem">Ferragem</option>
-                <option value="cat_louca">Louça</option>
-                <option value="cat_ferragem_louca">Ferragem e Louça</option>
-                <option value="cat_cabos_cobertos">Cabos Cobertos</option>
-                <option value="cat_cabos_al_nu">Cabos AL Nu</option>
-                <option value="cat_cordoalha">Cordoalha</option>
-            `;
+            let html = '<option value="">Não vincular material</option>';
             data.materials.forEach(mat => {
                 html += `<option value="${mat.id}">${escapeHtml(mat.code)} - ${escapeHtml(mat.description)}</option>`;
             });
@@ -1830,7 +2022,8 @@
             
             updateCharts();
             updateAlerts();
-            updatePepSummary(); 
+            updatePepSummary();
+            updatePepSchedulePanel();
         }
 
         function updateCharts() {
@@ -1903,7 +2096,7 @@
         function updatePepSummary() {
             const container = document.getElementById('pepSummary');
             container.innerHTML = '';
-            
+
             Object.keys(data.pepAllocations).forEach(pep => {
                 const allocs = data.pepAllocations[pep];
                 const types = Object.keys(allocs).length;
@@ -1911,7 +2104,7 @@
 
                 let financialLoad = 0;
                 let alerts = 0;
-                
+
                 Object.keys(allocs).forEach(matId => {
                     const qty = allocs[matId];
                     financialLoad += (qty * getMaterialValue(matId));
@@ -1919,13 +2112,32 @@
                     if(mat && getMaterialStock(matId) <= (mat.minStock || 0)) alerts++;
                 });
 
-                const alertHtml = alerts > 0 ? `<span class="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow border border-slate-800 animate-pulse">${alerts} Crit</span>` : '';
+                const pepMeta = getPepStatusMeta(pep);
+                const pepState = getPepProgramState(pepMeta);
+                const isSeparated = pepMeta.status === 'separado';
+                let staleInfo = '';
+                if (isSeparated && (pepMeta.separationDate || pepMeta.updatedAt)) {
+                    const baseDate = pepMeta.separationDate ? new Date(pepMeta.separationDate + 'T00:00:00') : new Date(pepMeta.updatedAt);
+                    const diffDays = Math.floor((Date.now() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
+                    if (diffDays >= 14) {
+                        alerts++;
+                        staleInfo = `<p class="mt-2 text-xs text-rose-300 font-semibold"><i class="fas fa-triangle-exclamation mr-1"></i>ALERTA: separado há ${diffDays} dias</p>`;
+                    }
+                }
+                if (pepState === 'atrasado') alerts++;
+                if (pepState === 'proximo') alerts += 0;
+
+                const alertHtml = alerts > 0 ? `<span class="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow border border-slate-800 ${staleInfo ? 'animate-pulse' : ''}">${alerts} Crit</span>` : '';
+                const statusBadge = getPepStatusBadge(pepMeta.status, pepState);
 
                 const card = `
                     <div class="bg-slate-800/60 p-5 rounded-xl border border-slate-700/50 relative hover:border-blue-500/50 transition cursor-default">
                         ${alertHtml}
-                        <h4 class="font-mono font-bold text-slate-200 text-sm mb-1">${pep}</h4>
-                        <div class="flex justify-between items-end mt-4">
+                        <div class="flex items-center justify-between gap-2">
+                            <h4 class="font-mono font-bold text-slate-200 text-sm mb-1">${pep}</h4>
+                            ${statusBadge}
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mt-4">
                             <div>
                                 <p class="text-[10px] uppercase text-slate-500 tracking-wider">Custo Absorvido</p>
                                 <p class="text-lg font-bold text-emerald-400">R$ ${financialLoad.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2})}</p>
@@ -1935,6 +2147,17 @@
                                 <p class="text-sm font-semibold text-blue-400">${types} SKUs</p>
                             </div>
                         </div>
+                        <div class="mt-4 grid grid-cols-2 gap-3 text-xs">
+                            <div class="bg-slate-900/40 rounded-lg p-3 border border-slate-700/50">
+                                <p class="uppercase tracking-wider text-slate-500">Separação</p>
+                                <p class="font-semibold text-amber-300 mt-1">${formatDateBR(pepMeta.separationDate)}</p>
+                            </div>
+                            <div class="bg-slate-900/40 rounded-lg p-3 border border-slate-700/50">
+                                <p class="uppercase tracking-wider text-slate-500">Programação</p>
+                                <p class="font-semibold ${pepState === 'atrasado' ? 'text-rose-300' : pepState === 'proximo' ? 'text-sky-300' : 'text-slate-200'} mt-1">${formatDateBR(pepMeta.programDate)}</p>
+                            </div>
+                        </div>
+                        ${staleInfo}
                     </div>
                 `;
                 container.innerHTML += card;
@@ -2764,14 +2987,27 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             const tbody = document.getElementById('historyPepTable'); tbody.innerHTML='';
             const filter = document.getElementById('historyPepTypeFilter').value;
             const mvs = data.movements.filter(m => m.pep === pep && (filter==='' || (filter==='exit'&&m.type==='exit') || (filter==='entry'&&m.type!=='exit'))).sort((a,b)=>new Date(b.date)-new Date(a.date));
-            
+            const pepMeta = getPepStatusMeta(pep);
+            const pepState = getPepProgramState(pepMeta);
+            const statusBadgeNode = document.getElementById('historyPepStatusBadge');
+            const statusDateNode = document.getElementById('historyPepStatusDate');
+            const sepDateNode = document.getElementById('historyPepSeparationDate');
+            const progDateNode = document.getElementById('historyPepProgramDate');
+            if (statusBadgeNode) statusBadgeNode.innerHTML = getPepStatusBadge(pepMeta.status, pepState);
+            if (statusDateNode) {
+                statusDateNode.textContent = pepMeta.updatedAt ? `Atualizado em ${new Date(pepMeta.updatedAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}` : 'Sem atualização manual';
+            }
+            if (sepDateNode) sepDateNode.textContent = formatDateBR(pepMeta.separationDate);
+            if (progDateNode) progDateNode.textContent = formatDateBR(pepMeta.programDate);
+
             if(mvs.length===0) { tbody.innerHTML='<tr><td colspan="6" class="p-4 text-center text-gray-400">Zero movimentações rastreadas.</td></tr>'; return; }
             mvs.forEach(m => {
                 const mat = data.materials.find(x=>x.id===m.materialId);
                 const isOut = m.type==='exit';
-                
+
                 const dataHora = new Date(m.date).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
-                
+                const movementStatus = isOut ? getPepStatusBadge(normalizePepStatus(m.pepStatus || pepMeta.status), getPepProgramState({ status: normalizePepStatus(m.pepStatus || pepMeta.status), separationDate: m.separationDate || pepMeta.separationDate, programDate: m.programDate || pepMeta.programDate })) : '<span class="px-2 py-1 rounded border text-xs font-semibold text-sky-700 bg-sky-50 border-sky-200">Devolução</span>';
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50 border-b border-gray-100 last:border-0">
                         <td class="p-3 text-xs text-gray-500 font-mono">${dataHora}</td>
@@ -2781,19 +3017,24 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                             <div class="text-gray-700">${mat?mat.description:'---'}</div>
                         </td>
                         <td class="p-3 text-sm font-bold">${m.quantity}</td>
-                        <td class="p-3 text-xs text-gray-500">${m.obs||'-'}</td>
+                        <td class="p-3 text-xs text-gray-500">
+                            <div>${m.obs||'-'}</div>
+                            <div class="mt-1">${movementStatus}</div>
+                            ${isOut ? `<div class="mt-2 text-[11px] text-gray-500">Separação: ${formatDateBR(m.separationDate || pepMeta.separationDate)} · Programação: ${formatDateBR(m.programDate || pepMeta.programDate)}</div>` : ''}
+                        </td>
                         <td class="p-3 text-center"><button class="text-rose-400 hover:text-rose-600" onclick="deleteMovement('${m.id}');setTimeout(()=>updateHistoryPepTable('${pep}'), 100);"><i class="fas fa-times"></i></button></td>
                     </tr>
                 `;
             });
         }
-        
+
         function exportHistoryPepList() {
             const pep = document.getElementById('selectedHistoryPep').textContent;
             if (!pep) { toast.show('Selecione um PEP primeiro.', 'warning'); return; }
             const now = new Date().toLocaleString('pt-BR');
             const filter = document.getElementById('historyPepTypeFilter').value;
             const mvs = data.movements.filter(m => m.pep === pep && (filter==='' || (filter==='exit'&&m.type==='exit') || (filter==='entry'&&m.type!=='exit'))).sort((a,b)=>new Date(a.date)-new Date(b.date));
+            const pepMeta = getPepStatusMeta(pep);
             const allocs = data.pepAllocations[pep] || {};
             let allocRows = '';
             Object.keys(allocs).forEach(function(matId) {
@@ -2847,7 +3088,8 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 '<p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ' + now + '</p></div>' +
                 '<div style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:6px;padding:12px;margin-bottom:20px">' +
                 '<p style="margin:0;font-size:13pt;font-weight:bold;color:#1e3a5f">PEP: <span style="color:#7c3aed">' + pep + '</span></p>' +
-                '<p style="margin:4px 0 0;font-size:10pt;color:#374151">Total de movimentacoes: <b>' + mvs.length + '</b></p></div>' +
+                '<p style="margin:4px 0 0;font-size:10pt;color:#374151">Total de movimentacoes: <b>' + mvs.length + '</b></p>' +
+                '<p style="margin:4px 0 0;font-size:10pt;color:#374151">Status atual: <b>' + (pepMeta.status === 'retirado' ? 'Retirado' : 'Separado') + '</b></p></div>' +
                 allocSection +
                 '<h3 style="font-size:12pt;color:#1e3a5f;margin-bottom:8px;border-bottom:2px solid #1e3a5f;padding-bottom:4px">Historico Completo de Movimentacoes</h3>' +
                 movSection +
