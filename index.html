@@ -1086,8 +1086,9 @@
     <!-- Modal for Material Creation -->
     <div id="materialModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[200] transition-opacity opacity-0">
         <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="materialModalInner">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-3">Novo Material no Catálogo</h3>
+            <h3 id="materialModalTitle" class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-3">Novo Material no Catálogo</h3>
             <form id="materialForm" class="space-y-4">
+                <input type="hidden" id="editingMaterialId">
                 
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -1133,7 +1134,7 @@
                 </div>
                 <div class="flex gap-3 mt-6 pt-4 border-t border-gray-100">
                     <button type="button" onclick="closeMaterialModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 font-semibold transition">Cancelar</button>
-                    <button type="submit" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold transition shadow-lg shadow-blue-500/30">Gravar Material</button>
+                    <button type="submit" id="materialSubmitBtn" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold transition shadow-lg shadow-blue-500/30">Gravar Material</button>
                 </div>
             </form>
         </div>
@@ -2206,18 +2207,66 @@
             document.getElementById('matImage').value = '';
         }
 
-        function openMaterialModal() {
+        function resetMaterialModalState() {
+            document.getElementById('materialForm').reset();
+            document.getElementById('editingMaterialId').value = '';
+            document.getElementById('materialModalTitle').textContent = 'Novo Material no Catálogo';
+            document.getElementById('materialSubmitBtn').textContent = 'Gravar Material';
+            document.getElementById('matCode').readOnly = false;
+            document.getElementById('matCode').classList.remove('bg-gray-100', 'cursor-not-allowed');
+            clearImagePreview();
+        }
+
+        function fillMaterialImage(imageBase64) {
+            if (!imageBase64) {
+                clearImagePreview();
+                return;
+            }
+            document.getElementById('matImageBase64').value = imageBase64;
+            document.getElementById('matImagePreview').src = imageBase64;
+            document.getElementById('matImagePreview').classList.remove('hidden');
+            document.getElementById('matImagePlaceholder').classList.add('hidden');
+            document.getElementById('matImage').value = '';
+        }
+
+        function openMaterialModal(materialId = null) {
+            resetMaterialModalState();
+
+            if (materialId) {
+                const material = data.materials.find(m => m.id === materialId);
+                if (!material) {
+                    toast.show('Material não encontrado para edição.', 'error');
+                    return;
+                }
+                document.getElementById('editingMaterialId').value = material.id;
+                document.getElementById('materialModalTitle').textContent = 'Editar Material do Catálogo';
+                document.getElementById('materialSubmitBtn').textContent = 'Salvar Alterações';
+                document.getElementById('matCode').value = material.code || '';
+                document.getElementById('matDesc').value = material.description || '';
+                document.getElementById('matUnit').value = material.unit || 'UN';
+                document.getElementById('matMinStock').value = material.minStock ?? 0;
+                fillMaterialImage(material.image || '');
+            }
+
             const modal = document.getElementById('materialModal');
             const inner = document.getElementById('materialModalInner');
             modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); document.getElementById('matCode').focus(); }, 10);
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                inner.classList.remove('scale-95');
+                document.getElementById('matCode').focus();
+            }, 10);
         }
 
         function closeMaterialModal() {
             const modal = document.getElementById('materialModal');
             const inner = document.getElementById('materialModalInner');
             modal.classList.add('opacity-0'); inner.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); document.getElementById('materialForm').reset(); clearImagePreview(); }, 300);
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                resetMaterialModalState();
+            }, 300);
         }
 
         function openImageModal(imgSrc, code) {
@@ -2248,41 +2297,63 @@
          */
         document.getElementById('materialForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            // 1. Obter e normalizar o código
+
+            const editingId = document.getElementById('editingMaterialId').value;
             const rawCode = document.getElementById('matCode').value;
             const normalizedCode = rawCode.trim().toUpperCase();
+            const normalizedDesc = document.getElementById('matDesc').value.trim();
+            const normalizedUnit = document.getElementById('matUnit').value;
+            const minStock = parseFloat(document.getElementById('matMinStock').value.toString().replace(',', '.')) || 0;
+            const imageBase64 = document.getElementById('matImageBase64').value || null;
 
-            // 2. Verificar se o código já existe no banco de dados (data.materials)
-            const codeExists = data.materials.some(material => material.code === normalizedCode);
+            const codeExists = data.materials.some(material => material.code === normalizedCode && material.id !== editingId);
 
             if (codeExists) {
-                // 3. Emitir alerta imediato e focar no campo
                 toast.show(`Alerta de Duplicidade: O código "${normalizedCode}" já está cadastrado no sistema.`, 'error');
                 document.getElementById('matCode').classList.add('ring-2', 'ring-rose-500');
                 document.getElementById('matCode').focus();
-                
-                // Remover destaque após 3 segundos
                 setTimeout(() => {
                     document.getElementById('matCode').classList.remove('ring-2', 'ring-rose-500');
                 }, 3000);
-
-                return; // Interrompe o processo de salvamento
+                return;
             }
 
-            // Se não houver duplicidade, prosseguir com o cadastro
+            if (editingId) {
+                const index = data.materials.findIndex(material => material.id === editingId);
+                if (index === -1) {
+                    toast.show('Material não encontrado para salvar edição.', 'error');
+                    return;
+                }
+
+                data.materials[index] = {
+                    ...data.materials[index],
+                    code: normalizedCode,
+                    description: normalizedDesc,
+                    unit: normalizedUnit,
+                    minStock: minStock,
+                    image: imageBase64,
+                    updatedAt: new Date().toISOString()
+                };
+
+                saveData();
+                updateAllViews();
+                closeMaterialModal();
+                toast.show(`Material ${normalizedCode} atualizado com sucesso!`, 'success');
+                return;
+            }
+
             data.materials.push({
                 id: Date.now().toString(),
                 code: normalizedCode,
-                description: document.getElementById('matDesc').value,
-                unit: document.getElementById('matUnit').value,
-                minStock: parseFloat(document.getElementById('matMinStock').value.toString().replace(',', '.')) || 0,
-                image: document.getElementById('matImageBase64').value || null,
+                description: normalizedDesc,
+                unit: normalizedUnit,
+                minStock: minStock,
+                image: imageBase64,
                 createdAt: new Date().toISOString()
             });
-            
-            saveData(); 
-            updateAllViews(); 
+
+            saveData();
+            updateAllViews();
             closeMaterialModal();
             toast.show(`Material ${normalizedCode} cadastrado com sucesso!`, 'success');
         });
@@ -2311,9 +2382,14 @@
                         </td>
                         <td class="p-4 text-sm text-gray-600 font-mono">R$ ${getMaterialValue(m.id).toFixed(2)}</td>
                         <td class="p-4 text-center">
-                            <button onclick="deleteMaterial('${m.id}')" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded transition">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick="openMaterialModal('${m.id}')" class="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-1.5 rounded transition" title="Editar material">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button onclick="deleteMaterial('${m.id}')" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded transition" title="Excluir material">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
