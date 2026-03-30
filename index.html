@@ -3471,13 +3471,40 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             const tbody = document.getElementById('detalhesTransformadorMovimentos');
             tbody.innerHTML = '';
             if (!data.transformadorMovimentos) data.transformadorMovimentos = [];
-            const movimentos = data.transformadorMovimentos.filter(m => m.transformadorId === transformadorId).sort((a, b) => new Date(b.data) - new Date(a.data));
-            if (movimentos.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Nenhuma movimentação registrada.</td></tr>'; } else {
+            const movimentos = data.transformadorMovimentos
+                .filter(m => m.transformadorId === transformadorId)
+                .sort((a, b) => new Date(b.data) - new Date(a.data));
+
+            if (movimentos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Nenhuma movimentação registrada.</td></tr>';
+            } else {
                 movimentos.forEach(m => {
-                    const dataStr = new Date(m.data).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-                    const tipoClass = m.tipo === 'saida' ? 'text-red-600 bg-red-50 border-red-200' : (m.tipo === 'entrada' ? 'text-green-600 bg-green-50 border-green-200' : 'text-blue-600 bg-blue-50 border-blue-200');
+                    const dataStr = new Date(m.data).toLocaleString('pt-BR', {
+                        day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
+                    });
+                    const tipoClass = m.tipo === 'saida'
+                        ? 'text-red-600 bg-red-50 border-red-200'
+                        : (m.tipo === 'entrada'
+                            ? 'text-green-600 bg-green-50 border-green-200'
+                            : 'text-blue-600 bg-blue-50 border-blue-200');
                     const tipoText = m.tipo === 'saida' ? 'Saída' : (m.tipo === 'entrada' ? 'Entrada' : 'Retorno');
-                    tbody.innerHTML += `<tr class="hover:bg-gray-50 border-b border-gray-100 last:border-0"></tr>`;
+                    const obs = m.observacao || m.obs || '-';
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-gray-50 border-b border-gray-100 last:border-0">
+                            <td class="p-3 text-sm text-gray-600">${dataStr}</td>
+                            <td class="p-3">
+                                <span class="px-2 py-1 rounded text-xs font-semibold border ${tipoClass}">${tipoText}</span>
+                            </td>
+                            <td class="p-3 text-sm text-gray-700">${m.de || '-'}</td>
+                            <td class="p-3 text-sm text-gray-700">${m.para || '-'}</td>
+                            <td class="p-3 text-sm text-gray-500">${obs}</td>
+                            <td class="p-3 text-center">
+                                <button onclick="deleteMovimentacaoTransformador('${m.id}')" class="text-red-600 hover:text-red-800" title="Excluir movimentação">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>`;
                 });
             }
             modal.classList.remove('hidden');
