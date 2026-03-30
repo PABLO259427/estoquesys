@@ -1995,12 +1995,43 @@
                 '</div></div></body></html>';
         }
 
+        function buildWordHtml(title, bodyHtml, orientation = 'portrait') {
+            const pageSize = orientation === 'landscape' ? '841.9pt 595.3pt' : '595.3pt 841.9pt';
+            return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+                '<head>' +
+                '<meta charset="utf-8">' +
+                '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">' +
+                '<title>' + escapeHtml(title) + '</title>' +
+                '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
+                '<style>' +
+                '@page WordSection1{size:' + pageSize + ';margin:1.4cm 1.2cm 1.4cm 1.2cm;}' +
+                'body{margin:0;padding:0;background:#ffffff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+                'div.WordSection1{page:WordSection1;}' +
+                'body,table,td,th,p,div,span,h1,h2,h3{font-family:Arial,Calibri,sans-serif !important;color:#111827;}' +
+                'table{border-collapse:collapse;width:100%;table-layout:auto;}' +
+                'th,td{word-break:break-word;vertical-align:top;}' +
+                '.report-wrap{padding:0;}' +
+                '.report-title{font-size:18pt;font-weight:700;color:#1e3a5f;margin:0;}' +
+                '.report-subtitle{font-size:13pt;font-weight:700;color:#374151;margin:6px 0 0;}' +
+                '.report-meta{font-size:9.5pt;color:#6b7280;margin:6px 0 0;}' +
+                '.report-card{background:#f8fafc;border:1px solid #dbeafe;border-radius:8px;padding:10px 12px;margin:14px 0 18px;}' +
+                '.report-card p{margin:0 0 4px;}' +
+                '.report-th{background:#1e3a5f;color:#ffffff;font-weight:700;}' +
+                '.report-footer{margin-top:18px;font-size:8.5pt;color:#6b7280;text-align:center;}' +
+                '</style>' +
+                '</head><body><div class="WordSection1"><div class="report-wrap">' + bodyHtml + '</div></div></body></html>';
+        }
+
         function downloadBlobAsWord(html, filename) {
-            const blob = new Blob([html], { type: 'application/msword' });
+            const blob = new Blob(['﻿', html], { type: 'application/msword;charset=utf-8' });
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
+            a.href = url;
             a.download = filename;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         }
 
         function downloadSucataCertificateWord(certificateId) {
@@ -3053,36 +3084,34 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 const stock = getMaterialStock(m.id);
                 const isCrit = stock <= m.minStock && m.minStock > 0;
                 rows += '<tr>' +
-                    '<td style="border:1px solid #ccc;padding:6px;font-family:Consolas,monospace;font-size:11pt;color:#1d4ed8">' + m.code + '</td>' +
-                    '<td style="border:1px solid #ccc;padding:6px;font-size:11pt">' + m.description + '</td>' +
-                    '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:11pt">' + m.unit + '</td>' +
-                    '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-weight:bold;font-size:11pt;color:' + (isCrit?'#dc2626':'#15803d') + '">' + stock + '</td>' +
-                    '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:11pt">' + m.minStock + '</td>' +
-                    '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:11pt;color:' + (isCrit?'#dc2626':'#15803d') + '">' + (isCrit?'CRITICO':'OK') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-family:Consolas,monospace;font-size:10pt;color:#1d4ed8;font-weight:700">' + escapeHtml(m.code) + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:10pt">' + escapeHtml(m.description) + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-size:10pt">' + escapeHtml(m.unit) + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-weight:bold;font-size:10pt;color:' + (isCrit ? '#dc2626' : '#15803d') + '">' + stock + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-size:10pt">' + (m.minStock ?? 0) + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-size:10pt;font-weight:700;color:' + (isCrit ? '#dc2626' : '#15803d') + '">' + (isCrit ? 'CRÍTICO' : 'OK') + '</td>' +
                     '</tr>';
             });
-            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Relatorio Geral</title></head><body style="font-family:Arial,sans-serif;margin:2cm">' +
-                '<div style="text-align:center;margin-bottom:20px">' +
-                '<h1 style="font-size:18pt;color:#1e3a5f;margin:0">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
-                '<h2 style="font-size:14pt;color:#374151;margin:4px 0">Relatorio Geral de Estoque</h2>' +
-                '<p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ' + now + '</p></div>' +
-                '<table style="width:100%;border-collapse:collapse;margin-top:16px">' +
-                '<thead><tr style="background:#1e3a5f;color:white">' +
-                '<th style="border:1px solid #ccc;padding:8px;text-align:left;font-size:11pt">Codigo</th>' +
-                '<th style="border:1px solid #ccc;padding:8px;text-align:left;font-size:11pt">Descricao</th>' +
-                '<th style="border:1px solid #ccc;padding:8px;text-align:center;font-size:11pt">UN</th>' +
-                '<th style="border:1px solid #ccc;padding:8px;text-align:center;font-size:11pt">Saldo Fisico</th>' +
-                '<th style="border:1px solid #ccc;padding:8px;text-align:center;font-size:11pt">Minimo</th>' +
-                '<th style="border:1px solid #ccc;padding:8px;text-align:center;font-size:11pt">Status</th>' +
-                '</tr></thead><tbody>' + rows + '</tbody></table>' +
-                '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
-                '</body></html>';
-            const blob = new Blob([html], {type: 'application/msword'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'Relatorio_Geral_' + new Date().toISOString().split('T')[0] + '.doc';
-            a.click();
-            toast.show('Relatorio geral exportado para Word.', 'success');
+            const body =
+                '<div style="text-align:center;margin-bottom:18px">' +
+                    '<h1 class="report-title">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
+                    '<h2 class="report-subtitle">Relatório Geral de Estoque</h2>' +
+                    '<p class="report-meta">Emitido em: ' + now + '</p>' +
+                '</div>' +
+                '<table>' +
+                    '<thead><tr>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:10pt">Código</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:10pt">Descrição</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:center;font-size:10pt">UN</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:center;font-size:10pt">Saldo Físico</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:center;font-size:10pt">Mínimo</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:center;font-size:10pt">Status</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' + (rows || '<tr><td colspan="6" style="border:1px solid #cbd5e1;padding:8px;text-align:center;color:#6b7280">Nenhum material cadastrado.</td></tr>') + '</tbody>' +
+                '</table>' +
+                '<p class="report-footer">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>';
+            downloadBlobAsWord(buildWordHtml('Relatório Geral', body), 'Relatorio_Geral_' + new Date().toISOString().split('T')[0] + '.doc');
+            toast.show('Relatório geral exportado para Word.', 'success');
         }
 
         function filterHistoryPepDropdown() {
@@ -3155,74 +3184,71 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             if (!pep) { toast.show('Selecione um PEP primeiro.', 'warning'); return; }
             const now = new Date().toLocaleString('pt-BR');
             const filter = document.getElementById('historyPepTypeFilter').value;
-            const mvs = data.movements.filter(m => m.pep === pep && (filter==='' || (filter==='exit'&&m.type==='exit') || (filter==='entry'&&m.type!=='exit'))).sort((a,b)=>new Date(a.date)-new Date(b.date));
+            const mvs = data.movements.filter(m => m.pep === pep && (filter === '' || (filter === 'exit' && m.type === 'exit') || (filter === 'entry' && m.type !== 'exit'))).sort((a,b)=>new Date(a.date)-new Date(b.date));
             const pepMeta = getPepStatusMeta(pep);
             const allocs = data.pepAllocations[pep] || {};
             let allocRows = '';
             Object.keys(allocs).forEach(function(matId) {
-                const mat = data.materials.find(function(x){return x.id===matId;});
-                if(mat && allocs[matId] > 0) {
+                const mat = data.materials.find(function(x){ return x.id === matId; });
+                if (mat && allocs[matId] > 0) {
                     allocRows += '<tr>' +
-                        '<td style="border:1px solid #ccc;padding:6px;font-family:Consolas,monospace;font-size:10pt;color:#1d4ed8">' + mat.code + '</td>' +
-                        '<td style="border:1px solid #ccc;padding:6px;font-size:10pt">' + mat.description + '</td>' +
-                        '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:10pt">' + mat.unit + '</td>' +
-                        '<td style="border:1px solid #ccc;padding:6px;text-align:center;font-weight:bold;font-size:10pt;color:#b45309">' + allocs[matId] + '</td>' +
+                        '<td style="border:1px solid #cbd5e1;padding:6px;font-family:Consolas,monospace;font-size:9.5pt;color:#1d4ed8;font-weight:700">' + escapeHtml(mat.code) + '</td>' +
+                        '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9.5pt">' + escapeHtml(mat.description) + '</td>' +
+                        '<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;font-size:9.5pt">' + escapeHtml(mat.unit) + '</td>' +
+                        '<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;font-size:9.5pt;font-weight:700;color:#b45309">' + allocs[matId] + '</td>' +
                         '</tr>';
                 }
             });
             let movRows = '';
             mvs.forEach(function(m) {
-                const mat = data.materials.find(function(x){return x.id===m.materialId;});
-                const isOut = m.type==='exit';
+                const mat = data.materials.find(function(x){ return x.id === m.materialId; });
+                const isOut = m.type === 'exit';
                 const dataHora = new Date(m.date).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-                const tipoTxt = isOut ? 'Saida' : (m.type==='return'?'Retorno':'Devolucao/Entrada');
+                const tipoTxt = isOut ? 'Saída' : (m.type === 'return' ? 'Retorno' : 'Devolução/Entrada');
                 const corTipo = isOut ? '#dc2626' : '#2563eb';
                 movRows += '<tr>' +
-                    '<td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-family:Consolas,monospace">' + dataHora + '</td>' +
-                    '<td style="border:1px solid #ccc;padding:5px;font-size:10pt;color:' + corTipo + ';font-weight:bold">' + tipoTxt + '</td>' +
-                    '<td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-family:Consolas,monospace;color:#1d4ed8">' + (mat?mat.code:'---') + '</td>' +
-                    '<td style="border:1px solid #ccc;padding:5px;font-size:10pt">' + (mat?mat.description:'---') + '</td>' +
-                    '<td style="border:1px solid #ccc;padding:5px;text-align:center;font-size:10pt;font-weight:bold">' + m.quantity + ' ' + (mat?mat.unit:'') + '</td>' +
-                    '<td style="border:1px solid #ccc;padding:5px;font-size:9pt;color:#6b7280">' + (m.obs||m.reason||m.requester||'-') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9.5pt;font-family:Consolas,monospace">' + dataHora + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9.5pt;color:' + corTipo + ';font-weight:700">' + tipoTxt + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9.5pt;font-family:Consolas,monospace;color:#1d4ed8;font-weight:700">' + escapeHtml(mat ? mat.code : '---') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9.5pt">' + escapeHtml(mat ? mat.description : '---') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;font-size:9.5pt;font-weight:700">' + m.quantity + ' ' + escapeHtml(mat ? mat.unit : '') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9pt;color:#475569">' + escapeHtml(m.obs || m.reason || m.requester || '-') + '</td>' +
                     '</tr>';
             });
-            const allocSection = allocRows ? ('<h3 style="font-size:12pt;color:#1e3a5f;margin-bottom:8px;border-bottom:2px solid #1e3a5f;padding-bottom:4px">Saldo Atual Alocado neste PEP</h3>' +
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:24px">' +
-                '<thead><tr style="background:#1e3a5f;color:white">' +
-                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Codigo</th>' +
-                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Descricao</th>' +
-                '<th style="border:1px solid #ccc;padding:7px;text-align:center;font-size:10pt">UN</th>' +
-                '<th style="border:1px solid #ccc;padding:7px;text-align:center;font-size:10pt">Qtd. Alocada</th>' +
+            const allocSection = allocRows ? ('<h3 style="font-size:11.5pt;color:#1e3a5f;margin:0 0 8px;border-bottom:2px solid #1e3a5f;padding-bottom:4px">Saldo Atual Alocado neste PEP</h3>' +
+                '<table style="margin-bottom:18px">' +
+                '<thead><tr>' +
+                    '<th class="report-th" style="border:1px solid #cbd5e1;padding:7px;text-align:left;font-size:9.5pt">Código</th>' +
+                    '<th class="report-th" style="border:1px solid #cbd5e1;padding:7px;text-align:left;font-size:9.5pt">Descrição</th>' +
+                    '<th class="report-th" style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-size:9.5pt">UN</th>' +
+                    '<th class="report-th" style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-size:9.5pt">Qtd. Alocada</th>' +
                 '</tr></thead><tbody>' + allocRows + '</tbody></table>') : '';
-            const movSection = movRows ? ('<table style="width:100%;border-collapse:collapse">' +
-                '<thead><tr style="background:#1e3a5f;color:white">' +
-                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Data/Hora</th>' +
-                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Tipo</th>' +
-                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Codigo</th>' +
-                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Material</th>' +
-                '<th style="border:1px solid #ccc;padding:7px;text-align:center;font-size:10pt">Quantidade</th>' +
-                '<th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Obs.</th>' +
-                '</tr></thead><tbody>' + movRows + '</tbody></table>') : '<p style="color:#9ca3af;font-style:italic">Nenhuma movimentacao registrada para este PEP.</p>';
-            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Dossie PEP</title></head><body style="font-family:Arial,sans-serif;margin:2cm">' +
-                '<div style="text-align:center;margin-bottom:20px">' +
-                '<h1 style="font-size:18pt;color:#1e3a5f;margin:0">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
-                '<h2 style="font-size:14pt;color:#374151;margin:4px 0">Dossie de Movimentacao por PEP</h2>' +
-                '<p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ' + now + '</p></div>' +
-                '<div style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:6px;padding:12px;margin-bottom:20px">' +
-                '<p style="margin:0;font-size:13pt;font-weight:bold;color:#1e3a5f">PEP: <span style="color:#7c3aed">' + pep + '</span></p>' +
-                '<p style="margin:4px 0 0;font-size:10pt;color:#374151">Total de movimentacoes: <b>' + mvs.length + '</b></p>' +
-                '<p style="margin:4px 0 0;font-size:10pt;color:#374151">Status atual: <b>' + (pepMeta.status === 'retirado' ? 'Retirado' : 'Separado') + '</b></p></div>' +
+            const movSection = movRows ? ('<table>' +
+                '<thead><tr>' +
+                    '<th class="report-th" style="border:1px solid #cbd5e1;padding:7px;text-align:left;font-size:9.5pt">Data/Hora</th>' +
+                    '<th class="report-th" style="border:1px solid #cbd5e1;padding:7px;text-align:left;font-size:9.5pt">Tipo</th>' +
+                    '<th class="report-th" style="border:1px solid #cbd5e1;padding:7px;text-align:left;font-size:9.5pt">Código</th>' +
+                    '<th class="report-th" style="border:1px solid #cbd5e1;padding:7px;text-align:left;font-size:9.5pt">Material</th>' +
+                    '<th class="report-th" style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-size:9.5pt">Quantidade</th>' +
+                    '<th class="report-th" style="border:1px solid #cbd5e1;padding:7px;text-align:left;font-size:9.5pt">Observação</th>' +
+                '</tr></thead><tbody>' + movRows + '</tbody></table>') : '<p style="color:#6b7280;font-style:italic">Nenhuma movimentação registrada para este PEP.</p>';
+            const body =
+                '<div style="text-align:center;margin-bottom:18px">' +
+                    '<h1 class="report-title">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
+                    '<h2 class="report-subtitle">Dossiê de Movimentação por PEP</h2>' +
+                    '<p class="report-meta">Emitido em: ' + now + '</p>' +
+                '</div>' +
+                '<div class="report-card">' +
+                    '<p style="font-size:12pt;font-weight:700;color:#1e3a5f">PEP: <span style="color:#7c3aed">' + escapeHtml(pep) + '</span></p>' +
+                    '<p style="font-size:9.5pt;color:#374151">Total de movimentações: <b>' + mvs.length + '</b></p>' +
+                    '<p style="font-size:9.5pt;color:#374151">Status atual: <b>' + (pepMeta.status === 'retirado' ? 'Retirado' : 'Separado') + '</b></p>' +
+                '</div>' +
                 allocSection +
-                '<h3 style="font-size:12pt;color:#1e3a5f;margin-bottom:8px;border-bottom:2px solid #1e3a5f;padding-bottom:4px">Historico Completo de Movimentacoes</h3>' +
+                '<h3 style="font-size:11.5pt;color:#1e3a5f;margin:0 0 8px;border-bottom:2px solid #1e3a5f;padding-bottom:4px">Histórico Completo de Movimentações</h3>' +
                 movSection +
-                '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
-                '</body></html>';
-            const blob = new Blob([html], {type: 'application/msword'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'Dossie_PEP_' + pep.replace(/[^a-zA-Z0-9]/g,'_') + '_' + new Date().toISOString().split('T')[0] + '.doc';
-            a.click();
-            toast.show('Dossie do PEP ' + pep + ' exportado para Word.', 'success');
+                '<p class="report-footer">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>';
+            downloadBlobAsWord(buildWordHtml('Dossiê PEP', body, 'landscape'), 'Dossie_PEP_' + pep.replace(/[^a-zA-Z0-9]/g,'_') + '_' + new Date().toISOString().split('T')[0] + '.doc');
+            toast.show('Dossiê do PEP ' + pep + ' exportado para Word.', 'success');
         }
 
         function exportStockList() {
@@ -3236,60 +3262,47 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 if (searchText && !m.description.toLowerCase().includes(searchText) && !m.code.toLowerCase().includes(searchText)) return;
                 const stock = getMaterialStock(m.id);
                 const isCrit = stock <= m.minStock && m.minStock > 0;
-                
-                // Buscar a última observação para o relatório
                 const lastMov = [...data.movements]
                     .filter(function(mov) { return mov.materialId === m.id; })
                     .sort(function(a, b) { return new Date(b.date) - new Date(a.date); })[0];
                 const lastObs = lastMov ? (lastMov.obs || lastMov.reason || '-') : '-';
-
-                if(isCrit) totalCriticos++;
+                if (isCrit) totalCriticos++;
                 totalItens++;
                 rowNum++;
-                const bgRow = isCrit ? 'background:#fff5f5' : (rowNum%2===0?'background:#f9fafb':'background:#ffffff');
+                const bgRow = isCrit ? 'background:#fff7ed' : (rowNum % 2 === 0 ? 'background:#f8fafc' : 'background:#ffffff');
                 rows += '<tr style="' + bgRow + '">' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;font-family:Consolas,monospace;font-size:10pt;color:#1d4ed8;font-weight:bold">' + m.code + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt">' + m.description + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-size:10pt">' + m.unit + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-weight:bold;font-size:11pt;color:' + (isCrit?'#dc2626':'#15803d') + '">' + stock + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:9pt;color:#6b7280;font-style:italic">' + lastObs + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-size:10pt;font-weight:bold;color:' + (isCrit?'#dc2626':'#15803d') + '">' + (isCrit?'CRITICO':'OK') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-family:Consolas,monospace;font-size:9.5pt;color:#1d4ed8;font-weight:700">' + escapeHtml(m.code) + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9.5pt">' + escapeHtml(m.description) + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-size:9.5pt">' + escapeHtml(m.unit) + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-weight:700;font-size:10pt;color:' + (isCrit ? '#dc2626' : '#15803d') + '">' + stock + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9pt;color:#475569">' + escapeHtml(lastObs) + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-size:9.5pt;font-weight:700;color:' + (isCrit ? '#dc2626' : '#15803d') + '">' + (isCrit ? 'CRÍTICO' : 'OK') + '</td>' +
                     '</tr>';
             });
-            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Balanco Fisico Geral</title></head><body style="font-family:Arial,sans-serif;margin:2cm">' +
-                '<div style="text-align:center;margin-bottom:24px">' +
-                '<h1 style="font-size:18pt;color:#1e3a5f;margin:0">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
-                '<h2 style="font-size:15pt;color:#374151;margin:6px 0">Balanco Fisico Geral</h2>' +
-                '<p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ' + now + (searchText ? ' | Filtro: ' + searchText : '') + '</p></div>' +
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:20px">' +
-                '<tr>' +
-                '<td style="width:33%;background:#eff6ff;border:1px solid #bfdbfe;padding:12px;text-align:center">' +
-                '<p style="margin:0;font-size:10pt;color:#374151">Total de Itens</p>' +
-                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#1d4ed8">' + totalItens + '</p></td>' +
-                '<td style="width:33%;background:#fef2f2;border:1px solid #fecaca;padding:12px;text-align:center">' +
-                '<p style="margin:0;font-size:10pt;color:#374151">Itens em Nivel Critico</p>' +
-                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#dc2626">' + totalCriticos + '</p></td>' +
-                '<td style="width:33%;background:#f0fdf4;border:1px solid #bbf7d0;padding:12px;text-align:center">' +
-                '<p style="margin:0;font-size:10pt;color:#374151">Itens em Nivel Normal</p>' +
-                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#15803d">' + (totalItens-totalCriticos) + '</p></td>' +
+            const body =
+                '<div style="text-align:center;margin-bottom:18px">' +
+                    '<h1 class="report-title">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
+                    '<h2 class="report-subtitle">Balanço Físico Geral</h2>' +
+                    '<p class="report-meta">Emitido em: ' + now + (searchText ? ' | Filtro: ' + escapeHtml(searchText) : '') + '</p>' +
+                '</div>' +
+                '<table style="margin-bottom:16px"><tr>' +
+                    '<td style="width:33%;background:#eff6ff;border:1px solid #bfdbfe;padding:10px;text-align:center"><p style="margin:0;font-size:9.5pt;color:#374151">Total de Itens</p><p style="margin:4px 0 0;font-size:16pt;font-weight:700;color:#1d4ed8">' + totalItens + '</p></td>' +
+                    '<td style="width:33%;background:#fef2f2;border:1px solid #fecaca;padding:10px;text-align:center"><p style="margin:0;font-size:9.5pt;color:#374151">Itens em Nível Crítico</p><p style="margin:4px 0 0;font-size:16pt;font-weight:700;color:#dc2626">' + totalCriticos + '</p></td>' +
+                    '<td style="width:33%;background:#f0fdf4;border:1px solid #bbf7d0;padding:10px;text-align:center"><p style="margin:0;font-size:9.5pt;color:#374151">Itens em Nível Normal</p><p style="margin:4px 0 0;font-size:16pt;font-weight:700;color:#15803d">' + (totalItens - totalCriticos) + '</p></td>' +
                 '</tr></table>' +
-                '<table style="width:100%;border-collapse:collapse">' +
-                '<thead><tr style="background:#1e3a5f;color:white">' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:11pt">Codigo</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:11pt">Descricao do Material</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Unidade</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Saldo Fisico</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:11pt">Ultima Obs.</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:11pt">Status</th>' +
-                '</tr></thead><tbody>' + rows + '</tbody></table>' +
-                '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
-                '</body></html>';
-            const blob = new Blob([html], {type: 'application/msword'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'Balanco_Fisico_Geral_' + new Date().toISOString().split('T')[0] + '.doc';
-            a.click();
-            toast.show('Balanco Fisico Geral exportado para Word.', 'success');
+                '<table>' +
+                    '<thead><tr>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:9.5pt">Código</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:9.5pt">Descrição do Material</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:center;font-size:9.5pt">Unidade</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:center;font-size:9.5pt">Saldo Físico</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:9.5pt">Última Obs.</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:center;font-size:9.5pt">Status</th>' +
+                    '</tr></thead><tbody>' + (rows || '<tr><td colspan="6" style="border:1px solid #cbd5e1;padding:8px;text-align:center;color:#6b7280">Nenhum item encontrado.</td></tr>') + '</tbody>' +
+                '</table>' +
+                '<p class="report-footer">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>';
+            downloadBlobAsWord(buildWordHtml('Balanço Físico Geral', body, 'landscape'), 'Balanco_Fisico_Geral_' + new Date().toISOString().split('T')[0] + '.doc');
+            toast.show('Balanço Físico Geral exportado para Word.', 'success');
         }
         
         function exportTimelineWord() {
@@ -3301,71 +3314,55 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             let totalMovimentos = 0;
             let totalEntradas = 0;
             let totalSaidas = 0;
-            
-            const mvs = data.movements.sort((a,b)=>new Date(a.date)-new Date(b.date));
-            
+            const mvs = [...data.movements].sort((a,b)=>new Date(a.date)-new Date(b.date));
             mvs.forEach(function(m) {
-                const mat = data.materials.find(function(x){return x.id===m.materialId;});
+                const mat = data.materials.find(function(x){ return x.id === m.materialId; });
                 const movDate = new Date(m.date);
                 const fromDate = dateFrom ? new Date(dateFrom) : null;
                 const toDate = dateTo ? new Date(dateTo + 'T23:59:59') : null;
-                
                 if ((fromDate && movDate < fromDate) || (toDate && movDate > toDate)) return;
                 if (searchText && (!mat || (!mat.code.toLowerCase().includes(searchText) && !mat.description.toLowerCase().includes(searchText)))) return;
-                
                 totalMovimentos++;
-                const isOut = m.type==='exit';
-                if(isOut) totalSaidas++; else totalEntradas++;
-                
+                const isOut = m.type === 'exit';
+                if (isOut) totalSaidas++; else totalEntradas++;
                 const dataHora = movDate.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-                const tipoTxt = isOut ? 'Saida' : (m.type==='return'?'Retorno':'Entrada');
+                const tipoTxt = isOut ? 'Saída' : (m.type === 'return' ? 'Retorno' : 'Entrada');
                 const corTipo = isOut ? '#dc2626' : '#2563eb';
-                const bgRow = isOut ? '#fff5f5' : '#f0f9ff';
-                
+                const bgRow = isOut ? '#fff7ed' : '#f8fafc';
                 movRows += '<tr style="background:' + bgRow + '">' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt;font-family:Consolas,monospace">' + dataHora + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt;color:' + corTipo + ';font-weight:bold">' + tipoTxt + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt;font-family:Consolas,monospace;color:#1d4ed8">' + (mat?mat.code:'---') + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt">' + (mat?mat.description:'---') + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;text-align:center;font-size:10pt;font-weight:bold">' + m.quantity + ' ' + (mat?mat.unit:'') + '</td>' +
-                    '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt">' + (m.pep||m.supplier||m.obs||'-') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9.5pt;font-family:Consolas,monospace">' + dataHora + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9.5pt;color:' + corTipo + ';font-weight:700">' + tipoTxt + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9.5pt;font-family:Consolas,monospace;color:#1d4ed8;font-weight:700">' + escapeHtml(mat ? mat.code : '---') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9.5pt">' + escapeHtml(mat ? mat.description : '---') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-size:9.5pt;font-weight:700">' + m.quantity + ' ' + escapeHtml(mat ? mat.unit : '') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9pt">' + escapeHtml(m.pep || m.supplier || m.obs || '-') + '</td>' +
                     '</tr>';
             });
-            
-            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Timeline Movimentacao</title></head><body style="font-family:Arial,sans-serif;margin:2cm">' +
-                '<div style="text-align:center;margin-bottom:24px">' +
-                '<h1 style="font-size:18pt;color:#1e3a5f;margin:0">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
-                '<h2 style="font-size:15pt;color:#374151;margin:6px 0">Timeline de Movimentacao</h2>' +
-                '<p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ' + now + (dateFrom || dateTo ? ' | Periodo: ' + (dateFrom||'Inicio') + ' a ' + (dateTo||'Hoje') : '') + '</p></div>' +
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:20px">' +
-                '<tr>' +
-                '<td style="width:33%;background:#eff6ff;border:1px solid #bfdbfe;padding:12px;text-align:center">' +
-                '<p style="margin:0;font-size:10pt;color:#374151">Total de Movimentacoes</p>' +
-                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#1d4ed8">' + totalMovimentos + '</p></td>' +
-                '<td style="width:33%;background:#f0fdf4;border:1px solid #bbf7d0;padding:12px;text-align:center">' +
-                '<p style="margin:0;font-size:10pt;color:#374151">Entradas/Devolucoes</p>' +
-                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#15803d">' + totalEntradas + '</p></td>' +
-                '<td style="width:33%;background:#fef2f2;border:1px solid #fecaca;padding:12px;text-align:center">' +
-                '<p style="margin:0;font-size:10pt;color:#374151">Saidas</p>' +
-                '<p style="margin:4px 0 0;font-size:18pt;font-weight:bold;color:#dc2626">' + totalSaidas + '</p></td>' +
-                '</tr></table>' +
-                '<table style="width:100%;border-collapse:collapse">' +
-                '<thead><tr style="background:#1e3a5f;color:white">' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Data/Hora</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Tipo</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Codigo</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Material</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:center;font-size:10pt">Quantidade</th>' +
-                '<th style="border:1px solid #ccc;padding:9px;text-align:left;font-size:10pt">Alvo/Obs</th>' +
-                '</tr></thead><tbody>' + movRows + '</tbody></table>' +
-                '<p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>' +
-                '</body></html>';
-            const blob = new Blob([html], {type: 'application/msword'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'Timeline_Movimentacao_' + new Date().toISOString().split('T')[0] + '.doc';
-            a.click();
-            toast.show('Timeline de Movimentacao exportada para Word.', 'success');
+            const filtroData = (dateFrom || dateTo) ? ('Período: ' + (dateFrom ? formatDateBR(dateFrom) : 'Início') + ' até ' + (dateTo ? formatDateBR(dateTo) : 'Hoje')) : 'Período: completo';
+            const body =
+                '<div style="text-align:center;margin-bottom:18px">' +
+                    '<h1 class="report-title">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
+                    '<h2 class="report-subtitle">Histórico Completo de Movimentações</h2>' +
+                    '<p class="report-meta">Emitido em: ' + now + '</p>' +
+                '</div>' +
+                '<div class="report-card">' +
+                    '<p style="font-size:9.5pt;color:#374151"><b>' + escapeHtml(filtroData) + '</b></p>' +
+                    '<p style="font-size:9.5pt;color:#374151">Filtro textual: <b>' + escapeHtml(searchText || 'Sem filtro') + '</b></p>' +
+                    '<p style="font-size:9.5pt;color:#374151">Movimentos: <b>' + totalMovimentos + '</b> | Entradas: <b>' + totalEntradas + '</b> | Saídas: <b>' + totalSaidas + '</b></p>' +
+                '</div>' +
+                '<table>' +
+                    '<thead><tr>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:9.5pt">Data/Hora</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:9.5pt">Operação</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:9.5pt">Código</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:9.5pt">Material</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:center;font-size:9.5pt">Quantidade</th>' +
+                        '<th class="report-th" style="border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:9.5pt">Alvo</th>' +
+                    '</tr></thead><tbody>' + (movRows || '<tr><td colspan="6" style="border:1px solid #cbd5e1;padding:8px;text-align:center;color:#6b7280">Nenhuma movimentação encontrada.</td></tr>') + '</tbody>' +
+                '</table>' +
+                '<p class="report-footer">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP - PABLO LEANDRO MARTINS DUARTE</p>';
+            downloadBlobAsWord(buildWordHtml('Histórico de Movimentações', body, 'landscape'), 'Historico_Movimentacoes_' + new Date().toISOString().split('T')[0] + '.doc');
+            toast.show('Histórico de movimentações exportado para Word.', 'success');
         }
         // ==================== TRANSFORMADORES ====================
         function openTransformadorModal() { document.getElementById('transformadorModal').classList.remove('hidden'); document.getElementById('transformadorModal').classList.add('flex'); }
