@@ -1997,6 +1997,24 @@
 
         function buildWordHtml(title, bodyHtml, orientation = 'portrait') {
             const pageSize = orientation === 'landscape' ? '841.9pt 595.3pt' : '595.3pt 841.9pt';
+            const companyName = 'Conecta Empreendimentos';
+            const companySubtitle = 'Controle de Estoque PEP • Smart Logistics & Command Center';
+            const generatedAt = new Date().toLocaleString('pt-BR');
+            const headerHtml =
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:14px">' +
+                    '<tr>' +
+                        '<td style="width:220px;vertical-align:middle;padding:0 0 8px 0">' +
+                            '<img src="' + COMPANY_LOGO + '" alt="Logo da empresa" style="max-width:190px;max-height:58px;object-fit:contain">' +
+                        '</td>' +
+                        '<td style="vertical-align:middle;text-align:right;padding:0 0 8px 0">' +
+                            '<div style="font-size:16pt;font-weight:700;color:#17365d;letter-spacing:.3px">' + companyName + '</div>' +
+                            '<div style="font-size:9.5pt;color:#4b5563;margin-top:3px">' + companySubtitle + '</div>' +
+                            '<div style="font-size:9pt;color:#6b7280;margin-top:5px">Documento: ' + escapeHtml(title) + ' • Emitido em ' + generatedAt + '</div>' +
+                        '</td>' +
+                    '</tr>' +
+                '</table>' +
+                '<div style="height:6px;background:linear-gradient(90deg,#1e3a5f 0%,#2563eb 55%,#93c5fd 100%);margin-bottom:18px"></div>';
+
             return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
                 '<head>' +
                 '<meta charset="utf-8">' +
@@ -2016,10 +2034,10 @@
                 '.report-meta{font-size:9.5pt;color:#6b7280;margin:6px 0 0;}' +
                 '.report-card{background:#f8fafc;border:1px solid #dbeafe;border-radius:8px;padding:10px 12px;margin:14px 0 18px;}' +
                 '.report-card p{margin:0 0 4px;}' +
-                '.report-th{background:#1e3a5f;color:#ffffff;font-weight:700;}' +
+                '.report-th{background:#1e3a5f;color:#ffffff !important;font-weight:700;}' +
                 '.report-footer{margin-top:18px;font-size:8.5pt;color:#6b7280;text-align:center;}' +
                 '</style>' +
-                '</head><body><div class="WordSection1"><div class="report-wrap">' + bodyHtml + '</div></div></body></html>';
+                '</head><body><div class="WordSection1"><div class="report-wrap">' + headerHtml + bodyHtml + '</div></div></body></html>';
         }
 
         function downloadBlobAsWord(html, filename) {
