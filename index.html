@@ -751,7 +751,8 @@
                                 <h3 class="text-2xl font-bold text-blue-700" id="selectedHistoryPep"></h3>
                             </div>
                             
-                            <div class="flex gap-2">
+                            <div class="flex gap-2 items-center">
+                                <span class="hidden xl:inline text-xs text-gray-500 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg">Você pode marcar cada item como separado ou retirado quando quiser.</span>
                                 <select id="historyPepTypeFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white" onchange="updateHistoryPepTable(document.getElementById('historyPepSearch').value)">
                                     <option value="">Filtro: Todos</option>
                                     <option value="exit">Saídas</option>
@@ -1651,6 +1652,41 @@
             toast.show(`PEP ${pep} marcada como ${normalizePepStatus(status)}.`, 'success');
         }
 
+
+        function updateMovementPepStatus(movementId, status) {
+            const movement = data.movements.find(item => item.id === movementId);
+            if (!movement || movement.type !== 'exit') return;
+
+            const normalized = normalizePepStatus(status);
+            const nowIso = new Date().toISOString();
+            const currentMeta = getPepStatusMeta(movement.pep || '');
+
+            movement.pepStatus = normalized;
+            if (normalized === 'separado') {
+                movement.separationDate = movement.separationDate || currentMeta.separationDate || nowIso.slice(0, 10);
+            }
+            if (normalized === 'retirado' && !movement.programDate) {
+                movement.programDate = movement.programDate || currentMeta.programDate || nowIso.slice(0, 10);
+            }
+
+            if (movement.pep) {
+                setPepStatus(
+                    movement.pep,
+                    normalized,
+                    true,
+                    movement.separationDate || currentMeta.separationDate || null,
+                    movement.programDate || currentMeta.programDate || null
+                );
+            } else {
+                saveData();
+                updateAllViews();
+            }
+
+            const selectedPep = document.getElementById('historyPepSearch').value;
+            if (selectedPep === movement.pep) updateHistoryPepTable(movement.pep);
+            toast.show(`Material atualizado para ${normalized}.`, 'success');
+        }
+
         function updatePepSchedulePanel() {
             const panel = document.getElementById('pepSchedulePanel');
             if (!panel) return;
@@ -2477,6 +2513,9 @@
             
             const quantity = parseFloat(document.getElementById('exitQuantity').value.toString().replace(',', '.'));
             const available = getMaterialStock(materialId);
+            const pepStatus = normalizePepStatus(document.getElementById('exitPepStatus').value);
+            const separationDate = document.getElementById('exitSeparationDate').value || null;
+            const programDate = document.getElementById('exitProgramDate').value || null;
             
             if (quantity > available) { toast.show(`Quebra de Caixa! Faltam ${quantity - available} UN.`, 'error'); return; }
             
@@ -2487,10 +2526,16 @@
             data.movements.push({
                 id: Date.now().toString(), type: 'exit', materialId, quantity, pep,
                 requester: document.getElementById('exitRequester').value, dateNeeded: document.getElementById('exitDateNeeded').value,
-                obs: document.getElementById('exitObs').value, date: new Date().toISOString(), user: 'Eng. Admin'
+                obs: document.getElementById('exitObs').value, date: new Date().toISOString(), user: 'Eng. Admin',
+                pepStatus, separationDate, programDate
             });
             
-            saveData(); updateAllViews(); this.reset(); clearPepSearch('exitPep'); clearMaterialSearch('exitMaterial');
+            saveData();
+            setPepStatus(pep, pepStatus, true, separationDate, programDate);
+            this.reset();
+            clearPepSearch('exitPep');
+            clearMaterialSearch('exitMaterial');
+            document.getElementById('exitPepStatus').value = 'separado';
             toast.show(`Despacho autorizado para ${pep}.`, 'success');
         });
 
@@ -3097,6 +3142,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                             <div>${m.obs||'-'}</div>
                             <div class="mt-1">${movementStatus}</div>
                             ${isOut ? `<div class="mt-2 text-[11px] text-gray-500">Separação: ${formatDateBR(m.separationDate || pepMeta.separationDate)} · Programação: ${formatDateBR(m.programDate || pepMeta.programDate)}</div>` : ''}
+                            ${isOut ? `<div class="mt-2 flex flex-wrap gap-2"><button class="px-2 py-1 rounded border text-[11px] font-semibold text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100" onclick="updateMovementPepStatus('${m.id}','separado')">Marcar Separado</button><button class="px-2 py-1 rounded border text-[11px] font-semibold text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" onclick="updateMovementPepStatus('${m.id}','retirado')">Marcar Retirado</button></div>` : ''}
                         </td>
                         <td class="p-3 text-center"><button class="text-rose-400 hover:text-rose-600" onclick="deleteMovement('${m.id}');setTimeout(()=>updateHistoryPepTable('${pep}'), 100);"><i class="fas fa-times"></i></button></td>
                     </tr>
