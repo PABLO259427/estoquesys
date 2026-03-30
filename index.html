@@ -675,7 +675,7 @@
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Código</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Material</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Saldo Físico</th>
-                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500"></th>
+                                    
                                 </tr>
                             </thead>
                             <tbody id="stockTable" class="divide-y divide-gray-100 skeleton-target">
@@ -1202,9 +1202,9 @@
             targets.forEach(t => {
                 if(t.tagName === 'TBODY') {
                     t.innerHTML = `
-                        <tr></tr>
-                        <tr></tr>
-                        <tr></tr>
+                        <tr><td colspan="10"><div class="h-8 skeleton w-full mb-2"></div></td></tr>
+                        <tr><td colspan="10"><div class="h-8 skeleton w-3/4 mb-2"></div></td></tr>
+                        <tr><td colspan="10"><div class="h-8 skeleton w-5/6"></div></td></tr>
                     `;
                 } else {
                     t.classList.add('opacity-50', 'pointer-events-none', 'transition-opacity');
@@ -1836,16 +1836,16 @@
                             : '<span class="px-2 py-1 rounded border text-xs font-semibold text-emerald-600 bg-emerald-50 border-emerald-200">Disponível</span>';
                         entriesTable.innerHTML += `
                             <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0">
-                                
+                                <td class="p-4 text-xs text-gray-500 font-mono">${new Date(entry.date).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
                                 <td class="p-4 text-sm font-mono font-bold text-blue-600">${escapeHtml(entry.begCode)}</td>
                                 <td class="p-4 text-sm text-gray-800">${escapeHtml(getSucataMaterialLabel(entry.materialId))}</td>
-                                
+                                <td class="p-4 text-sm text-gray-700">${escapeHtml(entry.origin || '-')}</td>
                                 <td class="p-4 text-sm">${entry.sourceMovementType === 'return'
                                     ? '<span class="px-2 py-1 rounded border text-xs font-semibold text-amber-700 bg-amber-50 border-amber-200">Devolução Avariada</span>'
                                     : '<span class="px-2 py-1 rounded border text-xs font-semibold text-slate-700 bg-slate-50 border-slate-200">Manual</span>'}</td>
                                 <td class="p-4 text-sm font-bold text-gray-800">${formatWeight(entry.weightKg)}</td>
                                 <td class="p-4 text-sm">${statusHtml}</td>
-                                
+                                <td class="p-4 text-center">${entry.soldCertificateId ? '<span class="text-xs text-gray-400">travado</span>' : `<button class="btn-delete-history" onclick="deleteSucataEntry('${entry.id}')"><i class="fas fa-trash"></i></button>`}</td>
                             </tr>`;
                     });
                 }
@@ -1866,7 +1866,7 @@
                                 <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0">
                                     <td class="p-4 text-sm font-mono font-bold text-blue-600">${escapeHtml(entry.begCode)}</td>
                                     <td class="p-4 text-sm font-bold text-gray-800">${formatWeight(entry.weightKg)}</td>
-                                    
+                                    <td class="p-4 text-sm"><span class="px-2 py-1 rounded border text-xs font-semibold ${statusClass}">${statusText}</span></td>
                                 </tr>`;
                         });
                 }
@@ -1882,7 +1882,7 @@
                     certs.forEach(cert => {
                         certTable.innerHTML += `
                             <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0">
-                                
+                                <td class="p-4 text-xs text-gray-500 font-mono">${new Date(cert.date).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
                                 <td class="p-4 text-sm text-gray-800 font-medium">${escapeHtml(cert.buyerName)}</td>
                                 <td class="p-4 text-xs text-gray-600">${escapeHtml(cert.bagCodes.join(', '))}</td>
                                 <td class="p-4 text-sm font-bold text-gray-800">${formatWeight(cert.totalWeightKg)}</td>
@@ -1911,7 +1911,7 @@
                     <td style="border:1px solid #111827;padding:7px 8px;text-align:center;font-size:10pt">${index + 1}</td>
                     <td style="border:1px solid #111827;padding:7px 8px;font-family:Consolas,monospace;font-size:10.5pt">${escapeHtml(item.begCode)}</td>
                     <td style="border:1px solid #111827;padding:7px 8px;font-size:10.5pt">${escapeHtml(item.materialLabel || 'Não informado')}</td>
-                    
+                    <td style="border:1px solid #111827;padding:7px 8px;font-size:10.5pt">${escapeHtml(item.origin || '-')}</td>
                     <td style="border:1px solid #111827;padding:7px 8px;text-align:right;font-weight:bold;font-size:10.5pt">${formatWeight(item.weightKg)}</td>
                 </tr>`).join('');
 
@@ -1940,7 +1940,7 @@
                 '<table style="width:100%;border-collapse:collapse;margin-top:14px;margin-bottom:12px">' +
                 '<tr>' +
                 '<td style="border:1px solid #111827;padding:6px 8px;font-size:10.5pt"><strong>Número do certificado:</strong> ' + escapeHtml(cert.id) + '</td>' +
-                '' +
+                '<td style="border:1px solid #111827;padding:6px 8px;font-size:10.5pt"><strong>Data de emissão:</strong> ' + new Date(cert.date).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) + '</td>' +
                 '</tr>' +
                 '</table>' +
 
@@ -1948,19 +1948,19 @@
                 '<table style="width:100%;border-collapse:collapse">' +
                 '<tr>' +
                 '<td style="width:145px;border:1px solid #111827;padding:7px 8px;font-size:10.8pt;font-weight:bold;background:#f3f4f6">Coletor</td>' +
-                '' +
+                '<td style="border:1px solid #111827;padding:7px 8px;font-size:10.8pt">' + escapeHtml(cert.buyerName || '-') + '</td>' +
                 '<td style="width:145px;border:1px solid #111827;padding:7px 8px;font-size:10.8pt;font-weight:bold;background:#f3f4f6">Documento</td>' +
-                '' +
+                '<td style="border:1px solid #111827;padding:7px 8px;font-size:10.8pt">' + escapeHtml(cert.buyerDocument || '-') + '</td>' +
                 '</tr>' +
                 '<tr>' +
                 '<td style="border:1px solid #111827;padding:7px 8px;font-size:10.8pt;font-weight:bold;background:#f3f4f6">Empresa</td>' +
-                '' +
+                '<td style="border:1px solid #111827;padding:7px 8px;font-size:10.8pt">' + escapeHtml(cert.buyerCompany || '-') + '</td>' +
                 '<td style="border:1px solid #111827;padding:7px 8px;font-size:10.8pt;font-weight:bold;background:#f3f4f6">Motorista</td>' +
-                '' +
+                '<td style="border:1px solid #111827;padding:7px 8px;font-size:10.8pt">' + escapeHtml(cert.driverName || '-') + '</td>' +
                 '</tr>' +
                 '<tr>' +
                 '<td style="border:1px solid #111827;padding:7px 8px;font-size:10.8pt;font-weight:bold;background:#f3f4f6">Placa</td>' +
-                '' +
+                '<td style="border:1px solid #111827;padding:7px 8px;font-size:10.8pt">' + escapeHtml(cert.truckPlate || '-') + '</td>' +
                 '<td style="border:1px solid #111827;padding:7px 8px;font-size:10.8pt;font-weight:bold;background:#f3f4f6">Quantidade de BEGs</td>' +
                 '<td style="border:1px solid #111827;padding:7px 8px;font-size:10.8pt">' + cert.bagItems.length + '</td>' +
                 '</tr>' +
@@ -1986,8 +1986,8 @@
                 '<div style="border:1px solid #111827;min-height:72px;padding:10px 12px;font-size:10.8pt">' + escapeHtml(cert.obs || 'Sem observações registradas.') + '</div>' +
 
                 '<table style="width:100%;border-collapse:collapse;margin-top:44px"><tr>' +
-                '' +
-                '' +
+                '<td style="width:50%;text-align:center;vertical-align:bottom;padding:0 12px;font-size:10.5pt"><div style="border-top:1px solid #111827;margin:0 auto 6px;width:88%;height:24px"></div>Assinatura do motorista</td>' +
+                '<td style="width:50%;text-align:center;vertical-align:bottom;padding:0 12px;font-size:10.5pt"><div style="border-top:1px solid #111827;margin:0 auto 6px;width:88%;height:24px"></div>Responsável pela liberação</td>' +
                 '</tr></table>' +
 
                 '<div style="border-top:3px solid #f07d2f;margin-top:14px"></div>' +
@@ -2067,10 +2067,10 @@
             const rows = [...data.sucata.entries].sort((a, b) => new Date(b.date) - new Date(a.date)).map(entry => {
                 const status = entry.soldCertificateId ? 'Baixado' : 'Disponível';
                 return '<tr>' +
-                    `` +
+                    `<td style="border:1px solid #d1d5db;padding:8px;font-size:10.5pt">${new Date(entry.date).toLocaleString('pt-BR')}</td>` +
                     `<td style="border:1px solid #d1d5db;padding:8px;font-family:Consolas,monospace;font-size:10.5pt">${escapeHtml(entry.begCode)}</td>` +
                     `<td style="border:1px solid #d1d5db;padding:8px;font-size:10.5pt">${escapeHtml(getSucataMaterialLabel(entry.materialId))}</td>` +
-                    `` +
+                    `<td style="border:1px solid #d1d5db;padding:8px;font-size:10.5pt">${escapeHtml(entry.origin || '-')}</td>` +
                     `<td style="border:1px solid #d1d5db;padding:8px;text-align:right;font-weight:bold;font-size:10.5pt">${formatWeight(entry.weightKg)}</td>` +
                     `<td style="border:1px solid #d1d5db;padding:8px;font-size:10.5pt">${status}</td>` +
                     '</tr>';
@@ -2925,9 +2925,9 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                     orderedEntries.forEach(item => {
                         entriesTbody.innerHTML += `
                             <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                                
+                                <td class="p-3 font-mono text-blue-600">${escapeHtml(item.begCode || '-')}</td>
                                 <td class="p-3 font-semibold text-gray-800">${formatWeight(item.weightKg || 0)}</td>
-                                
+                                <td class="p-3 text-gray-500 text-xs">${new Date(item.deletedAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <button onclick="restoreSucata('${item.id}')" class="px-2.5 py-1.5 text-xs bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition">Restaurar</button>
@@ -2949,9 +2949,9 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                     orderedCerts.forEach(cert => {
                         certsTbody.innerHTML += `
                             <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                                
-                                
-                                
+                                <td class="p-3 font-mono text-gray-700">${escapeHtml(cert.id || '-')}</td>
+                                <td class="p-3 text-gray-800">${escapeHtml(cert.buyerName || '-')}</td>
+                                <td class="p-3 text-gray-500 text-xs">${new Date(cert.deletedAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <button onclick="restoreCertificate('${cert.id}')" class="px-2.5 py-1.5 text-xs bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition">Restaurar</button>
@@ -2991,7 +2991,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                         <td class="p-4 text-center">${imgHtml}</td>
                         <td class="p-4 text-sm font-mono text-blue-600 font-semibold">${highlightMatch(m.code, searchText)}</td>
                         <td class="p-4 text-sm font-medium text-gray-800">${highlightMatch(m.description, searchText)}</td>
-                        
+                        <td class="p-4 text-sm"><span class="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold border border-gray-200">${stock} ${m.unit}</span></td>
                         <td class="p-4 text-xs text-gray-500 italic max-w-xs truncate" title="${lastObs}">${lastObs}</td>
                     </tr>
                 `;
@@ -3032,11 +3032,11 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0" id="hist-row-${m.id}">
                         <td class="p-3 text-xs text-gray-500 font-mono">${dStr}</td>
-                        
+                        <td class="p-3 text-xs"><span class="px-2 py-1 border rounded font-semibold ${tCls}">${tTxt}</span></td>
                         <td class="p-3 text-sm text-gray-800 font-medium leading-tight">${displayCode}${displayDesc}</td>
                         <td class="p-3 text-sm font-bold text-gray-700">${m.quantity}</td>
-                        
-                        
+                        <td class="p-3 text-xs text-gray-600 font-mono">${m.pep || m.supplier || '-'}</td>
+                        <td class="p-3 text-center"><button class="btn-delete-history" onclick="deleteMovement('${m.id}')"><i class="fas fa-trash"></i></button></td>
                     </tr>
                 `;
             });
@@ -3179,7 +3179,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50 border-b border-gray-100 last:border-0">
                         <td class="p-3 text-xs text-gray-500 font-mono">${dataHora}</td>
-                        
+                        <td class="p-3 text-xs"><span class="${isOut?'text-rose-600 bg-rose-50':'text-blue-600 bg-blue-50'} px-2 py-1 rounded border ${isOut?'border-rose-200':'border-blue-200'}">${isOut?'Saca':'Devolve'}</span></td>
                         <td class="p-3 text-sm font-medium">
                             <div class="text-blue-600 font-mono text-xs font-semibold">${mat?mat.code:'---'}</div>
                             <div class="text-gray-700">${mat?mat.description:'---'}</div>
@@ -3191,7 +3191,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                             ${isOut ? `<div class="mt-2 text-[11px] text-gray-500">Separação: ${formatDateBR(m.separationDate || pepMeta.separationDate)} · Programação: ${formatDateBR(m.programDate || pepMeta.programDate)}</div>` : ''}
                             ${isOut ? `<div class="mt-2 flex flex-wrap gap-2"><button class="px-2 py-1 rounded border text-[11px] font-semibold text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100" onclick="updateMovementPepStatus('${m.id}','separado')">Marcar Separado</button><button class="px-2 py-1 rounded border text-[11px] font-semibold text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" onclick="updateMovementPepStatus('${m.id}','retirado')">Marcar Retirado</button></div>` : ''}
                         </td>
-                        
+                        <td class="p-3 text-center"><button class="text-rose-400 hover:text-rose-600" onclick="deleteMovement('${m.id}');setTimeout(()=>updateHistoryPepTable('${pep}'), 100);"><i class="fas fa-times"></i></button></td>
                     </tr>
                 `;
             });
@@ -3227,10 +3227,10 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 movRows += '<tr>' +
                     '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9.5pt;font-family:Consolas,monospace">' + dataHora + '</td>' +
                     '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9.5pt;color:' + corTipo + ';font-weight:700">' + tipoTxt + '</td>' +
-                    '' +
-                    '' +
+                    '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9.5pt;font-family:Consolas,monospace;color:#1d4ed8;font-weight:700">' + escapeHtml(mat ? mat.code : '---') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9.5pt">' + escapeHtml(mat ? mat.description : '---') + '</td>' +
                     '<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;font-size:9.5pt;font-weight:700">' + m.quantity + ' ' + escapeHtml(mat ? mat.unit : '') + '</td>' +
-                    '' +
+                    '<td style="border:1px solid #cbd5e1;padding:6px;font-size:9pt;color:#475569">' + escapeHtml(m.obs || m.reason || m.requester || '-') + '</td>' +
                     '</tr>';
             });
             const allocSection = allocRows ? ('<h3 style="font-size:11.5pt;color:#1e3a5f;margin:0 0 8px;border-bottom:2px solid #1e3a5f;padding-bottom:4px">Saldo Atual Alocado neste PEP</h3>' +
@@ -3304,9 +3304,9 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                     '<p class="report-meta">Emitido em: ' + now + (searchText ? ' | Filtro: ' + escapeHtml(searchText) : '') + '</p>' +
                 '</div>' +
                 '<table style="margin-bottom:16px"><tr>' +
-                    '' +
-                    '' +
-                    '' +
+                    '<td style="width:33%;background:#eff6ff;border:1px solid #bfdbfe;padding:10px;text-align:center"><p style="margin:0;font-size:9.5pt;color:#374151">Total de Itens</p><p style="margin:4px 0 0;font-size:16pt;font-weight:700;color:#1d4ed8">' + totalItens + '</p></td>' +
+                    '<td style="width:33%;background:#fef2f2;border:1px solid #fecaca;padding:10px;text-align:center"><p style="margin:0;font-size:9.5pt;color:#374151">Itens em Nível Crítico</p><p style="margin:4px 0 0;font-size:16pt;font-weight:700;color:#dc2626">' + totalCriticos + '</p></td>' +
+                    '<td style="width:33%;background:#f0fdf4;border:1px solid #bbf7d0;padding:10px;text-align:center"><p style="margin:0;font-size:9.5pt;color:#374151">Itens em Nível Normal</p><p style="margin:4px 0 0;font-size:16pt;font-weight:700;color:#15803d">' + (totalItens - totalCriticos) + '</p></td>' +
                 '</tr></table>' +
                 '<table>' +
                     '<thead><tr>' +
@@ -3350,10 +3350,10 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 movRows += '<tr style="background:' + bgRow + '">' +
                     '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9.5pt;font-family:Consolas,monospace">' + dataHora + '</td>' +
                     '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9.5pt;color:' + corTipo + ';font-weight:700">' + tipoTxt + '</td>' +
-                    '' +
-                    '' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9.5pt;font-family:Consolas,monospace;color:#1d4ed8;font-weight:700">' + escapeHtml(mat ? mat.code : '---') + '</td>' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9.5pt">' + escapeHtml(mat ? mat.description : '---') + '</td>' +
                     '<td style="border:1px solid #cbd5e1;padding:7px;text-align:center;font-size:9.5pt;font-weight:700">' + m.quantity + ' ' + escapeHtml(mat ? mat.unit : '') + '</td>' +
-                    '' +
+                    '<td style="border:1px solid #cbd5e1;padding:7px;font-size:9pt">' + escapeHtml(m.pep || m.supplier || m.obs || '-') + '</td>' +
                     '</tr>';
             });
             const filtroData = (dateFrom || dateTo) ? ('Período: ' + (dateFrom ? formatDateBR(dateFrom) : 'Início') + ' até ' + (dateTo ? formatDateBR(dateTo) : 'Hoje')) : 'Período: completo';
@@ -3417,7 +3417,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 const dataStr = new Date(t.dataCadastro).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
                 const statusClass = t.status === 'em_estoque' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-700 border-orange-200';
                 const statusText = t.status === 'em_estoque' ? 'Em Estoque' : 'Em Campo';
-                tbody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0"></tr>`;
+                tbody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0"><td class="p-4 text-xs text-gray-500 font-mono">${dataStr}</td><td class="p-4 text-sm font-mono font-bold text-blue-600">${t.codigo}</td><td class="p-4 text-sm font-mono text-gray-700">${t.serie}</td><td class="p-4 text-sm text-gray-800">${t.descricao}</td><td class="p-4 text-sm text-gray-600">${t.notaFiscal}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-semibold border ${statusClass}">${statusText}</span></td><td class="p-4 text-center"><button onclick="viewTransformadorMovimentos('${t.id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Ver movimentações"><i class="fas fa-history"></i></button><button onclick="registrarMovimentacaoTransformador('${t.id}')" class="text-purple-600 hover:text-purple-800 mr-2" title="Registrar movimentação"><i class="fas fa-exchange-alt"></i></button><button onclick="deleteTransformador('${t.id}')" class="text-red-600 hover:text-red-800" title="Deletar"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         }
         function filterTransformadores() { updateTransformadoresTable(); }
@@ -3473,7 +3473,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                     const dataStr = new Date(m.data).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
                     const tipoClass = m.tipo === 'saida' ? 'text-red-600 bg-red-50 border-red-200' : (m.tipo === 'entrada' ? 'text-green-600 bg-green-50 border-green-200' : 'text-blue-600 bg-blue-50 border-blue-200');
                     const tipoText = m.tipo === 'saida' ? 'Saída' : (m.tipo === 'entrada' ? 'Entrada' : 'Retorno');
-                    tbody.innerHTML += `<tr class="hover:bg-gray-50 border-b border-gray-100 last:border-0"></tr>`;
+                    tbody.innerHTML += `<tr class="hover:bg-gray-50 border-b border-gray-100 last:border-0"><td class="p-3 text-xs text-gray-500 font-mono">${dataStr}</td><td class="p-3 text-xs"><span class="px-2 py-1 rounded border font-semibold ${tipoClass}">${tipoText}</span></td><td class="p-3 text-sm text-gray-700">${m.de}</td><td class="p-3 text-sm text-gray-700">${m.para}</td><td class="p-3 text-xs text-gray-600">${m.observacao || '-'}</td><td class="p-3 text-center"><button class="text-red-600 hover:text-red-800" onclick="deleteMovimentacaoTransformador('${m.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
                 });
             }
             modal.classList.remove('hidden');
@@ -3516,7 +3516,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 const dataStr = new Date(m.data).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
                 const tipoClass = m.tipo === 'saida' ? 'text-red-600 bg-red-50 border-red-200' : (m.tipo === 'entrada' ? 'text-green-600 bg-green-50 border-green-200' : 'text-blue-600 bg-blue-50 border-blue-200');
                 const tipoText = m.tipo === 'saida' ? 'Saída' : (m.tipo === 'entrada' ? 'Entrada' : 'Retorno');
-                tbody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0"></tr>`;
+                tbody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0"><td class="p-3 text-xs text-gray-500 font-mono">${dataStr}</td><td class="p-3 text-xs"><span class="px-2 py-1 rounded border font-semibold ${tipoClass}">${tipoText}</span></td><td class="p-3 text-sm font-mono font-bold text-blue-600">${transformador.codigo}</td><td class="p-3 text-sm font-mono text-gray-700">${transformador.serie}</td><td class="p-3 text-sm text-gray-800">${transformador.descricao}</td><td class="p-3 text-sm text-gray-700">${m.de} → ${m.para}</td><td class="p-3 text-xs text-gray-600">${m.observacao || '-'}</td><td class="p-3 text-center"><button class="text-red-600 hover:text-red-800" onclick="deleteMovimentacaoTransformador('${m.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         }
         function filterTransformadorHistorico() { updateTransformadorHistoricoTable(); }
