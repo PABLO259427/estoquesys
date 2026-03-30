@@ -1251,6 +1251,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
+        if (!Array.isArray(data.transformadorMovimentos)) data.transformadorMovimentos = [];
             updateAllViews();
             setupKeyboardShortcuts();
             setTimeout(() => showOverduePepAlert(), 600);
@@ -1295,6 +1296,7 @@
                     data.sucata = parsed.sucata || { entries: [], certificates: [] };
                     data.trash = parsed.trash || { entries: [], certificates: [] };
                     data.transformadores = parsed.transformadores || [];
+                    data.transformadorMovimentos = parsed.transformadorMovimentos || [];
                     data.transformadorMovimentos = parsed.transformadorMovimentos || [];
                 }
             } catch (e) {
@@ -3525,3 +3527,10 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
     </script>
 </body>
 </html>
+
+        function closeTransformadorMovimentosModal() {
+            const modal = document.getElementById('transformadorMovimentosModal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
