@@ -368,9 +368,14 @@
                 <div id="content-materials" class="tab-content hidden animate-fade-in p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Cadastro de Materiais</h2>
-                        <button onclick="openMaterialModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-md">
-                            <i class="fas fa-plus"></i> Novo Material
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="imprimirListaMateriaisProfissional()" class="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition flex items-center gap-2 shadow-md">
+                                <i class="fas fa-print"></i> Imprimir Lista
+                            </button>
+                            <button onclick="openMaterialModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-md">
+                                <i class="fas fa-plus"></i> Novo Material
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-100">
                         <table class="w-full text-left border-collapse">
@@ -3081,7 +3086,135 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
         function filterStock() { updateStockTable(); }
         function filterHistory() { updateHistoryTable(); }
 
-        function exportData() {
+        
+        function imprimirListaMateriaisProfissional() {
+            const rows = (data.materials || []).map((m, index) => {
+                const stock = getMaterialStock(m.id);
+                const unit = m.unit || 'UN';
+                return `
+                    <tr>
+                        <td>${String(index + 1).padStart(2, '0')}</td>
+                        <td>${m.code || '-'}</td>
+                        <td>${m.description || '-'}</td>
+                        <td>${unit}</td>
+                        <td style="text-align:right;">${stock}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const now = new Date();
+            const emission = now.toLocaleString('pt-BR');
+            const totalItens = (data.materials || []).length;
+
+            const html = `
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Lista Completa de Materiais</title>
+                    <style>
+                        @page { size: A4 portrait; margin: 16mm; }
+                        body { font-family: Arial, Helvetica, sans-serif; color: #1f2937; margin: 0; }
+                        .header { border-bottom: 3px solid #1d4ed8; padding-bottom: 12px; margin-bottom: 18px; }
+                        .brand { font-size: 12px; color: #6b7280; letter-spacing: .4px; text-transform: uppercase; }
+                        .title { font-size: 26px; font-weight: 700; margin: 6px 0 4px; color: #111827; }
+                        .subtitle { font-size: 13px; color: #6b7280; }
+                        .meta { display: flex; justify-content: space-between; gap: 12px; margin: 16px 0 18px; }
+                        .meta-box { flex: 1; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px 12px; background: #f9fafb; }
+                        .meta-label { font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 4px; }
+                        .meta-value { font-size: 15px; font-weight: 700; color: #111827; }
+                        table { width: 100%; border-collapse: collapse; }
+                        thead th {
+                            background: #eff6ff;
+                            color: #1e3a8a;
+                            font-size: 12px;
+                            text-transform: uppercase;
+                            letter-spacing: .35px;
+                            border: 1px solid #bfdbfe;
+                            padding: 10px;
+                            text-align: left;
+                        }
+                        tbody td {
+                            border: 1px solid #e5e7eb;
+                            padding: 9px 10px;
+                            font-size: 12px;
+                            vertical-align: top;
+                        }
+                        tbody tr:nth-child(even) { background: #f9fafb; }
+                        .footer {
+                            margin-top: 18px;
+                            padding-top: 10px;
+                            border-top: 1px solid #e5e7eb;
+                            font-size: 11px;
+                            color: #6b7280;
+                            display: flex;
+                            justify-content: space-between;
+                        }
+                        .empty {
+                            border: 1px dashed #cbd5e1;
+                            border-radius: 12px;
+                            padding: 22px;
+                            text-align: center;
+                            color: #64748b;
+                            background: #f8fafc;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="brand">Pablo Leandro Martins Duarte</div>
+                        <div class="title">Lista Completa de Materiais</div>
+                        <div class="subtitle">Controle de Estoque PEP • Relatório de impressão profissional</div>
+                    </div>
+
+                    <div class="meta">
+                        <div class="meta-box">
+                            <div class="meta-label">Emitido em</div>
+                            <div class="meta-value">${emission}</div>
+                        </div>
+                        <div class="meta-box">
+                            <div class="meta-label">Total de materiais</div>
+                            <div class="meta-value">${totalItens}</div>
+                        </div>
+                    </div>
+
+                    ${totalItens === 0 ? `
+                        <div class="empty">Nenhum material cadastrado no momento.</div>
+                    ` : `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 52px;">#</th>
+                                    <th style="width: 140px;">Código</th>
+                                    <th>Material</th>
+                                    <th style="width: 70px;">UN</th>
+                                    <th style="width: 110px; text-align:right;">Saldo Físico</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    `}
+
+                    <div class="footer">
+                        <div>Documento gerado pelo sistema de controle de estoque.</div>
+                        <div>Pronto para impressão</div>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const win = window.open('', '_blank', 'width=1000,height=800');
+            if (!win) {
+                toast.show('Permita pop-ups para abrir a impressão.', 'warning');
+                return;
+            }
+            win.document.open();
+            win.document.write(html);
+            win.document.close();
+            win.focus();
+            setTimeout(() => win.print(), 350);
+        }
+
+function exportData() {
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}));
             a.download = `sys_data_${new Date().toISOString().split('T')[0]}.json`; a.click();
