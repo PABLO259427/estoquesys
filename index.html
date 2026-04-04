@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema Profissional - Agente de Saúde</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js"></script>
   <style>
     :root{
       --bg:#f4f7fb;
@@ -57,7 +58,7 @@
 
     .top-actions{
       display:grid;
-      grid-template-columns:1fr auto auto auto;
+      grid-template-columns:1fr auto auto auto auto;
       gap:10px;
       margin-bottom:18px;
     }
@@ -358,12 +359,24 @@
       display:block;
     }
 
+    .log-box{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      color:#334155;
+      line-height:1.5;
+    }
+
+    @media (max-width: 1200px){
+      .top-actions{ grid-template-columns:1fr 1fr; }
+    }
+
     @media (max-width: 1100px){
       .grid-kpi{ grid-template-columns:repeat(3,1fr); }
       .form-grid{ grid-template-columns:repeat(2,1fr); }
       .toolbar{ grid-template-columns:1fr 1fr; }
       .two-cols{ grid-template-columns:1fr; }
-      .top-actions{ grid-template-columns:1fr 1fr; }
     }
 
     @media (max-width: 700px){
@@ -394,10 +407,12 @@
   <div class="wrap">
     <div class="top-actions hide-print">
       <input type="text" id="buscaGlobal" placeholder="Buscar por nome, endereço, CNS, família, microárea..." onkeyup="renderAll()">
-      <button class="btn-secondary" onclick="exportarDados()">Exportar Backup</button>
-      <button class="btn-light" onclick="document.getElementById('importarArquivo').click()">Importar Backup</button>
+      <button class="btn-secondary" onclick="exportarDados()">Exportar Backup JSON</button>
+      <button class="btn-light" onclick="document.getElementById('importarArquivo').click()">Importar JSON</button>
+      <button class="btn-light" onclick="document.getElementById('importarPdf').click()">Importar PDF</button>
       <button class="btn-success" onclick="exportarAutomaticoManual()">Exportar Atualizado Agora</button>
       <input type="file" id="importarArquivo" style="display:none" accept=".json" onchange="importarDados(event)">
+      <input type="file" id="importarPdf" style="display:none" accept=".pdf" onchange="importarPDF(event)">
     </div>
 
     <div class="tabs hide-print">
@@ -514,6 +529,7 @@
           <input id="indMicroarea" placeholder="Microárea">
           <input id="indIdade" type="number" placeholder="Idade">
           <input id="indCns" placeholder="CNS">
+          <input id="indCpf" placeholder="CPF">
           <input id="indTelefone" placeholder="Telefone">
           <select id="indPerfil">
             <option value="Criança">Criança</option>
@@ -624,6 +640,11 @@
           <div class="empty">Escolha um relatório para visualizar.</div>
         </div>
       </div>
+
+      <div class="card section">
+        <h2>Importação de PDF</h2>
+        <div id="logImportacaoPdf" class="log-box">Nenhum PDF importado ainda.</div>
+      </div>
     </section>
   </div>
 
@@ -688,6 +709,7 @@
               microarea:'Microárea 02',
               idade:27,
               cns:'700111122223333',
+              cpf:'',
               telefone:'(53) 99999-5555',
               perfil:'Gestante',
               prioridade:'Alta',
@@ -701,6 +723,7 @@
               microarea:'Microárea 01',
               idade:61,
               cns:'700444455556666',
+              cpf:'',
               telefone:'(53) 99999-6666',
               perfil:'Hipertenso',
               prioridade:'Média',
@@ -790,24 +813,253 @@
       };
 
       reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    async function importarPDF(event){
+      const file = event.target.files[0];
+      if(!file) return;
+
+      try{
+        document.getElementById('logImportacaoPdf').innerHTML = 'Lendo PDF...';
+
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let textoCompleto = '';
+
+        for(let pagina = 1; pagina <= pdf.numPages; pagina++){
+          const page = await pdf.getPage(pagina);
+          const content = await page.getTextContent();
+          const textoPagina = content.items.map(item => item.str).join('\n');
+          textoCompleto += '\n' + textoPagina;
+        }
+
+        const resultado = processarTextoPDFCadastro(textoCompleto);
+
+        salvarDB();
+        preencherFiltros();
+        renderAll();
+
+        document.getElementById('logImportacaoPdf').innerHTML = `
+          <div><strong>PDF importado com sucesso.</strong></div>
+          <div>Famílias criadas: ${resultado.familias}</div>
+          <div>Pessoas criadas: ${resultado.pessoas}</div>
+          <div>Linhas ignoradas: ${resultado.ignoradas}</div>
+          <div style="margin-top:8px;color:#64748b;font-size:13px;">
+            Revise os cadastros importados, porque PDF pode vir com quebras de linha e colunas misturadas.
+          </div>
+        `;
+
+        alert('PDF importado com sucesso. Revise os dados importados.');
+      } catch(err){
+        console.error(err);
+        document.getElementById('logImportacaoPdf').innerHTML = 'Erro ao importar PDF.';
+        alert('Não foi possível importar o PDF.');
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    function processarTextoPDFCadastro(texto){
+      const linhas = texto
+        .split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(l => l);
+
+      let ruaAtual = '';
+      let microareaAtual = 'Micro I';
+      let casaAtual = '';
+      let bufferPessoas = [];
+
+      let familiasCriadas = 0;
+      let pessoasCriadas = 0;
+      let ignoradas = 0;
+
+      function ehData(valor){
+        return /^\d{2}\/\d{2}\/\d{4}$/.test(valor);
+      }
+
+      function ehSUS(valor){
+        return /^\d{15,18}$/.test(valor.replace(/\s+/g,''));
+      }
+
+      function ehCPF(valor){
+        const limpo = valor.replace(/\D/g,'');
+        return limpo.length === 11;
+      }
+
+      function ehTelefone(valor){
+        const limpo = valor.replace(/[^\d]/g,'');
+        return limpo.length >= 8 && limpo.length <= 11;
+      }
+
+      function normalizarCPF(valor){
+        const d = valor.replace(/\D/g,'');
+        if(d.length !== 11) return valor;
+        return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9,11)}`;
+      }
+
+      function formatarDataISO(dataBR){
+        if(!ehData(dataBR)) return '';
+        const [dia, mes, ano] = dataBR.split('/');
+        return `${ano}-${mes}-${dia}`;
+      }
+
+      function criarFamiliaSeNaoExistir(casa, rua){
+        const nomeFamilia = casa ? `Casa ${casa} - ${rua}` : rua;
+        const jaExiste = db.familias.find(f => f.responsavel === nomeFamilia && f.endereco === rua);
+
+        if(jaExiste) return jaExiste;
+
+        const nova = {
+          id: gerarId(),
+          responsavel: nomeFamilia,
+          telefone: '',
+          endereco: rua,
+          bairro: '',
+          microarea: microareaAtual,
+          pessoas: 0,
+          risco: 'Baixo',
+          situacao: 'Importado do PDF',
+          ultimaVisita: '',
+          obs: 'Cadastro criado automaticamente por importação PDF.'
+        };
+
+        db.familias.unshift(nova);
+        familiasCriadas++;
+        return nova;
+      }
+
+      function atualizarTotalFamilia(familiaId){
+        const familia = db.familias.find(f => f.id === familiaId);
+        if(!familia) return;
+        familia.pessoas = db.pessoas.filter(p => p.familia === familia.responsavel).length;
+      }
+
+      for(let i = 0; i < linhas.length; i++){
+        const linha = linhas[i];
+
+        if(/Área/i.test(linha) && /Micro/i.test(linha)){
+          continue;
+        }
+
+        if(/^Rua /i.test(linha) || /^RUA /i.test(linha)){
+          ruaAtual = linha;
+          casaAtual = '';
+          bufferPessoas = [];
+          continue;
+        }
+
+        if(/CASA/i.test(linha) && /PACIENTE/i.test(linha)){
+          continue;
+        }
+
+        if(/RECUSA/i.test(linha) || /TERRENO/i.test(linha) || /OFICINA/i.test(linha) || /casa DE RELIGIAO/i.test(linha)){
+          continue;
+        }
+
+        const casaMatch = linha.match(/^(\d+[A-Zªº\-\(\)\s\/]*)$/i);
+        if(casaMatch && !ehTelefone(linha) && !ehSUS(linha) && !ehCPF(linha)){
+          casaAtual = linha;
+          bufferPessoas = [];
+          continue;
+        }
+
+        if(ehData(linha)){
+          const nome = bufferPessoas.join(' ').trim();
+
+          const sus = linhas[i + 1] && ehSUS(linhas[i + 1]) ? linhas[i + 1].replace(/\s+/g,'') : '';
+          const possivelTelefone = linhas[i + 2] || '';
+          const telefone = ehTelefone(possivelTelefone) ? possivelTelefone : '';
+          const possivelCpf = linhas[i + 3] || '';
+          const cpf = ehCPF(possivelCpf) ? normalizarCPF(possivelCpf) : '';
+
+          if(nome && ruaAtual){
+            const familia = criarFamiliaSeNaoExistir(casaAtual, ruaAtual);
+
+            const duplicado = db.pessoas.find(p =>
+              texto(p.nome) === texto(nome) &&
+              texto(p.cns) === texto(sus) &&
+              texto(p.cpf || '') === texto(cpf || '')
+            );
+
+            if(!duplicado){
+              db.pessoas.unshift({
+                id: gerarId(),
+                nome: nome,
+                familia: familia.responsavel,
+                microarea: familia.microarea,
+                idade: calcularIdadePorData(formatarDataISO(linha)),
+                cns: sus,
+                cpf: cpf,
+                telefone: telefone,
+                perfil: 'Outro',
+                prioridade: 'Baixa',
+                ultimoAtendimento: '',
+                acompanhamento: `Importado do PDF • DN: ${linha} • Endereço: ${ruaAtual} • Casa: ${casaAtual || '-'}`
+              });
+              pessoasCriadas++;
+              atualizarTotalFamilia(familia.id);
+            }
+          } else {
+            ignoradas++;
+          }
+
+          bufferPessoas = [];
+          continue;
+        }
+
+        if(
+          !ehSUS(linha) &&
+          !ehCPF(linha) &&
+          !ehTelefone(linha) &&
+          !/^\-+$/.test(linha) &&
+          !/^\d+$/.test(linha)
+        ){
+          bufferPessoas.push(linha);
+        }
+      }
+
+      return {
+        familias: familiasCriadas,
+        pessoas: pessoasCriadas,
+        ignoradas: ignoradas
+      };
+    }
+
+    function calcularIdadePorData(dataISO){
+      if(!dataISO) return 0;
+      const nascimento = new Date(dataISO + 'T00:00:00');
+      if(isNaN(nascimento.getTime())) return 0;
+
+      const hoje = new Date();
+      let idade = hoje.getFullYear() - nascimento.getFullYear();
+      const m = hoje.getMonth() - nascimento.getMonth();
+
+      if(m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())){
+        idade--;
+      }
+
+      return idade >= 0 ? idade : 0;
     }
 
     function badgeRisco(risco){
-      if(risco === 'Alto') return '<span class=\"badge badge-red\">Alto Risco</span>';
-      if(risco === 'Médio') return '<span class=\"badge badge-yellow\">Médio Risco</span>';
-      return '<span class=\"badge badge-gray\">Baixo Risco</span>';
+      if(risco === 'Alto') return '<span class="badge badge-red">Alto Risco</span>';
+      if(risco === 'Médio') return '<span class="badge badge-yellow">Médio Risco</span>';
+      return '<span class="badge badge-gray">Baixo Risco</span>';
     }
 
     function badgePrioridade(p){
-      if(p === 'Alta') return '<span class=\"badge badge-red\">Prioridade Alta</span>';
-      if(p === 'Média') return '<span class=\"badge badge-yellow\">Prioridade Média</span>';
-      return '<span class=\"badge badge-gray\">Prioridade Baixa</span>';
+      if(p === 'Alta') return '<span class="badge badge-red">Prioridade Alta</span>';
+      if(p === 'Média') return '<span class="badge badge-yellow">Prioridade Média</span>';
+      return '<span class="badge badge-gray">Prioridade Baixa</span>';
     }
 
     function badgeStatusVisita(s){
-      if(s === 'Concluída') return '<span class=\"badge badge-green\">Concluída</span>';
-      if(s === 'Agendada') return '<span class=\"badge badge-blue\">Agendada</span>';
-      return '<span class=\"badge badge-red\">Não realizada</span>';
+      if(s === 'Concluída') return '<span class="badge badge-green">Concluída</span>';
+      if(s === 'Agendada') return '<span class="badge badge-blue">Agendada</span>';
+      return '<span class="badge badge-red">Não realizada</span>';
     }
 
     function trocarAba(id, botao){
@@ -870,6 +1122,7 @@
         microarea: document.getElementById('indMicroarea').value.trim(),
         idade: Number(document.getElementById('indIdade').value || 0),
         cns: document.getElementById('indCns').value.trim(),
+        cpf: document.getElementById('indCpf').value.trim(),
         telefone: document.getElementById('indTelefone').value.trim(),
         perfil: document.getElementById('indPerfil').value,
         prioridade: document.getElementById('indPrioridade').value,
@@ -885,7 +1138,7 @@
     }
 
     function limparFormularioPessoa(){
-      ['indNome','indFamilia','indMicroarea','indIdade','indCns','indTelefone','indUltimoAtendimento','indAcompanhamento'].forEach(id => {
+      ['indNome','indFamilia','indMicroarea','indIdade','indCns','indCpf','indTelefone','indUltimoAtendimento','indAcompanhamento'].forEach(id => {
         document.getElementById(id).value = '';
       });
       document.getElementById('indPerfil').value = 'Criança';
@@ -1135,6 +1388,7 @@
           p.familia + ' ' +
           p.microarea + ' ' +
           p.cns + ' ' +
+          p.cpf + ' ' +
           p.telefone + ' ' +
           p.perfil + ' ' +
           p.prioridade + ' ' +
@@ -1165,6 +1419,7 @@
               </div>
               <div><strong>Idade:</strong> ${p.idade || 0}</div>
               <div><strong>CNS:</strong> ${p.cns || '-'}</div>
+              <div><strong>CPF:</strong> ${p.cpf || '-'}</div>
               <div><strong>Telefone:</strong> ${p.telefone || '-'}</div>
               <div><strong>Último atendimento:</strong> ${p.ultimoAtendimento || '-'}</div>
               <div><strong>Acompanhamento:</strong> ${p.acompanhamento || '-'}</div>
@@ -1316,12 +1571,13 @@
                 <th>Perfil</th>
                 <th>Prioridade</th>
                 <th>CNS</th>
+                <th>CPF</th>
               </tr>
             </thead>
             <tbody>
         `;
         if(!db.pessoas.length){
-          html += `<tr><td colspan="6">Sem dados</td></tr>`;
+          html += `<tr><td colspan="7">Sem dados</td></tr>`;
         } else {
           db.pessoas.forEach(p => {
             html += `<tr>
@@ -1331,6 +1587,7 @@
               <td>${p.perfil || ''}</td>
               <td>${p.prioridade || ''}</td>
               <td>${p.cns || ''}</td>
+              <td>${p.cpf || ''}</td>
             </tr>`;
           });
         }
