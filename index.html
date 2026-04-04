@@ -11,7 +11,6 @@
       --primary:#0f172a;
       --primary-2:#1e293b;
       --accent:#2563eb;
-      --accent-2:#dbeafe;
       --green:#16a34a;
       --yellow:#d97706;
       --red:#dc2626;
@@ -24,6 +23,7 @@
     }
 
     *{box-sizing:border-box}
+
     body{
       margin:0;
       font-family:Arial, Helvetica, sans-serif;
@@ -147,12 +147,6 @@
       gap:12px;
     }
 
-    .form-grid-3{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:12px;
-    }
-
     .form-grid-2{
       display:grid;
       grid-template-columns:repeat(2,1fr);
@@ -223,6 +217,10 @@
     .btn-success{
       background:var(--green);
       color:#fff;
+    }
+
+    .btn-success:hover{
+      background:#15803d;
     }
 
     .toolbar{
@@ -370,7 +368,7 @@
 
     @media (max-width: 700px){
       .grid-kpi{ grid-template-columns:repeat(2,1fr); }
-      .form-grid, .form-grid-3, .form-grid-2{ grid-template-columns:1fr; }
+      .form-grid, .form-grid-2{ grid-template-columns:1fr; }
       .toolbar{ grid-template-columns:1fr; }
       .top-actions{ grid-template-columns:1fr; }
       .item-top{ flex-direction:column; }
@@ -398,7 +396,7 @@
       <input type="text" id="buscaGlobal" placeholder="Buscar por nome, endereço, CNS, família, microárea..." onkeyup="renderAll()">
       <button class="btn-secondary" onclick="exportarDados()">Exportar Backup</button>
       <button class="btn-light" onclick="document.getElementById('importarArquivo').click()">Importar Backup</button>
-      <button class="btn-warning" onclick="window.print()">Imprimir</button>
+      <button class="btn-success" onclick="exportarAutomaticoManual()">Exportar Atualizado Agora</button>
       <input type="file" id="importarArquivo" style="display:none" accept=".json" onchange="importarDados(event)">
     </div>
 
@@ -636,99 +634,6 @@
       visitas: []
     };
 
-    function carregarDB(){
-      const salvo = localStorage.getItem('sistemaAgenteSaudeProfissional');
-      if(salvo){
-        db = JSON.parse(salvo);
-      } else {
-        db.familias = [
-          {
-            id: gerarId(),
-            responsavel:'Maria da Silva',
-            telefone:'(53) 99999-1111',
-            endereco:'Rua A, 120',
-            bairro:'Três Vendas',
-            microarea:'Microárea 01',
-            pessoas:4,
-            risco:'Médio',
-            situacao:'Acompanhamento',
-            ultimaVisita:'2026-03-28',
-            obs:'Família acompanhada por hipertensão.'
-          },
-          {
-            id: gerarId(),
-            responsavel:'Ana Souza',
-            telefone:'(53) 99999-2222',
-            endereco:'Rua B, 55',
-            bairro:'Centro',
-            microarea:'Microárea 02',
-            pessoas:5,
-            risco:'Alto',
-            situacao:'Prioritária',
-            ultimaVisita:'2026-02-25',
-            obs:'Gestante na residência.'
-          }
-        ];
-
-        db.pessoas = [
-          {
-            id: gerarId(),
-            nome:'Carla Souza',
-            familia:'Ana Souza',
-            microarea:'Microárea 02',
-            idade:27,
-            cns:'700111122223333',
-            telefone:'(53) 99999-5555',
-            perfil:'Gestante',
-            prioridade:'Alta',
-            ultimoAtendimento:'2026-03-10',
-            acompanhamento:'Pré-natal em andamento.'
-          },
-          {
-            id: gerarId(),
-            nome:'Pedro da Silva',
-            familia:'Maria da Silva',
-            microarea:'Microárea 01',
-            idade:61,
-            cns:'700444455556666',
-            telefone:'(53) 99999-6666',
-            perfil:'Hipertenso',
-            prioridade:'Média',
-            ultimoAtendimento:'2026-03-18',
-            acompanhamento:'Controle de pressão arterial.'
-          }
-        ];
-
-        db.visitas = [
-          {
-            id: gerarId(),
-            familia:'Maria da Silva',
-            microarea:'Microárea 01',
-            data:'2026-04-02',
-            tipo:'Visita domiciliar',
-            status:'Concluída',
-            profissional:'ACS',
-            obs:'Orientação sobre medicação.'
-          },
-          {
-            id: gerarId(),
-            familia:'Ana Souza',
-            microarea:'Microárea 02',
-            data:'2026-04-07',
-            tipo:'Busca ativa',
-            status:'Agendada',
-            profissional:'ACS',
-            obs:'Verificar vacinação infantil e situação da gestante.'
-          }
-        ];
-        salvarDB();
-      }
-    }
-
-    function salvarDB(){
-      localStorage.setItem('sistemaAgenteSaudeProfissional', JSON.stringify(db));
-    }
-
     function gerarId(){
       return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
     }
@@ -737,28 +642,177 @@
       return (v || '').toString().toLowerCase();
     }
 
+    function salvarDB(){
+      localStorage.setItem('sistemaAgenteSaudeProfissional', JSON.stringify(db));
+    }
+
+    function carregarDB(){
+      const salvo = localStorage.getItem('sistemaAgenteSaudeProfissional');
+      if(salvo){
+        db = JSON.parse(salvo);
+      } else {
+        db = {
+          familias: [
+            {
+              id: gerarId(),
+              responsavel:'Maria da Silva',
+              telefone:'(53) 99999-1111',
+              endereco:'Rua A, 120',
+              bairro:'Três Vendas',
+              microarea:'Microárea 01',
+              pessoas:4,
+              risco:'Médio',
+              situacao:'Acompanhamento',
+              ultimaVisita:'2026-03-28',
+              obs:'Família acompanhada por hipertensão.'
+            },
+            {
+              id: gerarId(),
+              responsavel:'Ana Souza',
+              telefone:'(53) 99999-2222',
+              endereco:'Rua B, 55',
+              bairro:'Centro',
+              microarea:'Microárea 02',
+              pessoas:5,
+              risco:'Alto',
+              situacao:'Prioritária',
+              ultimaVisita:'2026-02-25',
+              obs:'Gestante na residência.'
+            }
+          ],
+          pessoas: [
+            {
+              id: gerarId(),
+              nome:'Carla Souza',
+              familia:'Ana Souza',
+              microarea:'Microárea 02',
+              idade:27,
+              cns:'700111122223333',
+              telefone:'(53) 99999-5555',
+              perfil:'Gestante',
+              prioridade:'Alta',
+              ultimoAtendimento:'2026-03-10',
+              acompanhamento:'Pré-natal em andamento.'
+            },
+            {
+              id: gerarId(),
+              nome:'Pedro da Silva',
+              familia:'Maria da Silva',
+              microarea:'Microárea 01',
+              idade:61,
+              cns:'700444455556666',
+              telefone:'(53) 99999-6666',
+              perfil:'Hipertenso',
+              prioridade:'Média',
+              ultimoAtendimento:'2026-03-18',
+              acompanhamento:'Controle de pressão arterial.'
+            }
+          ],
+          visitas: [
+            {
+              id: gerarId(),
+              familia:'Maria da Silva',
+              microarea:'Microárea 01',
+              data:'2026-04-02',
+              tipo:'Visita domiciliar',
+              status:'Concluída',
+              profissional:'ACS',
+              obs:'Orientação sobre medicação.'
+            },
+            {
+              id: gerarId(),
+              familia:'Ana Souza',
+              microarea:'Microárea 02',
+              data:'2026-04-07',
+              tipo:'Busca ativa',
+              status:'Agendada',
+              profissional:'ACS',
+              obs:'Verificar vacinação infantil e situação da gestante.'
+            }
+          ]
+        };
+        salvarDB();
+      }
+    }
+
+    function gerarNomeBackup(){
+      const agora = new Date();
+      const ano = agora.getFullYear();
+      const mes = String(agora.getMonth() + 1).padStart(2, '0');
+      const dia = String(agora.getDate()).padStart(2, '0');
+      const hora = String(agora.getHours()).padStart(2, '0');
+      const min = String(agora.getMinutes()).padStart(2, '0');
+      const seg = String(agora.getSeconds()).padStart(2, '0');
+      return `backup-agente-saude-${ano}-${mes}-${dia}_${hora}-${min}-${seg}.json`;
+    }
+
+    function exportarDados(){
+      const blob = new Blob([JSON.stringify(db, null, 2)], { type:'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = gerarNomeBackup();
+      a.click();
+    }
+
+    function exportarAutomaticoManual(){
+      salvarDB();
+      exportarDados();
+      alert('Backup atualizado exportado com sucesso.');
+    }
+
+    function importarDados(event){
+      const file = event.target.files[0];
+      if(!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e){
+        try{
+          const dados = JSON.parse(e.target.result);
+
+          if(
+            typeof dados !== 'object' ||
+            !Array.isArray(dados.familias) ||
+            !Array.isArray(dados.pessoas) ||
+            !Array.isArray(dados.visitas)
+          ){
+            alert('Arquivo inválido.');
+            return;
+          }
+
+          db = dados;
+          salvarDB();
+          preencherFiltros();
+          renderAll();
+          alert('Backup importado com sucesso.');
+        } catch(err){
+          alert('Erro ao importar o arquivo.');
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
     function badgeRisco(risco){
-      if(risco === 'Alto') return '<span class="badge badge-red">Alto Risco</span>';
-      if(risco === 'Médio') return '<span class="badge badge-yellow">Médio Risco</span>';
-      return '<span class="badge badge-gray">Baixo Risco</span>';
+      if(risco === 'Alto') return '<span class=\"badge badge-red\">Alto Risco</span>';
+      if(risco === 'Médio') return '<span class=\"badge badge-yellow\">Médio Risco</span>';
+      return '<span class=\"badge badge-gray\">Baixo Risco</span>';
     }
 
     function badgePrioridade(p){
-      if(p === 'Alta') return '<span class="badge badge-red">Prioridade Alta</span>';
-      if(p === 'Média') return '<span class="badge badge-yellow">Prioridade Média</span>';
-      return '<span class="badge badge-gray">Prioridade Baixa</span>';
+      if(p === 'Alta') return '<span class=\"badge badge-red\">Prioridade Alta</span>';
+      if(p === 'Média') return '<span class=\"badge badge-yellow\">Prioridade Média</span>';
+      return '<span class=\"badge badge-gray\">Prioridade Baixa</span>';
     }
 
     function badgeStatusVisita(s){
-      if(s === 'Concluída') return '<span class="badge badge-green">Concluída</span>';
-      if(s === 'Agendada') return '<span class="badge badge-blue">Agendada</span>';
-      return '<span class="badge badge-red">Não realizada</span>';
+      if(s === 'Concluída') return '<span class=\"badge badge-green\">Concluída</span>';
+      if(s === 'Agendada') return '<span class=\"badge badge-blue\">Agendada</span>';
+      return '<span class=\"badge badge-red\">Não realizada</span>';
     }
 
     function trocarAba(id, botao){
       document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
       document.getElementById(id).classList.add('active');
-
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
       botao.classList.add('active');
     }
@@ -902,7 +956,6 @@
       document.getElementById('kpiConcluidas').textContent = db.visitas.filter(v => v.status === 'Concluída').length;
       document.getElementById('kpiAltoRisco').textContent = db.familias.filter(f => f.risco === 'Alto').length;
       document.getElementById('kpiGestantes').textContent = db.pessoas.filter(p => p.perfil === 'Gestante').length;
-
       renderAlertas();
       renderProximasVisitas();
       renderResumoMicroarea();
@@ -1350,38 +1403,6 @@
       }
 
       document.getElementById('areaRelatorio').innerHTML = html;
-    }
-
-    function exportarDados(){
-      const blob = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'backup-sistema-agente-saude.json';
-      a.click();
-    }
-
-    function importarDados(event){
-      const file = event.target.files[0];
-      if(!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e){
-        try{
-          const dados = JSON.parse(e.target.result);
-          if(!dados.familias || !dados.pessoas || !dados.visitas){
-            alert('Arquivo inválido.');
-            return;
-          }
-          db = dados;
-          salvarDB();
-          preencherFiltros();
-          renderAll();
-          alert('Backup importado com sucesso.');
-        }catch{
-          alert('Erro ao importar arquivo.');
-        }
-      };
-      reader.readAsText(file);
     }
 
     function imprimirRelatorioFamilias(){
