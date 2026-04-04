@@ -4,7 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema Profissional - Agente de Saúde</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  </script>
+
   <style>
     :root{
       --bg:#f4f7fb;
@@ -135,11 +141,6 @@
     .section h2{
       margin:0 0 14px;
       font-size:22px;
-    }
-
-    .section h3{
-      margin:0 0 12px;
-      font-size:18px;
     }
 
     .form-grid{
@@ -411,8 +412,9 @@
       <button class="btn-light" onclick="document.getElementById('importarArquivo').click()">Importar JSON</button>
       <button class="btn-light" onclick="document.getElementById('importarPdf').click()">Importar PDF</button>
       <button class="btn-success" onclick="exportarAutomaticoManual()">Exportar Atualizado Agora</button>
+
       <input type="file" id="importarArquivo" style="display:none" accept=".json" onchange="importarDados(event)">
-      <input type="file" id="importarPdf" style="display:none" accept=".pdf" onchange="importarPDF(event)">
+      <input type="file" id="importarPdf" style="display:none" accept="application/pdf,.pdf" onchange="importarPDF(event)">
     </div>
 
     <div class="tabs hide-print">
@@ -496,7 +498,10 @@
           <input id="famSituacao" placeholder="Situação da família">
           <input id="famUltimaVisita" type="date">
           <textarea id="famObs" class="full" placeholder="Observações da família"></textarea>
-          <button class="btn-primary full" onclick="salvarFamilia()">Salvar Família</button>
+
+          <button class="btn-primary" id="btnSalvarFamilia" onclick="salvarFamilia()">Salvar Família</button>
+          <button class="btn-warning" id="btnAtualizarFamilia" onclick="atualizarFamilia()" style="display:none;">Atualizar Família</button>
+          <button class="btn-light" id="btnCancelarFamilia" onclick="cancelarEdicaoFamilia()" style="display:none;">Cancelar</button>
         </div>
       </div>
 
@@ -547,7 +552,10 @@
           </select>
           <input id="indUltimoAtendimento" type="date">
           <textarea id="indAcompanhamento" class="full" placeholder="Acompanhamento / observações"></textarea>
-          <button class="btn-primary full" onclick="salvarPessoa()">Salvar Pessoa</button>
+
+          <button class="btn-primary" id="btnSalvarPessoa" onclick="salvarPessoa()">Salvar Pessoa</button>
+          <button class="btn-warning" id="btnAtualizarPessoa" onclick="atualizarPessoa()" style="display:none;">Atualizar Pessoa</button>
+          <button class="btn-light" id="btnCancelarPessoa" onclick="cancelarEdicaoPessoa()" style="display:none;">Cancelar</button>
         </div>
       </div>
 
@@ -596,7 +604,10 @@
           </select>
           <input id="visProfissional" placeholder="Profissional responsável">
           <textarea id="visObs" class="full" placeholder="Observações da visita"></textarea>
-          <button class="btn-primary full" onclick="salvarVisita()">Salvar Visita</button>
+
+          <button class="btn-primary" id="btnSalvarVisita" onclick="salvarVisita()">Salvar Visita</button>
+          <button class="btn-warning" id="btnAtualizarVisita" onclick="atualizarVisita()" style="display:none;">Atualizar Visita</button>
+          <button class="btn-light" id="btnCancelarVisita" onclick="cancelarEdicaoVisita()" style="display:none;">Cancelar</button>
         </div>
       </div>
 
@@ -654,6 +665,10 @@
       pessoas: [],
       visitas: []
     };
+
+    let editandoFamiliaId = null;
+    let editandoPessoaId = null;
+    let editandoVisitaId = null;
 
     function gerarId(){
       return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -820,19 +835,32 @@
       const file = event.target.files[0];
       if(!file) return;
 
+      const log = document.getElementById('logImportacaoPdf');
+
       try{
-        document.getElementById('logImportacaoPdf').innerHTML = 'Lendo PDF...';
+        log.innerHTML = 'Lendo PDF...';
 
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        const pdf = await pdfjsLib.getDocument({
+          data: arrayBuffer
+        }).promise;
 
         let textoCompleto = '';
 
         for(let pagina = 1; pagina <= pdf.numPages; pagina++){
           const page = await pdf.getPage(pagina);
           const content = await page.getTextContent();
-          const textoPagina = content.items.map(item => item.str).join('\n');
+
+          const textoPagina = content.items
+            .map(item => item.str)
+            .join('\n');
+
           textoCompleto += '\n' + textoPagina;
+        }
+
+        if(!textoCompleto.trim()){
+          throw new Error('PDF sem texto legível.');
         }
 
         const resultado = processarTextoPDFCadastro(textoCompleto);
@@ -841,28 +869,33 @@
         preencherFiltros();
         renderAll();
 
-        document.getElementById('logImportacaoPdf').innerHTML = `
+        log.innerHTML = `
           <div><strong>PDF importado com sucesso.</strong></div>
           <div>Famílias criadas: ${resultado.familias}</div>
           <div>Pessoas criadas: ${resultado.pessoas}</div>
           <div>Linhas ignoradas: ${resultado.ignoradas}</div>
           <div style="margin-top:8px;color:#64748b;font-size:13px;">
-            Revise os cadastros importados, porque PDF pode vir com quebras de linha e colunas misturadas.
+            Revise os dados importados, porque PDFs podem quebrar colunas e nomes em linhas diferentes.
           </div>
         `;
 
-        alert('PDF importado com sucesso. Revise os dados importados.');
+        alert('PDF importado com sucesso.');
       } catch(err){
-        console.error(err);
-        document.getElementById('logImportacaoPdf').innerHTML = 'Erro ao importar PDF.';
+        console.error('Erro ao importar PDF:', err);
+        log.innerHTML = `
+          <div><strong>Erro ao importar PDF.</strong></div>
+          <div style="margin-top:8px;color:#b91c1c;font-size:13px;">
+            ${err.message || 'Falha desconhecida ao ler o PDF.'}
+          </div>
+        `;
         alert('Não foi possível importar o PDF.');
       } finally {
         event.target.value = '';
       }
     }
 
-    function processarTextoPDFCadastro(texto){
-      const linhas = texto
+    function processarTextoPDFCadastro(textoBruto){
+      const linhas = textoBruto
         .split(/\r?\n/)
         .map(l => l.trim())
         .filter(l => l);
@@ -870,7 +903,6 @@
       let ruaAtual = '';
       let microareaAtual = 'Micro I';
       let casaAtual = '';
-      let bufferPessoas = [];
 
       let familiasCriadas = 0;
       let pessoasCriadas = 0;
@@ -904,6 +936,33 @@
         if(!ehData(dataBR)) return '';
         const [dia, mes, ano] = dataBR.split('/');
         return `${ano}-${mes}-${dia}`;
+      }
+
+      function calcularIdadePorData(dataISO){
+        if(!dataISO) return 0;
+        const nascimento = new Date(dataISO + 'T00:00:00');
+        if(isNaN(nascimento.getTime())) return 0;
+
+        const hoje = new Date();
+        let idade = hoje.getFullYear() - nascimento.getFullYear();
+        const m = hoje.getMonth() - nascimento.getMonth();
+
+        if(m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())){
+          idade--;
+        }
+
+        return idade >= 0 ? idade : 0;
+      }
+
+      function limparCabecalhoNome(nome){
+        return nome
+          .replace(/\bCASA\b/gi, '')
+          .replace(/\bPACIENTE\b/gi, '')
+          .replace(/\bDN\b/gi, '')
+          .replace(/\bSUS\b/gi, '')
+          .replace(/\bCPF\b/gi, '')
+          .replace(/\bTELEFONE\b/gi, '')
+          .trim();
       }
 
       function criarFamiliaSeNaoExistir(casa, rua){
@@ -947,7 +1006,6 @@
         if(/^Rua /i.test(linha) || /^RUA /i.test(linha)){
           ruaAtual = linha;
           casaAtual = '';
-          bufferPessoas = [];
           continue;
         }
 
@@ -959,29 +1017,53 @@
           continue;
         }
 
-        const casaMatch = linha.match(/^(\d+[A-Zªº\-\(\)\s\/]*)$/i);
-        if(casaMatch && !ehTelefone(linha) && !ehSUS(linha) && !ehCPF(linha)){
-          casaAtual = linha;
-          bufferPessoas = [];
+        const casaSozinha = linha.match(/^(\d+[A-Zªº\-\(\)\/ ]*)$/i);
+        if(casaSozinha && !ehData(linha) && !ehSUS(linha) && !ehCPF(linha) && !ehTelefone(linha)){
+          casaAtual = linha.trim();
           continue;
         }
 
         if(ehData(linha)){
-          const nome = bufferPessoas.join(' ').trim();
+          let nome = '';
+          let j = i - 1;
+
+          while(j >= 0){
+            const anterior = linhas[j];
+
+            if(
+              ehData(anterior) ||
+              ehSUS(anterior) ||
+              ehCPF(anterior) ||
+              ehTelefone(anterior) ||
+              /^Rua /i.test(anterior) ||
+              /^RUA /i.test(anterior) ||
+              /CASA/i.test(anterior) ||
+              /PACIENTE/i.test(anterior)
+            ){
+              break;
+            }
+
+            if(/^(\d+[A-Zªº\-\(\)\/ ]*)$/i.test(anterior)){
+              break;
+            }
+
+            nome = anterior + ' ' + nome;
+            j--;
+          }
+
+          nome = limparCabecalhoNome(nome).trim();
 
           const sus = linhas[i + 1] && ehSUS(linhas[i + 1]) ? linhas[i + 1].replace(/\s+/g,'') : '';
-          const possivelTelefone = linhas[i + 2] || '';
-          const telefone = ehTelefone(possivelTelefone) ? possivelTelefone : '';
-          const possivelCpf = linhas[i + 3] || '';
-          const cpf = ehCPF(possivelCpf) ? normalizarCPF(possivelCpf) : '';
+          const telefone = linhas[i + 2] && ehTelefone(linhas[i + 2]) ? linhas[i + 2] : '';
+          const cpf = linhas[i + 3] && ehCPF(linhas[i + 3]) ? normalizarCPF(linhas[i + 3]) : '';
 
           if(nome && ruaAtual){
             const familia = criarFamiliaSeNaoExistir(casaAtual, ruaAtual);
 
             const duplicado = db.pessoas.find(p =>
               texto(p.nome) === texto(nome) &&
-              texto(p.cns) === texto(sus) &&
-              texto(p.cpf || '') === texto(cpf || '')
+              (sus ? texto(p.cns) === texto(sus) : true) &&
+              (cpf ? texto(p.cpf || '') === texto(cpf) : true)
             );
 
             if(!duplicado){
@@ -1005,19 +1087,6 @@
           } else {
             ignoradas++;
           }
-
-          bufferPessoas = [];
-          continue;
-        }
-
-        if(
-          !ehSUS(linha) &&
-          !ehCPF(linha) &&
-          !ehTelefone(linha) &&
-          !/^\-+$/.test(linha) &&
-          !/^\d+$/.test(linha)
-        ){
-          bufferPessoas.push(linha);
         }
       }
 
@@ -1028,20 +1097,22 @@
       };
     }
 
-    function calcularIdadePorData(dataISO){
-      if(!dataISO) return 0;
-      const nascimento = new Date(dataISO + 'T00:00:00');
-      if(isNaN(nascimento.getTime())) return 0;
+    function mostrarModoEdicaoFamilia(editar){
+      document.getElementById('btnSalvarFamilia').style.display = editar ? 'none' : 'inline-block';
+      document.getElementById('btnAtualizarFamilia').style.display = editar ? 'inline-block' : 'none';
+      document.getElementById('btnCancelarFamilia').style.display = editar ? 'inline-block' : 'none';
+    }
 
-      const hoje = new Date();
-      let idade = hoje.getFullYear() - nascimento.getFullYear();
-      const m = hoje.getMonth() - nascimento.getMonth();
+    function mostrarModoEdicaoPessoa(editar){
+      document.getElementById('btnSalvarPessoa').style.display = editar ? 'none' : 'inline-block';
+      document.getElementById('btnAtualizarPessoa').style.display = editar ? 'inline-block' : 'none';
+      document.getElementById('btnCancelarPessoa').style.display = editar ? 'inline-block' : 'none';
+    }
 
-      if(m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())){
-        idade--;
-      }
-
-      return idade >= 0 ? idade : 0;
+    function mostrarModoEdicaoVisita(editar){
+      document.getElementById('btnSalvarVisita').style.display = editar ? 'none' : 'inline-block';
+      document.getElementById('btnAtualizarVisita').style.display = editar ? 'inline-block' : 'none';
+      document.getElementById('btnCancelarVisita').style.display = editar ? 'inline-block' : 'none';
     }
 
     function badgeRisco(risco){
@@ -1101,6 +1172,57 @@
       alert('Família salva com sucesso.');
     }
 
+    function editarFamilia(id){
+      const f = db.familias.find(item => item.id === id);
+      if(!f) return;
+
+      editandoFamiliaId = id;
+
+      document.getElementById('famResponsavel').value = f.responsavel || '';
+      document.getElementById('famTelefone').value = f.telefone || '';
+      document.getElementById('famEndereco').value = f.endereco || '';
+      document.getElementById('famBairro').value = f.bairro || '';
+      document.getElementById('famMicroarea').value = f.microarea || '';
+      document.getElementById('famPessoas').value = f.pessoas || 0;
+      document.getElementById('famRisco').value = f.risco || 'Baixo';
+      document.getElementById('famSituacao').value = f.situacao || '';
+      document.getElementById('famUltimaVisita').value = f.ultimaVisita || '';
+      document.getElementById('famObs').value = f.obs || '';
+
+      mostrarModoEdicaoFamilia(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function atualizarFamilia(){
+      if(!editandoFamiliaId) return;
+
+      const f = db.familias.find(item => item.id === editandoFamiliaId);
+      if(!f) return;
+
+      f.responsavel = document.getElementById('famResponsavel').value.trim();
+      f.telefone = document.getElementById('famTelefone').value.trim();
+      f.endereco = document.getElementById('famEndereco').value.trim();
+      f.bairro = document.getElementById('famBairro').value.trim();
+      f.microarea = document.getElementById('famMicroarea').value.trim();
+      f.pessoas = Number(document.getElementById('famPessoas').value || 0);
+      f.risco = document.getElementById('famRisco').value;
+      f.situacao = document.getElementById('famSituacao').value.trim();
+      f.ultimaVisita = document.getElementById('famUltimaVisita').value;
+      f.obs = document.getElementById('famObs').value.trim();
+
+      salvarDB();
+      preencherFiltros();
+      renderAll();
+      cancelarEdicaoFamilia();
+      alert('Família atualizada com sucesso.');
+    }
+
+    function cancelarEdicaoFamilia(){
+      editandoFamiliaId = null;
+      limparFormularioFamilia();
+      mostrarModoEdicaoFamilia(false);
+    }
+
     function limparFormularioFamilia(){
       ['famResponsavel','famTelefone','famEndereco','famBairro','famMicroarea','famPessoas','famSituacao','famUltimaVisita','famObs'].forEach(id => {
         document.getElementById(id).value = '';
@@ -1137,6 +1259,59 @@
       alert('Pessoa salva com sucesso.');
     }
 
+    function editarPessoa(id){
+      const p = db.pessoas.find(item => item.id === id);
+      if(!p) return;
+
+      editandoPessoaId = id;
+
+      document.getElementById('indNome').value = p.nome || '';
+      document.getElementById('indFamilia').value = p.familia || '';
+      document.getElementById('indMicroarea').value = p.microarea || '';
+      document.getElementById('indIdade').value = p.idade || 0;
+      document.getElementById('indCns').value = p.cns || '';
+      document.getElementById('indCpf').value = p.cpf || '';
+      document.getElementById('indTelefone').value = p.telefone || '';
+      document.getElementById('indPerfil').value = p.perfil || 'Outro';
+      document.getElementById('indPrioridade').value = p.prioridade || 'Baixa';
+      document.getElementById('indUltimoAtendimento').value = p.ultimoAtendimento || '';
+      document.getElementById('indAcompanhamento').value = p.acompanhamento || '';
+
+      mostrarModoEdicaoPessoa(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function atualizarPessoa(){
+      if(!editandoPessoaId) return;
+
+      const p = db.pessoas.find(item => item.id === editandoPessoaId);
+      if(!p) return;
+
+      p.nome = document.getElementById('indNome').value.trim();
+      p.familia = document.getElementById('indFamilia').value.trim();
+      p.microarea = document.getElementById('indMicroarea').value.trim();
+      p.idade = Number(document.getElementById('indIdade').value || 0);
+      p.cns = document.getElementById('indCns').value.trim();
+      p.cpf = document.getElementById('indCpf').value.trim();
+      p.telefone = document.getElementById('indTelefone').value.trim();
+      p.perfil = document.getElementById('indPerfil').value;
+      p.prioridade = document.getElementById('indPrioridade').value;
+      p.ultimoAtendimento = document.getElementById('indUltimoAtendimento').value;
+      p.acompanhamento = document.getElementById('indAcompanhamento').value.trim();
+
+      salvarDB();
+      preencherFiltros();
+      renderAll();
+      cancelarEdicaoPessoa();
+      alert('Pessoa atualizada com sucesso.');
+    }
+
+    function cancelarEdicaoPessoa(){
+      editandoPessoaId = null;
+      limparFormularioPessoa();
+      mostrarModoEdicaoPessoa(false);
+    }
+
     function limparFormularioPessoa(){
       ['indNome','indFamilia','indMicroarea','indIdade','indCns','indCpf','indTelefone','indUltimoAtendimento','indAcompanhamento'].forEach(id => {
         document.getElementById(id).value = '';
@@ -1168,6 +1343,51 @@
       preencherFiltros();
       renderAll();
       alert('Visita salva com sucesso.');
+    }
+
+    function editarVisita(id){
+      const v = db.visitas.find(item => item.id === id);
+      if(!v) return;
+
+      editandoVisitaId = id;
+
+      document.getElementById('visFamilia').value = v.familia || '';
+      document.getElementById('visMicroarea').value = v.microarea || '';
+      document.getElementById('visData').value = v.data || '';
+      document.getElementById('visTipo').value = v.tipo || 'Visita domiciliar';
+      document.getElementById('visStatus').value = v.status || 'Agendada';
+      document.getElementById('visProfissional').value = v.profissional || '';
+      document.getElementById('visObs').value = v.obs || '';
+
+      mostrarModoEdicaoVisita(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function atualizarVisita(){
+      if(!editandoVisitaId) return;
+
+      const v = db.visitas.find(item => item.id === editandoVisitaId);
+      if(!v) return;
+
+      v.familia = document.getElementById('visFamilia').value.trim();
+      v.microarea = document.getElementById('visMicroarea').value.trim();
+      v.data = document.getElementById('visData').value;
+      v.tipo = document.getElementById('visTipo').value;
+      v.status = document.getElementById('visStatus').value;
+      v.profissional = document.getElementById('visProfissional').value.trim();
+      v.obs = document.getElementById('visObs').value.trim();
+
+      salvarDB();
+      preencherFiltros();
+      renderAll();
+      cancelarEdicaoVisita();
+      alert('Visita atualizada com sucesso.');
+    }
+
+    function cancelarEdicaoVisita(){
+      editandoVisitaId = null;
+      limparFormularioVisita();
+      mostrarModoEdicaoVisita(false);
     }
 
     function limparFormularioVisita(){
@@ -1367,6 +1587,7 @@
               <div><strong>Última visita:</strong> ${f.ultimaVisita || '-'}</div>
               <div><strong>Observações:</strong> ${f.obs || '-'}</div>
               <div class="item-actions hide-print">
+                <button class="btn-warning" onclick="editarFamilia('${f.id}')">Editar</button>
                 <button class="btn-danger" onclick="excluirFamilia('${f.id}')">Excluir</button>
               </div>
             </div>
@@ -1424,6 +1645,7 @@
               <div><strong>Último atendimento:</strong> ${p.ultimoAtendimento || '-'}</div>
               <div><strong>Acompanhamento:</strong> ${p.acompanhamento || '-'}</div>
               <div class="item-actions hide-print">
+                <button class="btn-warning" onclick="editarPessoa('${p.id}')">Editar</button>
                 <button class="btn-danger" onclick="excluirPessoa('${p.id}')">Excluir</button>
               </div>
             </div>
@@ -1472,6 +1694,7 @@
               <div><strong>Profissional:</strong> ${v.profissional || '-'}</div>
               <div><strong>Observações:</strong> ${v.obs || '-'}</div>
               <div class="item-actions hide-print">
+                <button class="btn-warning" onclick="editarVisita('${v.id}')">Editar</button>
                 <button class="btn-danger" onclick="excluirVisita('${v.id}')">Excluir</button>
               </div>
             </div>
@@ -1697,6 +1920,9 @@
 
     carregarDB();
     preencherFiltros();
+    mostrarModoEdicaoFamilia(false);
+    mostrarModoEdicaoPessoa(false);
+    mostrarModoEdicaoVisita(false);
     renderAll();
   </script>
 </body>
