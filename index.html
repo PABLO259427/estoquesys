@@ -167,11 +167,17 @@
       outline:none;
       font-size:14px;
       background:#fff;
+      transition: all .15s ease;
     }
 
     textarea{
       min-height:92px;
       resize:vertical;
+    }
+
+    input:focus, select:focus, textarea:focus{
+      border-color:#2563eb;
+      box-shadow:0 0 0 3px rgba(37,99,235,.12);
     }
 
     button{
@@ -180,6 +186,11 @@
       border-radius:12px;
       cursor:pointer;
       font-weight:bold;
+      transition: all .15s ease;
+    }
+
+    button:hover{
+      transform:translateY(-1px);
     }
 
     .btn-primary{
@@ -242,6 +253,12 @@
       border-radius:16px;
       padding:16px;
       background:#fff;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .item:hover{
+      transform:translateY(-2px);
+      box-shadow:0 12px 24px rgba(15,23,42,.08);
     }
 
     .item-top{
@@ -497,6 +514,17 @@
           </select>
           <input id="famSituacao" placeholder="Situação da família">
           <input id="famUltimaVisita" type="date">
+          <input id="famAcs" placeholder="ACS responsável">
+          <input id="famNumeroCasa" placeholder="Número da casa">
+          <select id="famTipoMoradia">
+            <option value="">Tipo de moradia</option>
+            <option value="Casa">Casa</option>
+            <option value="Apartamento">Apartamento</option>
+            <option value="Terreno">Terreno</option>
+            <option value="Comércio">Comércio</option>
+            <option value="Outro">Outro</option>
+          </select>
+          <input id="famUltimaAtualizacao" type="date">
           <textarea id="famObs" class="full" placeholder="Observações da família"></textarea>
 
           <button class="btn-primary" id="btnSalvarFamilia" onclick="salvarFamilia()">Salvar Família</button>
@@ -551,6 +579,26 @@
             <option value="Alta">Prioridade Alta</option>
           </select>
           <input id="indUltimoAtendimento" type="date">
+          <select id="indSexo">
+            <option value="">Sexo</option>
+            <option value="Feminino">Feminino</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Outro">Outro</option>
+          </select>
+          <input id="indNascimento" type="date">
+          <select id="indVinculo">
+            <option value="">Vínculo familiar</option>
+            <option value="Responsável">Responsável</option>
+            <option value="Cônjuge">Cônjuge</option>
+            <option value="Filho(a)">Filho(a)</option>
+            <option value="Pai/Mãe">Pai/Mãe</option>
+            <option value="Outro">Outro</option>
+          </select>
+          <select id="indVacinacao">
+            <option value="">Vacinação</option>
+            <option value="Em dia">Em dia</option>
+            <option value="Pendente">Pendente</option>
+          </select>
           <textarea id="indAcompanhamento" class="full" placeholder="Acompanhamento / observações"></textarea>
 
           <button class="btn-primary" id="btnSalvarPessoa" onclick="salvarPessoa()">Salvar Pessoa</button>
@@ -700,7 +748,11 @@
               risco:'Médio',
               situacao:'Acompanhamento',
               ultimaVisita:'2026-03-28',
-              obs:'Família acompanhada por hipertensão.'
+              obs:'Família acompanhada por hipertensão.',
+              acs:'',
+              numeroCasa:'120',
+              tipoMoradia:'Casa',
+              ultimaAtualizacao:'2026-03-28'
             },
             {
               id: gerarId(),
@@ -713,7 +765,11 @@
               risco:'Alto',
               situacao:'Prioritária',
               ultimaVisita:'2026-02-25',
-              obs:'Gestante na residência.'
+              obs:'Gestante na residência.',
+              acs:'',
+              numeroCasa:'55',
+              tipoMoradia:'Casa',
+              ultimaAtualizacao:'2026-02-25'
             }
           ],
           pessoas: [
@@ -729,7 +785,11 @@
               perfil:'Gestante',
               prioridade:'Alta',
               ultimoAtendimento:'2026-03-10',
-              acompanhamento:'Pré-natal em andamento.'
+              acompanhamento:'Pré-natal em andamento.',
+              sexo:'Feminino',
+              nascimento:'',
+              vinculo:'Filho(a)',
+              vacinacao:''
             },
             {
               id: gerarId(),
@@ -743,7 +803,11 @@
               perfil:'Hipertenso',
               prioridade:'Média',
               ultimoAtendimento:'2026-03-18',
-              acompanhamento:'Controle de pressão arterial.'
+              acompanhamento:'Controle de pressão arterial.',
+              sexo:'Masculino',
+              nascimento:'',
+              vinculo:'Responsável',
+              vacinacao:''
             }
           ],
           visitas: [
@@ -841,21 +905,14 @@
         log.innerHTML = 'Lendo PDF...';
 
         const arrayBuffer = await file.arrayBuffer();
-
-        const pdf = await pdfjsLib.getDocument({
-          data: arrayBuffer
-        }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
         let textoCompleto = '';
 
         for(let pagina = 1; pagina <= pdf.numPages; pagina++){
           const page = await pdf.getPage(pagina);
           const content = await page.getTextContent();
-
-          const textoPagina = content.items
-            .map(item => item.str)
-            .join('\n');
-
+          const textoPagina = content.items.map(item => item.str).join('\n');
           textoCompleto += '\n' + textoPagina;
         }
 
@@ -982,7 +1039,11 @@
           risco: 'Baixo',
           situacao: 'Importado do PDF',
           ultimaVisita: '',
-          obs: 'Cadastro criado automaticamente por importação PDF.'
+          obs: 'Cadastro criado automaticamente por importação PDF.',
+          acs:'',
+          numeroCasa:casa || '',
+          tipoMoradia:'',
+          ultimaAtualizacao:''
         };
 
         db.familias.unshift(nova);
@@ -999,9 +1060,7 @@
       for(let i = 0; i < linhas.length; i++){
         const linha = linhas[i];
 
-        if(/Área/i.test(linha) && /Micro/i.test(linha)){
-          continue;
-        }
+        if(/Área/i.test(linha) && /Micro/i.test(linha)) continue;
 
         if(/^Rua /i.test(linha) || /^RUA /i.test(linha)){
           ruaAtual = linha;
@@ -1009,13 +1068,9 @@
           continue;
         }
 
-        if(/CASA/i.test(linha) && /PACIENTE/i.test(linha)){
-          continue;
-        }
+        if(/CASA/i.test(linha) && /PACIENTE/i.test(linha)) continue;
 
-        if(/RECUSA/i.test(linha) || /TERRENO/i.test(linha) || /OFICINA/i.test(linha) || /casa DE RELIGIAO/i.test(linha)){
-          continue;
-        }
+        if(/RECUSA/i.test(linha) || /TERRENO/i.test(linha) || /OFICINA/i.test(linha) || /casa DE RELIGIAO/i.test(linha)) continue;
 
         const casaSozinha = linha.match(/^(\d+[A-Zªº\-\(\)\/ ]*)$/i);
         if(casaSozinha && !ehData(linha) && !ehSUS(linha) && !ehCPF(linha) && !ehTelefone(linha)){
@@ -1079,7 +1134,11 @@
                 perfil: 'Outro',
                 prioridade: 'Baixa',
                 ultimoAtendimento: '',
-                acompanhamento: `Importado do PDF • DN: ${linha} • Endereço: ${ruaAtual} • Casa: ${casaAtual || '-'}`
+                acompanhamento: `Importado do PDF • DN: ${linha} • Endereço: ${ruaAtual} • Casa: ${casaAtual || '-'}`,
+                sexo:'',
+                nascimento:formatarDataISO(linha),
+                vinculo:'',
+                vacinacao:''
               });
               pessoasCriadas++;
               atualizarTotalFamilia(familia.id);
@@ -1099,7 +1158,7 @@
 
     function mostrarModoEdicaoFamilia(editar){
       document.getElementById('btnSalvarFamilia').style.display = editar ? 'none' : 'inline-block';
-      document.getElementById('btnAtualizarFamilia').style.display = editar ? 'inline-block' : 'none';
+      document.getElementById('btnAtualizarFamilia').style.display = editar ? 'inline-block' : 'inline-block'.replace('inline-block','none');
       document.getElementById('btnCancelarFamilia').style.display = editar ? 'inline-block' : 'none';
     }
 
@@ -1162,7 +1221,11 @@
         risco: document.getElementById('famRisco').value,
         situacao: document.getElementById('famSituacao').value.trim(),
         ultimaVisita: document.getElementById('famUltimaVisita').value,
-        obs: document.getElementById('famObs').value.trim()
+        obs: document.getElementById('famObs').value.trim(),
+        acs: document.getElementById('famAcs').value.trim(),
+        numeroCasa: document.getElementById('famNumeroCasa').value.trim(),
+        tipoMoradia: document.getElementById('famTipoMoradia').value,
+        ultimaAtualizacao: document.getElementById('famUltimaAtualizacao').value
       });
 
       salvarDB();
@@ -1188,6 +1251,10 @@
       document.getElementById('famSituacao').value = f.situacao || '';
       document.getElementById('famUltimaVisita').value = f.ultimaVisita || '';
       document.getElementById('famObs').value = f.obs || '';
+      document.getElementById('famAcs').value = f.acs || '';
+      document.getElementById('famNumeroCasa').value = f.numeroCasa || '';
+      document.getElementById('famTipoMoradia').value = f.tipoMoradia || '';
+      document.getElementById('famUltimaAtualizacao').value = f.ultimaAtualizacao || '';
 
       mostrarModoEdicaoFamilia(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1209,6 +1276,10 @@
       f.situacao = document.getElementById('famSituacao').value.trim();
       f.ultimaVisita = document.getElementById('famUltimaVisita').value;
       f.obs = document.getElementById('famObs').value.trim();
+      f.acs = document.getElementById('famAcs').value.trim();
+      f.numeroCasa = document.getElementById('famNumeroCasa').value.trim();
+      f.tipoMoradia = document.getElementById('famTipoMoradia').value;
+      f.ultimaAtualizacao = document.getElementById('famUltimaAtualizacao').value;
 
       salvarDB();
       preencherFiltros();
@@ -1224,10 +1295,16 @@
     }
 
     function limparFormularioFamilia(){
-      ['famResponsavel','famTelefone','famEndereco','famBairro','famMicroarea','famPessoas','famSituacao','famUltimaVisita','famObs'].forEach(id => {
+      [
+        'famResponsavel','famTelefone','famEndereco','famBairro','famMicroarea',
+        'famPessoas','famSituacao','famUltimaVisita','famObs',
+        'famAcs','famNumeroCasa','famUltimaAtualizacao'
+      ].forEach(id => {
         document.getElementById(id).value = '';
       });
+
       document.getElementById('famRisco').value = 'Baixo';
+      document.getElementById('famTipoMoradia').value = '';
     }
 
     function salvarPessoa(){
@@ -1249,7 +1326,11 @@
         perfil: document.getElementById('indPerfil').value,
         prioridade: document.getElementById('indPrioridade').value,
         ultimoAtendimento: document.getElementById('indUltimoAtendimento').value,
-        acompanhamento: document.getElementById('indAcompanhamento').value.trim()
+        acompanhamento: document.getElementById('indAcompanhamento').value.trim(),
+        sexo: document.getElementById('indSexo').value,
+        nascimento: document.getElementById('indNascimento').value,
+        vinculo: document.getElementById('indVinculo').value,
+        vacinacao: document.getElementById('indVacinacao').value
       });
 
       salvarDB();
@@ -1276,6 +1357,10 @@
       document.getElementById('indPrioridade').value = p.prioridade || 'Baixa';
       document.getElementById('indUltimoAtendimento').value = p.ultimoAtendimento || '';
       document.getElementById('indAcompanhamento').value = p.acompanhamento || '';
+      document.getElementById('indSexo').value = p.sexo || '';
+      document.getElementById('indNascimento').value = p.nascimento || '';
+      document.getElementById('indVinculo').value = p.vinculo || '';
+      document.getElementById('indVacinacao').value = p.vacinacao || '';
 
       mostrarModoEdicaoPessoa(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1298,6 +1383,10 @@
       p.prioridade = document.getElementById('indPrioridade').value;
       p.ultimoAtendimento = document.getElementById('indUltimoAtendimento').value;
       p.acompanhamento = document.getElementById('indAcompanhamento').value.trim();
+      p.sexo = document.getElementById('indSexo').value;
+      p.nascimento = document.getElementById('indNascimento').value;
+      p.vinculo = document.getElementById('indVinculo').value;
+      p.vacinacao = document.getElementById('indVacinacao').value;
 
       salvarDB();
       preencherFiltros();
@@ -1313,11 +1402,18 @@
     }
 
     function limparFormularioPessoa(){
-      ['indNome','indFamilia','indMicroarea','indIdade','indCns','indCpf','indTelefone','indUltimoAtendimento','indAcompanhamento'].forEach(id => {
+      [
+        'indNome','indFamilia','indMicroarea','indIdade','indCns','indCpf',
+        'indTelefone','indUltimoAtendimento','indAcompanhamento','indNascimento'
+      ].forEach(id => {
         document.getElementById(id).value = '';
       });
+
       document.getElementById('indPerfil').value = 'Criança';
       document.getElementById('indPrioridade').value = 'Baixa';
+      document.getElementById('indSexo').value = '';
+      document.getElementById('indVinculo').value = '';
+      document.getElementById('indVacinacao').value = '';
     }
 
     function salvarVisita(){
@@ -1382,6 +1478,20 @@
       renderAll();
       cancelarEdicaoVisita();
       alert('Visita atualizada com sucesso.');
+    }
+
+    function concluirVisita(id){
+      const visita = db.visitas.find(v => v.id === id);
+      if(!visita) return;
+
+      visita.status = 'Concluída';
+      if(!visita.data){
+        visita.data = new Date().toISOString().slice(0,10);
+      }
+
+      salvarDB();
+      renderAll();
+      alert('Visita marcada como concluída.');
     }
 
     function cancelarEdicaoVisita(){
@@ -1449,7 +1559,10 @@
         html += `<div class="alert-box alert-yellow"><strong>Gestantes prioritárias:</strong> ${gestantesAlta.length}</div>`;
       }
 
-      const vacinasPendentes = db.pessoas.filter(p => p.perfil === 'Criança' && texto(p.acompanhamento).includes('vac'));
+      const vacinasPendentes = db.pessoas.filter(p =>
+        p.perfil === 'Criança' &&
+        (texto(p.acompanhamento).includes('vac') || p.vacinacao === 'Pendente')
+      );
       if(vacinasPendentes.length){
         html += `<div class="alert-box alert-blue"><strong>Crianças com possível pendência vacinal:</strong> ${vacinasPendentes.length}</div>`;
       }
@@ -1457,6 +1570,17 @@
       const visitasAtrasadas = db.visitas.filter(v => v.status === 'Agendada' && v.data && new Date(v.data) < hoje);
       if(visitasAtrasadas.length){
         html += `<div class="alert-box alert-red"><strong>Visitas agendadas em atraso:</strong> ${visitasAtrasadas.length}</div>`;
+      }
+
+      const familiasSemVisita = db.familias.filter(f => {
+        if(!f.ultimaVisita) return true;
+        const dt = new Date(f.ultimaVisita);
+        const diff = Math.floor((hoje - dt) / (1000 * 60 * 60 * 24));
+        return diff > 30;
+      });
+
+      if(familiasSemVisita.length){
+        html += `<div class="alert-box alert-yellow"><strong>Famílias sem visita recente (mais de 30 dias):</strong> ${familiasSemVisita.length}</div>`;
       }
 
       if(!html){
@@ -1556,7 +1680,10 @@
           f.bairro + ' ' +
           f.microarea + ' ' +
           f.situacao + ' ' +
-          f.obs
+          f.obs + ' ' +
+          (f.acs || '') + ' ' +
+          (f.numeroCasa || '') + ' ' +
+          (f.tipoMoradia || '')
         );
         return (!busca || base.includes(busca)) &&
                (!global || base.includes(global)) &&
@@ -1583,8 +1710,12 @@
               </div>
               <div><strong>Telefone:</strong> ${f.telefone || '-'}</div>
               <div><strong>Endereço:</strong> ${f.endereco || '-'}</div>
+              <div><strong>ACS responsável:</strong> ${f.acs || '-'}</div>
+              <div><strong>Número da casa:</strong> ${f.numeroCasa || '-'}</div>
+              <div><strong>Tipo de moradia:</strong> ${f.tipoMoradia || '-'}</div>
               <div><strong>Pessoas na residência:</strong> ${f.pessoas || 0}</div>
               <div><strong>Última visita:</strong> ${f.ultimaVisita || '-'}</div>
+              <div><strong>Última atualização cadastral:</strong> ${f.ultimaAtualizacao || '-'}</div>
               <div><strong>Observações:</strong> ${f.obs || '-'}</div>
               <div class="item-actions hide-print">
                 <button class="btn-warning" onclick="editarFamilia('${f.id}')">Editar</button>
@@ -1613,7 +1744,10 @@
           p.telefone + ' ' +
           p.perfil + ' ' +
           p.prioridade + ' ' +
-          p.acompanhamento
+          p.acompanhamento + ' ' +
+          (p.sexo || '') + ' ' +
+          (p.vinculo || '') + ' ' +
+          (p.vacinacao || '')
         );
         return (!busca || base.includes(busca)) &&
                (!global || base.includes(global)) &&
@@ -1641,6 +1775,10 @@
               <div><strong>Idade:</strong> ${p.idade || 0}</div>
               <div><strong>CNS:</strong> ${p.cns || '-'}</div>
               <div><strong>CPF:</strong> ${p.cpf || '-'}</div>
+              <div><strong>Sexo:</strong> ${p.sexo || '-'}</div>
+              <div><strong>Nascimento:</strong> ${p.nascimento || '-'}</div>
+              <div><strong>Vínculo familiar:</strong> ${p.vinculo || '-'}</div>
+              <div><strong>Vacinação:</strong> ${p.vacinacao || '-'}</div>
               <div><strong>Telefone:</strong> ${p.telefone || '-'}</div>
               <div><strong>Último atendimento:</strong> ${p.ultimoAtendimento || '-'}</div>
               <div><strong>Acompanhamento:</strong> ${p.acompanhamento || '-'}</div>
@@ -1694,6 +1832,7 @@
               <div><strong>Profissional:</strong> ${v.profissional || '-'}</div>
               <div><strong>Observações:</strong> ${v.obs || '-'}</div>
               <div class="item-actions hide-print">
+                ${v.status !== 'Concluída' ? `<button class="btn-success" onclick="concluirVisita('${v.id}')">Concluir</button>` : ''}
                 <button class="btn-warning" onclick="editarVisita('${v.id}')">Editar</button>
                 <button class="btn-danger" onclick="excluirVisita('${v.id}')">Excluir</button>
               </div>
