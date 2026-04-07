@@ -1616,11 +1616,8 @@
             }
 
             const selectedMaterialId = prompt(
-                `Digite o ID do material para incluir no ${entry.begCode}:
-
-` +
-                data.materials.map(mat => `${mat.id} | ${mat.code} - ${mat.description}`).join('
-')
+                `Digite o ID do material para incluir no ${entry.begCode}:\n\n` +
+                data.materials.map(mat => `${mat.id} | ${mat.code} - ${mat.description}`).join('\n')
             );
 
             if (!selectedMaterialId) return;
