@@ -1495,6 +1495,38 @@
             if (!data.sucata) data.sucata = { entries: [], certificates: [] };
             if (!Array.isArray(data.sucata.entries)) data.sucata.entries = [];
             if (!Array.isArray(data.sucata.certificates)) data.sucata.certificates = [];
+
+            data.sucata.entries.forEach(entry => {
+                if (!Array.isArray(entry.items)) {
+                    entry.items = [{
+                        id: entry.itemId || ('item_' + Date.now() + '_' + Math.floor(Math.random() * 10000)),
+                        materialId: entry.materialId || null,
+                        weightKg: Number(entry.weightKg || 0),
+                        obs: entry.obs || '',
+                        date: entry.date || new Date().toISOString(),
+                        sourceMovementType: entry.sourceMovementType || null,
+                        sourcePep: entry.sourcePep || null,
+                        sourceQuantity: entry.sourceQuantity || null
+                    }];
+                }
+
+                entry.items = entry.items.map(item => ({
+                    id: item.id || ('item_' + Date.now() + '_' + Math.floor(Math.random() * 10000)),
+                    materialId: item.materialId || null,
+                    weightKg: Number(item.weightKg || 0),
+                    obs: item.obs || '',
+                    date: item.date || entry.date || new Date().toISOString(),
+                    sourceMovementType: item.sourceMovementType || null,
+                    sourcePep: item.sourcePep || null,
+                    sourceQuantity: item.sourceQuantity || null
+                }));
+
+                entry.weightKg = entry.items.reduce((sum, item) => sum + Number(item.weightKg || 0), 0);
+                if (!entry.origin) entry.origin = '';
+                if (!entry.documentRef) entry.documentRef = '';
+                if (!entry.date) entry.date = new Date().toISOString();
+                if (typeof entry.soldCertificateId === 'undefined') entry.soldCertificateId = null;
+            });
         }
 
         function ensureTrashData() {
@@ -1516,6 +1548,120 @@
         function getSucataMaterialLabel(materialId) {
             const mat = data.materials.find(m => m.id === materialId);
             return mat ? `${mat.code} - ${mat.description}` : 'Não informado';
+        }
+
+        function getSucataEntryTotalWeight(entry) {
+            if (!entry) return 0;
+            if (Array.isArray(entry.items) && entry.items.length > 0) {
+                return entry.items.reduce((sum, item) => sum + Number(item.weightKg || 0), 0);
+            }
+            return Number(entry.weightKg || 0);
+        }
+
+        function getSucataEntryItemsCount(entry) {
+            if (!entry) return 0;
+            if (Array.isArray(entry.items) && entry.items.length > 0) return entry.items.length;
+            return 0;
+        }
+
+        function getSucataEntryMaterialsLabel(entry) {
+            if (!entry) return 'Não informado';
+
+            if (Array.isArray(entry.items) && entry.items.length > 0) {
+                const labels = entry.items.map(item => getSucataMaterialLabel(item.materialId));
+                const unique = [...new Set(labels)];
+                return unique.join(' | ');
+            }
+
+            return getSucataMaterialLabel(entry.materialId);
+        }
+
+        function buildSucataItemsHtml(entry) {
+            if (!entry || !Array.isArray(entry.items) || entry.items.length === 0) {
+                return '<div class="text-xs text-gray-400">Sem itens</div>';
+            }
+
+            return entry.items.map((item, index) => {
+                return `
+                    <div class="flex items-center justify-between gap-2 text-xs border border-gray-200 rounded-lg px-2 py-1 bg-gray-50 mt-1">
+                        <div class="min-w-0">
+                            <div class="font-semibold text-gray-700 truncate">${index + 1}. ${escapeHtml(getSucataMaterialLabel(item.materialId))}</div>
+                            <div class="text-gray-500 truncate">${escapeHtml(item.obs || '-')}</div>
+                        </div>
+                        <div class="shrink-0 font-bold text-gray-700">${formatWeight(item.weightKg)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addMaterialToExistingBeg(entryId) {
+            ensureSucataData();
+
+            const entry = data.sucata.entries.find(item => item.id === entryId);
+            if (!entry) {
+                toast.show('BEG não encontrado.', 'error');
+                return;
+            }
+
+            if (entry.soldCertificateId) {
+                toast.show('Este BEG já foi baixado em certificado e está travado.', 'warning');
+                return;
+            }
+
+            updateSucataMaterialOptions();
+
+            if (!data.materials.length) {
+                toast.show('Cadastre materiais antes de incluir no BEG.', 'warning');
+                return;
+            }
+
+            const selectedMaterialId = prompt(
+                `Digite o ID do material para incluir no ${entry.begCode}:
+
+` +
+                data.materials.map(mat => `${mat.id} | ${mat.code} - ${mat.description}`).join('
+')
+            );
+
+            if (!selectedMaterialId) return;
+
+            const materialId = selectedMaterialId.split('|')[0].trim();
+            const material = data.materials.find(mat => mat.id === materialId);
+
+            if (!material) {
+                toast.show('Material inválido.', 'error');
+                return;
+            }
+
+            const weightInput = prompt(`Peso do material ${material.code} em KG:`, '0');
+            if (weightInput === null) return;
+
+            const weightKg = parseFloat(String(weightInput).replace(',', '.'));
+            if (!(weightKg > 0)) {
+                toast.show('Peso inválido.', 'error');
+                return;
+            }
+
+            const obs = prompt('Observação do item (opcional):', '') || '';
+
+            if (!Array.isArray(entry.items)) entry.items = [];
+
+            entry.items.push({
+                id: 'item_' + Date.now(),
+                materialId: material.id,
+                weightKg,
+                obs,
+                date: new Date().toISOString(),
+                sourceMovementType: 'manual',
+                sourcePep: null,
+                sourceQuantity: null
+            });
+
+            entry.weightKg = getSucataEntryTotalWeight(entry);
+
+            saveData();
+            updateSucataViews();
+            toast.show(`Material incluído no ${entry.begCode}.`, 'success');
         }
 
         function getSucataAvailableEntries() {
@@ -1542,7 +1688,7 @@
                 document.getElementById('certificateTotalWeight').value = '0,00 KG';
                 return;
             }
-            select.innerHTML = entries.map(entry => `<option value="${entry.id}">${escapeHtml(entry.begCode)} — ${formatWeight(entry.weightKg)} — ${escapeHtml(entry.origin || 'Sem origem')}</option>`).join('');
+            select.innerHTML = entries.map(entry => `<option value="${entry.id}">${escapeHtml(entry.begCode)} — ${formatWeight(getSucataEntryTotalWeight(entry))} — ${escapeHtml(entry.origin || 'Sem origem')}</option>`).join('');
             updateCertificateWeightPreview();
         }
 
@@ -1553,7 +1699,7 @@
             const selectedIds = Array.from(select.selectedOptions).map(option => option.value).filter(Boolean);
             const total = selectedIds.reduce((sum, id) => {
                 const entry = data.sucata.entries.find(item => item.id === id);
-                return sum + Number(entry?.weightKg || 0);
+                return sum + getSucataEntryTotalWeight(entry);
             }, 0);
             field.value = formatWeight(total);
         }
@@ -1565,8 +1711,8 @@
 
             const availableEntries = getSucataAvailableEntries();
             const soldEntries = data.sucata.entries.filter(entry => entry.soldCertificateId);
-            const availableWeight = availableEntries.reduce((sum, entry) => sum + Number(entry.weightKg || 0), 0);
-            const soldWeight = soldEntries.reduce((sum, entry) => sum + Number(entry.weightKg || 0), 0);
+            const availableWeight = availableEntries.reduce((sum, entry) => sum + getSucataEntryTotalWeight(entry), 0);
+            const soldWeight = soldEntries.reduce((sum, entry) => sum + getSucataEntryTotalWeight(entry), 0);
 
             const totalBegs = document.getElementById('sucataAvailableBegs');
             const availableWeightNode = document.getElementById('sucataAvailableWeight');
@@ -1589,17 +1735,30 @@
                             ? '<span class="px-2 py-1 rounded border text-xs font-semibold text-rose-600 bg-rose-50 border-rose-200">Baixado</span>'
                             : '<span class="px-2 py-1 rounded border text-xs font-semibold text-emerald-600 bg-emerald-50 border-emerald-200">Disponível</span>';
                         entriesTable.innerHTML += `
-                            <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0">
+                            <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0 align-top">
                                 <td class="p-4 text-xs text-gray-500 font-mono">${new Date(entry.date).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
                                 <td class="p-4 text-sm font-mono font-bold text-blue-600">${escapeHtml(entry.begCode)}</td>
-                                <td class="p-4 text-sm text-gray-800">${escapeHtml(getSucataMaterialLabel(entry.materialId))}</td>
+                                <td class="p-4 text-sm text-gray-800">
+                                    <div class="font-semibold">${escapeHtml(getSucataEntryMaterialsLabel(entry))}</div>
+                                    <div class="text-xs text-gray-500 mt-1">${getSucataEntryItemsCount(entry)} item(ns)</div>
+                                    ${buildSucataItemsHtml(entry)}
+                                </td>
                                 <td class="p-4 text-sm text-gray-700">${escapeHtml(entry.origin || '-')}</td>
                                 <td class="p-4 text-sm">${entry.sourceMovementType === 'return'
                                     ? '<span class="px-2 py-1 rounded border text-xs font-semibold text-amber-700 bg-amber-50 border-amber-200">Devolução Avariada</span>'
                                     : '<span class="px-2 py-1 rounded border text-xs font-semibold text-slate-700 bg-slate-50 border-slate-200">Manual</span>'}</td>
-                                <td class="p-4 text-sm font-bold text-gray-800">${formatWeight(entry.weightKg)}</td>
+                                <td class="p-4 text-sm font-bold text-gray-800">${formatWeight(getSucataEntryTotalWeight(entry))}</td>
                                 <td class="p-4 text-sm">${statusHtml}</td>
-                                <td class="p-4 text-center">${entry.soldCertificateId ? '<span class="text-xs text-gray-400">travado</span>' : `<button class="btn-delete-history" onclick="deleteSucataEntry('${entry.id}')"><i class="fas fa-trash"></i></button>`}</td>
+                                <td class="p-4 text-center">
+                                    <div class="flex flex-col items-center gap-2">
+                                        ${entry.soldCertificateId ? '<span class="text-xs text-gray-400">travado</span>' : `
+                                            <button class="px-2 py-1 text-[11px] bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100 transition" onclick="addMaterialToExistingBeg('${entry.id}')">
+                                                <i class="fas fa-plus"></i> Material
+                                            </button>
+                                            <button class="btn-delete-history" onclick="deleteSucataEntry('${entry.id}')"><i class="fas fa-trash"></i></button>
+                                        `}
+                                    </div>
+                                </td>
                             </tr>`;
                     });
                 }
@@ -1619,7 +1778,7 @@
                             begsTable.innerHTML += `
                                 <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0">
                                     <td class="p-4 text-sm font-mono font-bold text-blue-600">${escapeHtml(entry.begCode)}</td>
-                                    <td class="p-4 text-sm font-bold text-gray-800">${formatWeight(entry.weightKg)}</td>
+                                    <td class="p-4 text-sm font-bold text-gray-800">${formatWeight(getSucataEntryTotalWeight(entry))}</td>
                                     <td class="p-4 text-sm"><span class="px-2 py-1 rounded border text-xs font-semibold ${statusClass}">${statusText}</span></td>
                                 </tr>`;
                         });
@@ -1660,14 +1819,25 @@
         }
 
         function buildSucataCertificateHtml(cert) {
-            const entryRows = cert.bagItems.map((item, index) => `
-                <tr>
-                    <td style="border:1px solid #111827;padding:7px 8px;text-align:center;font-size:10pt">${index + 1}</td>
-                    <td style="border:1px solid #111827;padding:7px 8px;font-family:Consolas,monospace;font-size:10.5pt">${escapeHtml(item.begCode)}</td>
-                    <td style="border:1px solid #111827;padding:7px 8px;font-size:10.5pt">${escapeHtml(item.materialLabel || 'Não informado')}</td>
-                    <td style="border:1px solid #111827;padding:7px 8px;font-size:10.5pt">${escapeHtml(item.origin || '-')}</td>
-                    <td style="border:1px solid #111827;padding:7px 8px;text-align:right;font-weight:bold;font-size:10.5pt">${formatWeight(item.weightKg)}</td>
-                </tr>`).join('');
+            const entryRows = cert.bagItems.map((item, index) => {
+                const subItemsHtml = Array.isArray(item.items) && item.items.length > 0
+                    ? '<div style="margin-top:4px;font-size:9pt;color:#374151">' + item.items.map(sub =>
+                        `• ${escapeHtml(sub.materialLabel)} — ${formatWeight(sub.weightKg)}${sub.obs ? ' — ' + escapeHtml(sub.obs) : ''}`
+                      ).join('<br>') + '</div>'
+                    : '';
+
+                return `
+                    <tr>
+                        <td style="border:1px solid #111827;padding:7px 8px;text-align:center;font-size:10pt">${index + 1}</td>
+                        <td style="border:1px solid #111827;padding:7px 8px;font-family:Consolas,monospace;font-size:10.5pt">${escapeHtml(item.begCode)}</td>
+                        <td style="border:1px solid #111827;padding:7px 8px;font-size:10.5pt">
+                            ${escapeHtml(item.materialLabel || 'Não informado')}
+                            ${subItemsHtml}
+                        </td>
+                        <td style="border:1px solid #111827;padding:7px 8px;font-size:10.5pt">${escapeHtml(item.origin || '-')}</td>
+                        <td style="border:1px solid #111827;padding:7px 8px;text-align:right;font-weight:bold;font-size:10.5pt">${formatWeight(item.weightKg)}</td>
+                    </tr>`;
+            }).join('');
 
             return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
                 '<head><meta charset="utf-8"><title>Certificado Oficial de Baixa de Sucata</title></head>' +
@@ -1774,9 +1944,9 @@
                 return '<tr>' +
                     `<td style="border:1px solid #d1d5db;padding:8px;font-size:10.5pt">${new Date(entry.date).toLocaleString('pt-BR')}</td>` +
                     `<td style="border:1px solid #d1d5db;padding:8px;font-family:Consolas,monospace;font-size:10.5pt">${escapeHtml(entry.begCode)}</td>` +
-                    `<td style="border:1px solid #d1d5db;padding:8px;font-size:10.5pt">${escapeHtml(getSucataMaterialLabel(entry.materialId))}</td>` +
+                    `<td style="border:1px solid #d1d5db;padding:8px;font-size:10.5pt">${escapeHtml(getSucataEntryMaterialsLabel(entry))}</td>` +
                     `<td style="border:1px solid #d1d5db;padding:8px;font-size:10.5pt">${escapeHtml(entry.origin || '-')}</td>` +
-                    `<td style="border:1px solid #d1d5db;padding:8px;text-align:right;font-weight:bold;font-size:10.5pt">${formatWeight(entry.weightKg)}</td>` +
+                    `<td style="border:1px solid #d1d5db;padding:8px;text-align:right;font-weight:bold;font-size:10.5pt">${formatWeight(getSucataEntryTotalWeight(entry))}</td>` +
                     `<td style="border:1px solid #d1d5db;padding:8px;font-size:10.5pt">${status}</td>` +
                     '</tr>';
             }).join('');
@@ -2259,25 +2429,52 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
 
                 if (!begCode) { toast.show('Informe o código do BEG para enviar a sucata.', 'warning'); return; }
                 if (!(weightKg > 0)) { toast.show('Informe o peso em KG para enviar a sucata.', 'warning'); return; }
-                if (data.sucata.entries.some(entry => entry.begCode === begCode && !entry.soldCertificateId)) {
-                    toast.show('Já existe um BEG disponível com esse código na aba de sucata.', 'error');
-                    return;
-                }
 
-                data.sucata.entries.push({
-                    id: 'suc_' + Date.now(),
-                    begCode,
-                    weightKg,
-                    materialId,
-                    origin,
-                    documentRef,
-                    obs,
-                    sourceMovementType: 'return',
-                    sourcePep: pep,
-                    sourceQuantity: quantity,
-                    date: new Date().toISOString(),
-                    soldCertificateId: null
-                });
+                const existingEntry = data.sucata.entries.find(entry => entry.begCode === begCode && !entry.soldCertificateId);
+
+                if (existingEntry) {
+                    if (!Array.isArray(existingEntry.items)) existingEntry.items = [];
+
+                    existingEntry.items.push({
+                        id: 'item_' + Date.now(),
+                        materialId,
+                        weightKg,
+                        obs,
+                        date: new Date().toISOString(),
+                        sourceMovementType: 'return',
+                        sourcePep: pep,
+                        sourceQuantity: quantity
+                    });
+
+                    if (origin && !existingEntry.origin) existingEntry.origin = origin;
+                    if (documentRef && !existingEntry.documentRef) existingEntry.documentRef = documentRef;
+
+                    existingEntry.weightKg = getSucataEntryTotalWeight(existingEntry);
+                } else {
+                    data.sucata.entries.push({
+                        id: 'suc_' + Date.now(),
+                        begCode,
+                        origin,
+                        documentRef,
+                        obs,
+                        sourceMovementType: 'return',
+                        sourcePep: pep,
+                        sourceQuantity: quantity,
+                        date: new Date().toISOString(),
+                        soldCertificateId: null,
+                        items: [{
+                            id: 'item_' + Date.now(),
+                            materialId,
+                            weightKg,
+                            obs,
+                            date: new Date().toISOString(),
+                            sourceMovementType: 'return',
+                            sourcePep: pep,
+                            sourceQuantity: quantity
+                        }],
+                        weightKg
+                    });
+                }
             }
 
             data.pepAllocations[pep][materialId] -= quantity;
@@ -2306,21 +2503,54 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
 
             if (!begCode) { toast.show('Informe o código do BEG.', 'warning'); return; }
             if (!(weightKg > 0)) { toast.show('Informe um peso válido em KG.', 'warning'); return; }
-            if (data.sucata.entries.some(entry => entry.begCode === begCode && !entry.soldCertificateId)) {
-                toast.show('Já existe um BEG disponível com esse código.', 'error');
+
+            const existingEntry = data.sucata.entries.find(entry => entry.begCode === begCode && !entry.soldCertificateId);
+
+            if (existingEntry) {
+                if (!Array.isArray(existingEntry.items)) existingEntry.items = [];
+
+                existingEntry.items.push({
+                    id: 'item_' + Date.now(),
+                    materialId,
+                    weightKg,
+                    obs,
+                    date: new Date().toISOString(),
+                    sourceMovementType: 'manual',
+                    sourcePep: null,
+                    sourceQuantity: null
+                });
+
+                if (origin && !existingEntry.origin) existingEntry.origin = origin;
+                if (documentRef && !existingEntry.documentRef) existingEntry.documentRef = documentRef;
+
+                existingEntry.weightKg = getSucataEntryTotalWeight(existingEntry);
+
+                saveData();
+                updateSucataViews();
+                this.reset();
+                toast.show(`Material adicionado ao BEG ${begCode}.`, 'success');
                 return;
             }
 
             data.sucata.entries.push({
                 id: 'suc_' + Date.now(),
                 begCode,
-                weightKg,
-                materialId,
                 origin,
                 documentRef,
                 obs,
                 date: new Date().toISOString(),
-                soldCertificateId: null
+                soldCertificateId: null,
+                items: [{
+                    id: 'item_' + Date.now(),
+                    materialId,
+                    weightKg,
+                    obs,
+                    date: new Date().toISOString(),
+                    sourceMovementType: 'manual',
+                    sourcePep: null,
+                    sourceQuantity: null
+                }],
+                weightKg
             });
 
             saveData();
@@ -2360,11 +2590,16 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 bagCodes: bagItems.map(item => item.begCode),
                 bagItems: bagItems.map(item => ({
                     begCode: item.begCode,
-                    weightKg: item.weightKg,
+                    weightKg: getSucataEntryTotalWeight(item),
                     origin: item.origin,
-                    materialLabel: getSucataMaterialLabel(item.materialId)
+                    materialLabel: getSucataEntryMaterialsLabel(item),
+                    items: Array.isArray(item.items) ? item.items.map(sub => ({
+                        materialLabel: getSucataMaterialLabel(sub.materialId),
+                        weightKg: Number(sub.weightKg || 0),
+                        obs: sub.obs || ''
+                    })) : []
                 })),
-                totalWeightKg: bagItems.reduce((sum, item) => sum + Number(item.weightKg || 0), 0)
+                totalWeightKg: bagItems.reduce((sum, item) => sum + getSucataEntryTotalWeight(item), 0)
             };
 
             bagItems.forEach(item => { item.soldCertificateId = certId; });
