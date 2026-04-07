@@ -57,7 +57,7 @@
     }
 
     .wrap{
-      max-width:1400px;
+      max-width:1450px;
       margin:0 auto;
       padding:20px;
     }
@@ -152,6 +152,18 @@
     .form-grid-2{
       display:grid;
       grid-template-columns:repeat(2,1fr);
+      gap:12px;
+    }
+
+    .form-grid-3{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+
+    .form-grid-5{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
       gap:12px;
     }
 
@@ -386,23 +398,50 @@
       line-height:1.5;
     }
 
+    .point-summary{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+    }
+
+    .mini-card{
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+      background:#fff;
+    }
+
+    .mini-card .label{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:8px;
+    }
+
+    .mini-card .value{
+      font-size:26px;
+      font-weight:bold;
+      color:var(--primary);
+    }
+
     @media (max-width: 1200px){
       .top-actions{ grid-template-columns:1fr 1fr; }
+      .point-summary{ grid-template-columns:repeat(2,1fr); }
     }
 
     @media (max-width: 1100px){
       .grid-kpi{ grid-template-columns:repeat(3,1fr); }
-      .form-grid{ grid-template-columns:repeat(2,1fr); }
+      .form-grid, .form-grid-5{ grid-template-columns:repeat(2,1fr); }
       .toolbar{ grid-template-columns:1fr 1fr; }
       .two-cols{ grid-template-columns:1fr; }
     }
 
     @media (max-width: 700px){
       .grid-kpi{ grid-template-columns:repeat(2,1fr); }
-      .form-grid, .form-grid-2{ grid-template-columns:1fr; }
+      .form-grid, .form-grid-2, .form-grid-3, .form-grid-5{ grid-template-columns:1fr; }
       .toolbar{ grid-template-columns:1fr; }
       .top-actions{ grid-template-columns:1fr; }
       .item-top{ flex-direction:column; }
+      .point-summary{ grid-template-columns:1fr; }
     }
 
     @media print{
@@ -419,7 +458,7 @@
 <body>
   <header>
     <h1>Sistema Profissional do Agente de Saúde</h1>
-    <p>Cadastro familiar, cadastro individual, visitas, acompanhamento e relatórios</p>
+    <p>Cadastro familiar, cadastro individual, visitas, acompanhamento, ponto e relatórios</p>
   </header>
 
   <div class="wrap">
@@ -439,6 +478,7 @@
       <button class="tab-btn" onclick="trocarAba('familias', this)">Famílias</button>
       <button class="tab-btn" onclick="trocarAba('individual', this)">Cadastro Individual</button>
       <button class="tab-btn" onclick="trocarAba('visitas', this)">Visitas</button>
+      <button class="tab-btn" onclick="trocarAba('ponto', this)">Ponto</button>
       <button class="tab-btn" onclick="trocarAba('relatorios', this)">Relatórios</button>
     </div>
 
@@ -679,14 +719,92 @@
       </div>
     </section>
 
+    <section id="ponto" class="content">
+      <div class="card section hide-print">
+        <h2>Registro de Ponto</h2>
+        <div class="form-grid-5">
+          <input id="ptoData" type="date">
+          <input id="ptoEntrada" type="time">
+          <input id="ptoSaida" type="time">
+          <input id="ptoIntervaloInicio" type="time">
+          <input id="ptoIntervaloFim" type="time">
+          <select id="ptoLocal">
+            <option value="">Local / situação</option>
+            <option value="UBS">UBS</option>
+            <option value="Visita domiciliar">Visita domiciliar</option>
+            <option value="Busca ativa">Busca ativa</option>
+            <option value="Reunião">Reunião</option>
+            <option value="Capacitação">Capacitação</option>
+            <option value="Trabalho externo">Trabalho externo</option>
+            <option value="Folga">Folga</option>
+            <option value="Atestado">Atestado</option>
+            <option value="Férias">Férias</option>
+          </select>
+          <input id="ptoMicroarea" placeholder="Microárea / roteiro do dia">
+          <input id="ptoAtividade" placeholder="Atividade principal">
+          <textarea id="ptoObs" class="full" placeholder="Observações do ponto"></textarea>
+
+          <button class="btn-primary" id="btnSalvarPonto" onclick="salvarPonto()">Salvar Ponto</button>
+          <button class="btn-warning" id="btnAtualizarPonto" onclick="atualizarPonto()" style="display:none;">Atualizar Ponto</button>
+          <button class="btn-light" id="btnCancelarPonto" onclick="cancelarEdicaoPonto()" style="display:none;">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="card section">
+        <h2>Resumo do Ponto</h2>
+        <div class="point-summary">
+          <div class="mini-card">
+            <div class="label">Registros no mês</div>
+            <div class="value" id="ptoResumoDias">0</div>
+          </div>
+          <div class="mini-card">
+            <div class="label">Horas no mês</div>
+            <div class="value" id="ptoResumoHoras">00:00</div>
+          </div>
+          <div class="mini-card">
+            <div class="label">Pontos incompletos</div>
+            <div class="value" id="ptoResumoIncompletos">0</div>
+          </div>
+          <div class="mini-card">
+            <div class="label">Trabalho externo</div>
+            <div class="value" id="ptoResumoExternos">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card section">
+        <h2>Histórico de Ponto</h2>
+        <div class="toolbar hide-print">
+          <input type="text" id="filtroPonto" placeholder="Buscar ponto..." onkeyup="renderPontos()">
+          <select id="filtroPontoLocal" onchange="renderPontos()">
+            <option value="">Todos os locais</option>
+            <option value="UBS">UBS</option>
+            <option value="Visita domiciliar">Visita domiciliar</option>
+            <option value="Busca ativa">Busca ativa</option>
+            <option value="Reunião">Reunião</option>
+            <option value="Capacitação">Capacitação</option>
+            <option value="Trabalho externo">Trabalho externo</option>
+            <option value="Folga">Folga</option>
+            <option value="Atestado">Atestado</option>
+            <option value="Férias">Férias</option>
+          </select>
+          <input type="month" id="filtroPontoMes" onchange="renderPontos()">
+          <button class="btn-light" onclick="limparFiltrosPonto()">Limpar filtros</button>
+          <button class="btn-secondary" onclick="gerarTabelaRelatorio('ponto')">Relatório de Ponto</button>
+        </div>
+        <div id="listaPontos" class="list"></div>
+      </div>
+    </section>
+
     <section id="relatorios" class="content">
       <div class="card section">
         <h2>Relatórios Rápidos</h2>
-        <div class="form-grid-2 hide-print">
+        <div class="form-grid-3 hide-print">
           <button class="btn-secondary" onclick="gerarTabelaRelatorio('familias')">Relatório de Famílias</button>
           <button class="btn-secondary" onclick="gerarTabelaRelatorio('pessoas')">Relatório de Cadastro Individual</button>
           <button class="btn-secondary" onclick="gerarTabelaRelatorio('visitas')">Relatório de Visitas</button>
           <button class="btn-secondary" onclick="gerarTabelaRelatorio('prioridades')">Relatório de Prioridades</button>
+          <button class="btn-secondary" onclick="gerarTabelaRelatorio('ponto')">Relatório de Ponto</button>
         </div>
         <div class="footer-note hide-print">
           Os relatórios abaixo mudam conforme o botão escolhido. Depois você pode imprimir.
@@ -711,12 +829,14 @@
     let db = {
       familias: [],
       pessoas: [],
-      visitas: []
+      visitas: [],
+      pontos: []
     };
 
     let editandoFamiliaId = null;
     let editandoPessoaId = null;
     let editandoVisitaId = null;
+    let editandoPontoId = null;
 
     function gerarId(){
       return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -730,10 +850,18 @@
       localStorage.setItem('sistemaAgenteSaudeProfissional', JSON.stringify(db));
     }
 
+    function garantirEstruturaDB(){
+      if(!db.familias) db.familias = [];
+      if(!db.pessoas) db.pessoas = [];
+      if(!db.visitas) db.visitas = [];
+      if(!db.pontos) db.pontos = [];
+    }
+
     function carregarDB(){
       const salvo = localStorage.getItem('sistemaAgenteSaudeProfissional');
       if(salvo){
         db = JSON.parse(salvo);
+        garantirEstruturaDB();
       } else {
         db = {
           familias: [
@@ -831,6 +959,21 @@
               profissional:'ACS',
               obs:'Verificar vacinação infantil e situação da gestante.'
             }
+          ],
+          pontos: [
+            {
+              id: gerarId(),
+              data:'2026-04-01',
+              entrada:'08:00',
+              saida:'17:00',
+              intervaloInicio:'12:00',
+              intervaloFim:'13:00',
+              local:'Visita domiciliar',
+              microarea:'Microárea 01',
+              atividade:'Roteiro de visitas',
+              observacoes:'Atendimento externo no turno da manhã.',
+              horasTrabalhadas:'08:00'
+            }
           ]
         };
         salvarDB();
@@ -882,6 +1025,7 @@
           }
 
           db = dados;
+          garantirEstruturaDB();
           salvarDB();
           preencherFiltros();
           renderAll();
@@ -1158,7 +1302,7 @@
 
     function mostrarModoEdicaoFamilia(editar){
       document.getElementById('btnSalvarFamilia').style.display = editar ? 'none' : 'inline-block';
-      document.getElementById('btnAtualizarFamilia').style.display = editar ? 'inline-block' : 'inline-block'.replace('inline-block','none');
+      document.getElementById('btnAtualizarFamilia').style.display = editar ? 'inline-block' : 'none';
       document.getElementById('btnCancelarFamilia').style.display = editar ? 'inline-block' : 'none';
     }
 
@@ -1172,6 +1316,12 @@
       document.getElementById('btnSalvarVisita').style.display = editar ? 'none' : 'inline-block';
       document.getElementById('btnAtualizarVisita').style.display = editar ? 'inline-block' : 'none';
       document.getElementById('btnCancelarVisita').style.display = editar ? 'inline-block' : 'none';
+    }
+
+    function mostrarModoEdicaoPonto(editar){
+      document.getElementById('btnSalvarPonto').style.display = editar ? 'none' : 'inline-block';
+      document.getElementById('btnAtualizarPonto').style.display = editar ? 'inline-block' : 'none';
+      document.getElementById('btnCancelarPonto').style.display = editar ? 'inline-block' : 'none';
     }
 
     function badgeRisco(risco){
@@ -1190,6 +1340,13 @@
       if(s === 'Concluída') return '<span class="badge badge-green">Concluída</span>';
       if(s === 'Agendada') return '<span class="badge badge-blue">Agendada</span>';
       return '<span class="badge badge-red">Não realizada</span>';
+    }
+
+    function badgeLocalPonto(local){
+      if(local === 'Visita domiciliar' || local === 'Trabalho externo') return '<span class="badge badge-green">' + (local || '-') + '</span>';
+      if(local === 'UBS' || local === 'Reunião') return '<span class="badge badge-blue">' + (local || '-') + '</span>';
+      if(local === 'Atestado' || local === 'Férias' || local === 'Folga') return '<span class="badge badge-yellow">' + (local || '-') + '</span>';
+      return '<span class="badge badge-gray">' + (local || '-') + '</span>';
     }
 
     function trocarAba(id, botao){
@@ -1506,6 +1663,223 @@
       });
       document.getElementById('visTipo').value = 'Visita domiciliar';
       document.getElementById('visStatus').value = 'Agendada';
+    }
+
+    function timeToMinutes(hora){
+      if(!hora) return null;
+      const [h,m] = hora.split(':').map(Number);
+      if(Number.isNaN(h) || Number.isNaN(m)) return null;
+      return (h * 60) + m;
+    }
+
+    function minutesToHHMM(total){
+      if(total === null || total === undefined || Number.isNaN(total)) return '00:00';
+      const horas = Math.floor(total / 60);
+      const minutos = total % 60;
+      return String(horas).padStart(2, '0') + ':' + String(minutos).padStart(2, '0');
+    }
+
+    function calcularHorasPonto(entrada, saida, intervaloInicio, intervaloFim){
+      const ent = timeToMinutes(entrada);
+      const sai = timeToMinutes(saida);
+      if(ent === null || sai === null || sai < ent) return '';
+
+      let total = sai - ent;
+
+      const intIni = timeToMinutes(intervaloInicio);
+      const intFim = timeToMinutes(intervaloFim);
+
+      if(intIni !== null && intFim !== null && intFim >= intIni){
+        total -= (intFim - intIni);
+      }
+
+      if(total < 0) total = 0;
+      return minutesToHHMM(total);
+    }
+
+    function salvarPonto(){
+      const data = document.getElementById('ptoData').value;
+      if(!data){
+        alert('Informe a data do ponto.');
+        return;
+      }
+
+      const horas = calcularHorasPonto(
+        document.getElementById('ptoEntrada').value,
+        document.getElementById('ptoSaida').value,
+        document.getElementById('ptoIntervaloInicio').value,
+        document.getElementById('ptoIntervaloFim').value
+      );
+
+      db.pontos.unshift({
+        id: gerarId(),
+        data: data,
+        entrada: document.getElementById('ptoEntrada').value,
+        saida: document.getElementById('ptoSaida').value,
+        intervaloInicio: document.getElementById('ptoIntervaloInicio').value,
+        intervaloFim: document.getElementById('ptoIntervaloFim').value,
+        local: document.getElementById('ptoLocal').value,
+        microarea: document.getElementById('ptoMicroarea').value.trim(),
+        atividade: document.getElementById('ptoAtividade').value.trim(),
+        observacoes: document.getElementById('ptoObs').value.trim(),
+        horasTrabalhadas: horas
+      });
+
+      salvarDB();
+      limparFormularioPonto();
+      renderPontos();
+      alert('Ponto salvo com sucesso.');
+    }
+
+    function editarPonto(id){
+      const p = db.pontos.find(item => item.id === id);
+      if(!p) return;
+
+      editandoPontoId = id;
+      document.getElementById('ptoData').value = p.data || '';
+      document.getElementById('ptoEntrada').value = p.entrada || '';
+      document.getElementById('ptoSaida').value = p.saida || '';
+      document.getElementById('ptoIntervaloInicio').value = p.intervaloInicio || '';
+      document.getElementById('ptoIntervaloFim').value = p.intervaloFim || '';
+      document.getElementById('ptoLocal').value = p.local || '';
+      document.getElementById('ptoMicroarea').value = p.microarea || '';
+      document.getElementById('ptoAtividade').value = p.atividade || '';
+      document.getElementById('ptoObs').value = p.observacoes || '';
+
+      mostrarModoEdicaoPonto(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function atualizarPonto(){
+      if(!editandoPontoId) return;
+
+      const p = db.pontos.find(item => item.id === editandoPontoId);
+      if(!p) return;
+
+      p.data = document.getElementById('ptoData').value;
+      p.entrada = document.getElementById('ptoEntrada').value;
+      p.saida = document.getElementById('ptoSaida').value;
+      p.intervaloInicio = document.getElementById('ptoIntervaloInicio').value;
+      p.intervaloFim = document.getElementById('ptoIntervaloFim').value;
+      p.local = document.getElementById('ptoLocal').value;
+      p.microarea = document.getElementById('ptoMicroarea').value.trim();
+      p.atividade = document.getElementById('ptoAtividade').value.trim();
+      p.observacoes = document.getElementById('ptoObs').value.trim();
+      p.horasTrabalhadas = calcularHorasPonto(p.entrada, p.saida, p.intervaloInicio, p.intervaloFim);
+
+      salvarDB();
+      renderPontos();
+      cancelarEdicaoPonto();
+      alert('Ponto atualizado com sucesso.');
+    }
+
+    function cancelarEdicaoPonto(){
+      editandoPontoId = null;
+      limparFormularioPonto();
+      mostrarModoEdicaoPonto(false);
+    }
+
+    function limparFormularioPonto(){
+      ['ptoData','ptoEntrada','ptoSaida','ptoIntervaloInicio','ptoIntervaloFim','ptoMicroarea','ptoAtividade','ptoObs'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('ptoLocal').value = '';
+    }
+
+    function excluirPonto(id){
+      if(!confirm('Deseja excluir este ponto?')) return;
+      db.pontos = db.pontos.filter(x => x.id !== id);
+      salvarDB();
+      renderPontos();
+    }
+
+    function atualizarResumoPonto(){
+      const mesSelecionado = document.getElementById('filtroPontoMes').value;
+      const pontosBase = mesSelecionado
+        ? db.pontos.filter(p => (p.data || '').startsWith(mesSelecionado))
+        : db.pontos;
+
+      const totalDias = pontosBase.length;
+      let totalMinutos = 0;
+      let incompletos = 0;
+      let externos = 0;
+
+      pontosBase.forEach(p => {
+        const mins = timeToMinutes(p.horasTrabalhadas || '');
+        if(mins !== null) totalMinutos += mins;
+        if(!p.entrada || !p.saida) incompletos++;
+        if(p.local === 'Visita domiciliar' || p.local === 'Trabalho externo' || p.local === 'Busca ativa') externos++;
+      });
+
+      document.getElementById('ptoResumoDias').textContent = totalDias;
+      document.getElementById('ptoResumoHoras').textContent = minutesToHHMM(totalMinutos);
+      document.getElementById('ptoResumoIncompletos').textContent = incompletos;
+      document.getElementById('ptoResumoExternos').textContent = externos;
+    }
+
+    function renderPontos(){
+      const busca = texto(document.getElementById('filtroPonto')?.value || '');
+      const local = document.getElementById('filtroPontoLocal')?.value || '';
+      const mes = document.getElementById('filtroPontoMes')?.value || '';
+
+      const lista = db.pontos
+        .filter(p => {
+          const base = texto(
+            (p.data || '') + ' ' +
+            (p.local || '') + ' ' +
+            (p.microarea || '') + ' ' +
+            (p.atividade || '') + ' ' +
+            (p.observacoes || '') + ' ' +
+            (p.entrada || '') + ' ' +
+            (p.saida || '')
+          );
+          return (!busca || base.includes(busca)) &&
+                 (!local || p.local === local) &&
+                 (!mes || (p.data || '').startsWith(mes));
+        })
+        .sort((a,b) => (b.data || '').localeCompare(a.data || ''));
+
+      let html = '';
+      if(!lista.length){
+        html = `<div class="empty">Nenhum ponto encontrado.</div>`;
+      } else {
+        lista.forEach(p => {
+          html += `
+            <div class="item">
+              <div class="item-top">
+                <div>
+                  <h4>${p.data || '-'}</h4>
+                  <div class="muted">${p.microarea || 'Sem microárea'} • ${p.atividade || 'Sem atividade'}</div>
+                </div>
+                <div class="badges">
+                  ${badgeLocalPonto(p.local)}
+                  <span class="badge badge-blue">${p.horasTrabalhadas || '00:00'}</span>
+                </div>
+              </div>
+              <div><strong>Entrada:</strong> ${p.entrada || '-'}</div>
+              <div><strong>Saída:</strong> ${p.saida || '-'}</div>
+              <div><strong>Intervalo:</strong> ${(p.intervaloInicio || '-') + ' às ' + (p.intervaloFim || '-')}</div>
+              <div><strong>Local:</strong> ${p.local || '-'}</div>
+              <div><strong>Microárea / roteiro:</strong> ${p.microarea || '-'}</div>
+              <div><strong>Observações:</strong> ${p.observacoes || '-'}</div>
+              <div class="item-actions hide-print">
+                <button class="btn-warning" onclick="editarPonto('${p.id}')">Editar</button>
+                <button class="btn-danger" onclick="excluirPonto('${p.id}')">Excluir</button>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      document.getElementById('listaPontos').innerHTML = html;
+      atualizarResumoPonto();
+    }
+
+    function limparFiltrosPonto(){
+      document.getElementById('filtroPonto').value = '';
+      document.getElementById('filtroPontoLocal').value = '';
+      document.getElementById('filtroPontoMes').value = '';
+      renderPontos();
     }
 
     function excluirFamilia(id){
@@ -2021,24 +2395,58 @@
         html += '</tbody></table>';
       }
 
+      if(tipo === 'ponto'){
+        html += `
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Entrada</th>
+                <th>Saída</th>
+                <th>Intervalo</th>
+                <th>Local</th>
+                <th>Microárea</th>
+                <th>Horas</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        if(!db.pontos.length){
+          html += `<tr><td colspan="7">Sem dados</td></tr>`;
+        } else {
+          db.pontos
+            .sort((a,b) => (b.data || '').localeCompare(a.data || ''))
+            .forEach(p => {
+              html += `<tr>
+                <td>${p.data || ''}</td>
+                <td>${p.entrada || ''}</td>
+                <td>${p.saida || ''}</td>
+                <td>${(p.intervaloInicio || '-') + ' às ' + (p.intervaloFim || '-')}</td>
+                <td>${p.local || ''}</td>
+                <td>${p.microarea || ''}</td>
+                <td>${p.horasTrabalhadas || ''}</td>
+              </tr>`;
+            });
+        }
+        html += '</tbody></table>';
+      }
+
       document.getElementById('areaRelatorio').innerHTML = html;
+      trocarAbaRelatorio();
     }
 
     function imprimirRelatorioFamilias(){
       gerarTabelaRelatorio('familias');
-      trocarAbaRelatorio();
       window.print();
     }
 
     function imprimirRelatorioPessoas(){
       gerarTabelaRelatorio('pessoas');
-      trocarAbaRelatorio();
       window.print();
     }
 
     function imprimirRelatorioVisitas(){
       gerarTabelaRelatorio('visitas');
-      trocarAbaRelatorio();
       window.print();
     }
 
@@ -2055,6 +2463,7 @@
       renderFamilias();
       renderPessoas();
       renderVisitas();
+      renderPontos();
     }
 
     carregarDB();
@@ -2062,6 +2471,12 @@
     mostrarModoEdicaoFamilia(false);
     mostrarModoEdicaoPessoa(false);
     mostrarModoEdicaoVisita(false);
+    mostrarModoEdicaoPonto(false);
+
+    const hoje = new Date().toISOString().slice(0,10);
+    if(document.getElementById('ptoData')) document.getElementById('ptoData').value = hoje;
+    if(document.getElementById('filtroPontoMes')) document.getElementById('filtroPontoMes').value = hoje.slice(0,7);
+
     renderAll();
   </script>
 </body>
