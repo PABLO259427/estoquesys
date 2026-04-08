@@ -869,6 +869,15 @@
                                     <p class="text-xs text-gray-500 mt-1">Segure Ctrl para selecionar mais de um BEG.</p>
                                 </div>
                                 <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Exibir unidade no relatório</label>
+                                    <select id="certificateUnitMode" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        <option value="kg">Somente KG</option>
+                                        <option value="meter">Somente metro</option>
+                                        <option value="both" selected>Metro + KG</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 mt-1">O peso total da baixa continuará sendo exibido em KG.</p>
+                                </div>
+                                <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
                                     <input type="text" id="certificateObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Observações da coleta">
                                 </div>
@@ -1592,6 +1601,21 @@
             return Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' KG';
         }
 
+        function formatMeters(value) {
+            return Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' M';
+        }
+
+        function getCertificateItemDisplay(item, mode = 'both') {
+            const hasMeters = item && item.measurementMode === 'meter' && Number(item.meters || 0) > 0;
+            if (mode === 'meter') {
+                return hasMeters ? formatMeters(item.meters) : formatWeight(item.weightKg);
+            }
+            if (mode === 'both') {
+                return hasMeters ? `${formatMeters(item.meters)} — ${formatWeight(item.weightKg)}` : formatWeight(item.weightKg);
+            }
+            return formatWeight(item.weightKg);
+        }
+
         function getSucataMaterialLabel(materialId) {
             const mat = data.materials.find(m => m.id === materialId);
             return mat ? `${mat.code} - ${mat.description}` : 'Não informado';
@@ -2079,10 +2103,12 @@
         }
 
         function buildSucataCertificateHtml(cert) {
+            const reportUnitMode = cert.reportUnitMode || 'both';
+            const unitModeLabel = reportUnitMode === 'meter' ? 'Somente metro' : (reportUnitMode === 'both' ? 'Metro + KG' : 'Somente KG');
             const entryRows = cert.bagItems.map((item, index) => {
                 const subItemsHtml = Array.isArray(item.items) && item.items.length > 0
                     ? '<div style="margin-top:4px;font-size:9pt;color:#374151">' + item.items.map(sub =>
-                        `• ${escapeHtml(sub.materialLabel)} — ${formatWeight(sub.weightKg)}${sub.obs ? ' — ' + escapeHtml(sub.obs) : ''}`
+                        `• ${escapeHtml(sub.materialLabel)} — ${getCertificateItemDisplay(sub, reportUnitMode)}${sub.obs ? ' — ' + escapeHtml(sub.obs) : ''}`
                       ).join('<br>') + '</div>'
                     : '';
 
@@ -2095,7 +2121,7 @@
                             ${subItemsHtml}
                         </td>
                         <td style="border:1px solid #111827;padding:7px 8px;font-size:10.5pt">${escapeHtml(item.origin || '-')}</td>
-                        <td style="border:1px solid #111827;padding:7px 8px;text-align:right;font-weight:bold;font-size:10.5pt">${formatWeight(item.weightKg)}</td>
+                        <td style="border:1px solid #111827;padding:7px 8px;text-align:right;font-weight:bold;font-size:10.5pt">${reportUnitMode === 'meter' && item.hasMeters ? formatMeters(item.totalMeters) : getCertificateItemDisplay(item, reportUnitMode)}</td>
                     </tr>`;
             }).join('');
 
@@ -2125,6 +2151,9 @@
                 '<tr>' +
                 '<td style="border:1px solid #111827;padding:6px 8px;font-size:10.5pt"><strong>Número do certificado:</strong> ' + escapeHtml(cert.id) + '</td>' +
                 '<td style="border:1px solid #111827;padding:6px 8px;font-size:10.5pt"><strong>Data de emissão:</strong> ' + new Date(cert.date).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td colspan="2" style="border:1px solid #111827;padding:6px 8px;font-size:10.5pt"><strong>Unidade exibida no relatório:</strong> ' + unitModeLabel + '</td>' +
                 '</tr>' +
                 '</table>' +
 
@@ -2851,6 +2880,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             const driverName = document.getElementById('driverName').value.trim();
             const truckPlate = document.getElementById('truckPlate').value.trim().toUpperCase();
             const obs = document.getElementById('certificateObs').value.trim();
+            const reportUnitMode = document.getElementById('certificateUnitMode').value || 'both';
             const selectedIds = Array.from(document.getElementById('certificateBegs').selectedOptions).map(option => option.value).filter(Boolean);
 
             if (!buyerName || !driverName || !truckPlate) { toast.show('Preencha comprador, motorista e placa.', 'warning'); return; }
@@ -2869,19 +2899,29 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 driverName,
                 truckPlate,
                 obs,
+                reportUnitMode,
                 date: new Date().toISOString(),
                 bagCodes: bagItems.map(item => item.begCode),
-                bagItems: bagItems.map(item => ({
-                    begCode: item.begCode,
-                    weightKg: getSucataEntryTotalWeight(item),
-                    origin: item.origin,
-                    materialLabel: getSucataEntryMaterialsLabel(item),
-                    items: Array.isArray(item.items) ? item.items.map(sub => ({
+                bagItems: bagItems.map(item => {
+                    const subItems = Array.isArray(item.items) ? item.items.map(sub => ({
                         materialLabel: getSucataMaterialLabel(sub.materialId),
                         weightKg: Number(sub.weightKg || 0),
+                        meters: Number(sub.meters || 0) || null,
+                        measurementMode: sub.measurementMode || 'kg',
+                        factorKgPerMeter: Number(sub.factorKgPerMeter || 0) || null,
                         obs: sub.obs || ''
-                    })) : []
-                })),
+                    })) : [];
+                    const totalMeters = subItems.reduce((sum, sub) => sum + ((sub.measurementMode === 'meter' && Number(sub.meters || 0) > 0) ? Number(sub.meters) : 0), 0);
+                    return {
+                        begCode: item.begCode,
+                        weightKg: getSucataEntryTotalWeight(item),
+                        totalMeters,
+                        hasMeters: totalMeters > 0,
+                        origin: item.origin,
+                        materialLabel: getSucataEntryMaterialsLabel(item),
+                        items: subItems
+                    };
+                }),
                 totalWeightKg: bagItems.reduce((sum, item) => sum + getSucataEntryTotalWeight(item), 0)
             };
 
@@ -2891,6 +2931,8 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             saveData();
             updateSucataViews();
             this.reset();
+            const certificateUnitModeField = document.getElementById('certificateUnitMode');
+            if (certificateUnitModeField) certificateUnitModeField.value = 'both';
             downloadSucataCertificateWord(certId);
             toast.show('Certificado de baixa gerado com sucesso.', 'success');
         });
