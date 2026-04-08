@@ -772,9 +772,35 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-700 mb-1">Peso do BEG (KG)</label>
-                                        <input type="number" id="sucataWeightKg" step="0.01" min="0.01" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500" required>
+                                        <input type="number" id="sucataWeightKg" step="0.01" min="0.01" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500" placeholder="Informe o peso final em KG" required>
                                     </div>
                                 </div>
+                                <div id="sucataMeasurementBox" class="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-3 hidden">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="text-sm font-bold text-emerald-900"><i class="fas fa-ruler-horizontal mr-2"></i>Conversão técnica de metro para KG</p>
+                                            <p class="text-xs text-emerald-800">Quando o material existir na tabela de pesos, tu pode lançar por metro e o sistema calcula o peso automaticamente.</p>
+                                        </div>
+                                        <span id="sucataConversionBadge" class="text-[11px] font-semibold px-2 py-1 rounded-full border border-emerald-300 text-emerald-700 bg-white hidden"></span>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-1">Modo de lançamento</label>
+                                            <select id="sucataMeasurementMode" class="w-full px-4 py-2.5 bg-white border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+                                                <option value="kg">Informar direto em KG</option>
+                                                <option value="meter">Informar em metro e converter</option>
+                                            </select>
+                                        </div>
+                                        <div id="sucataMetersField" class="hidden">
+                                            <label class="block text-sm font-semibold text-gray-700 mb-1">Metragem</label>
+                                            <input type="number" id="sucataMeters" step="0.01" min="0.01" class="w-full px-4 py-2.5 bg-white border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500" placeholder="Ex: 100">
+                                        </div>
+                                    </div>
+
+                                    <div id="sucataConversionInfo" class="text-xs text-emerald-900 hidden"></div>
+                                </div>
+
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Material vinculado</label>
                                     <div class="pep-search-wrapper" id="sucataMaterialWrapper">
@@ -1186,6 +1212,15 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('exitDateNeeded').value = today;
 
+            document.getElementById('sucataMeasurementMode')?.addEventListener('change', updateSucataMeasurementUI);
+            document.getElementById('sucataMeters')?.addEventListener('input', applySucataWeightFromMeters);
+            document.getElementById('sucataWeightKg')?.addEventListener('input', function() {
+                if (document.getElementById('sucataMeasurementMode')?.value === 'kg') {
+                    updateSucataMeasurementUI();
+                }
+            });
+            updateSucataMeasurementUI();
+
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('#entryPepReturnWrapper')) document.getElementById('entryPepReturnDropdown').classList.add('hidden');
                 if (!e.target.closest('#exitPepWrapper')) document.getElementById('exitPepDropdown').classList.add('hidden');
@@ -1526,7 +1561,11 @@
                     date: item.date || entry.date || new Date().toISOString(),
                     sourceMovementType: item.sourceMovementType || null,
                     sourcePep: item.sourcePep || null,
-                    sourceQuantity: item.sourceQuantity || null
+                    sourceQuantity: item.sourceQuantity || null,
+                    measurementMode: item.measurementMode || 'kg',
+                    meters: item.meters || null,
+                    factorKgPerMeter: item.factorKgPerMeter || null,
+                    conversionDescription: item.conversionDescription || null
                 }));
 
                 entry.weightKg = entry.items.reduce((sum, item) => sum + Number(item.weightKg || 0), 0);
@@ -1595,6 +1634,7 @@
                         <div class="min-w-0">
                             <div class="font-semibold text-gray-700 truncate">${index + 1}. ${escapeHtml(getSucataMaterialLabel(item.materialId))}</div>
                             <div class="text-gray-500 truncate">${escapeHtml(item.obs || '-')}</div>
+                            ${item.measurementMode === 'meter' && item.meters ? `<div class="text-[11px] text-emerald-700 truncate">${Number(item.meters).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m × ${Number(item.factorKgPerMeter || 0).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 6 })} kg/m</div>` : ''}
                         </div>
                         <div class="shrink-0 font-bold text-gray-700">${formatWeight(item.weightKg)}</div>
                     </div>
@@ -1705,6 +1745,7 @@
 
             searchInput.value = `${selected.code} - ${selected.description}`;
             selectedLabel.innerHTML = `<i class="fas fa-check-circle text-emerald-500 mr-1"></i> Material vinculado: <b>${selected.code}</b>`;
+            updateSucataMeasurementUI();
         }
 
         function showSucataMaterialDropdown() {
@@ -1759,6 +1800,135 @@
             document.getElementById('sucataMaterialId').value = materialId;
             document.getElementById('sucataMaterialSelected').innerHTML = `<i class="fas fa-check-circle text-emerald-500 mr-1"></i> Material vinculado: <b>${materialCode}</b>`;
             document.getElementById('sucataMaterialDropdown').classList.add('hidden');
+            updateSucataMeasurementUI();
+        }
+
+        const SUCATA_CONVERSION_TABLE = [{"description":"Cabo 4 CA","kgPerKm":58.4,"kgPerMeter":0.0584},{"description":"Cabo 2 CA","kgPerKm":92.7,"kgPerMeter":0.0927},{"description":"Cabo 1/0 CA","kgPerKm":147.5,"kgPerMeter":0.1475},{"description":"Cabo 2/0 CA","kgPerKm":185.0,"kgPerMeter":0.185},{"description":"Cabo 3/0 CA","kgPerKm":234.4,"kgPerMeter":0.2344},{"description":"Cabo 4/0 CA","kgPerKm":293.0,"kgPerMeter":0.293},{"description":"Cabo 336,4 CA","kgPerKm":470.0,"kgPerMeter":0.47},{"description":"Cabo 397,5 CA","kgPerKm":555.6,"kgPerMeter":0.5556},{"description":"Cabo 477 CA","kgPerKm":666.6,"kgPerMeter":0.6666},{"description":"Cabo 4 CAA","kgPerKm":89.6,"kgPerMeter":0.0896},{"description":"Cabo 2 CAA","kgPerKm":135.9,"kgPerMeter":0.1359},{"description":"Cabo 1/0 CAA","kgPerKm":216.3,"kgPerMeter":0.2163},{"description":"Cabo 2/0 CAA","kgPerKm":272.0,"kgPerMeter":0.272},{"description":"Cabo 3/0 CAA","kgPerKm":343.6,"kgPerMeter":0.3436},{"description":"Cabo 4/0 CAA","kgPerKm":433.3,"kgPerMeter":0.4333},{"description":"Fio AL nú 4 AWG","kgPerKm":57.15,"kgPerMeter":0.05715},{"description":"Fio AL nú 6 AWG","kgPerKm":35.92,"kgPerMeter":0.03592},{"description":"Arame Galvonizado","kgPerKm":45.4545,"kgPerMeter":0.045455},{"description":"Amarrilho","kgPerKm":57.0,"kgPerMeter":0.057},{"description":"Fita Alumínio","kgPerKm":27.1,"kgPerMeter":0.0271},{"description":"Fio CAZ 3,09","kgPerKm":59.0,"kgPerMeter":0.059},{"description":"Cordoalha Aço Zincado - CAZ 11,93MM²","kgPerKm":96.0,"kgPerMeter":0.096},{"description":"Cabo de aço 6,35mm","kgPerKm":180.4,"kgPerMeter":0.1804},{"description":"Cabo de aço 7,94mm","kgPerKm":305.1,"kgPerMeter":0.3051},{"description":"Cabo de aço 9,53mm","kgPerKm":406.8,"kgPerMeter":0.4068},{"description":"Cabo Barr. 70 mm","kgPerKm":762.0,"kgPerMeter":0.762},{"description":"Cabo Barr. 95 mm","kgPerKm":1045.0,"kgPerMeter":1.045},{"description":"Fio Cu nú 4 AWG","kgPerKm":188.0,"kgPerMeter":0.188},{"description":"Fio Cu nú 6 AWG meia - dura","kgPerKm":118.2,"kgPerMeter":0.1182},{"description":"Fio Cu nú 8 AWG meia - dura","kgPerKm":74.4,"kgPerMeter":0.0744},{"description":"Cabo Cu nú 4 AWG","kgPerKm":218.0,"kgPerMeter":0.218},{"description":"Cabo Cu nú 2 AWG","kgPerKm":305.0,"kgPerMeter":0.305},{"description":"Cabo Cu nú 1/0 AWG","kgPerKm":485.0,"kgPerMeter":0.485},{"description":"Cabo Cu nú 2/0 AWG","kgPerKm":611.0,"kgPerMeter":0.611},{"description":"Cabo Cu nú 3/0 AWG","kgPerKm":771.0,"kgPerMeter":0.771},{"description":"Cabo Cu nú 4/0 AWG","kgPerKm":972.0,"kgPerMeter":0.972},{"description":"Cabo Cu nú 16 mm² 7F CL2A","kgPerKm":143.0,"kgPerMeter":0.143},{"description":"Fio aço cobreado 40% 6 AWG","kgPerKm":109.0,"kgPerMeter":0.109},{"description":"Fio aço cobreado 40% 4 AWG","kgPerKm":173.0,"kgPerMeter":0.173},{"description":"Fio aço cobreado 40% 2 AWG","kgPerKm":275.0,"kgPerMeter":0.275},{"description":"Fio aço cobreado 40% 1/0 AWG","kgPerKm":438.0,"kgPerMeter":0.438},{"description":"CABO ACO COBREADO 16MM² 3F 40%","kgPerKm":130.0,"kgPerMeter":0.13},{"description":"CABO ACO COBREADO 25MM² 3F 40%","kgPerKm":206.0,"kgPerMeter":0.206},{"description":"CABO ACO COBREADO 35MM² 3F 40%","kgPerKm":262.0,"kgPerMeter":0.262},{"description":"CABO ACO COBREADO 50MM² 3F 40%","kgPerKm":415.0,"kgPerMeter":0.415},{"description":"CABO ACO COBREADO 16MM² 7F 40%","kgPerKm":131.0,"kgPerMeter":0.131},{"description":"CABO ACO COBREADO 25MM² 7F 40%","kgPerKm":193.0,"kgPerMeter":0.193},{"description":"CABO ACO COBREADO 35MM² 7F 40%","kgPerKm":284.0,"kgPerMeter":0.284},{"description":"CABO ACO COBREADO 50MM² 7F 40%","kgPerKm":409.0,"kgPerMeter":0.409},{"description":"CABO AL NU CAL 155,4MCM 7FI ANAHEIM","kgPerKm":217.1,"kgPerMeter":0.2171},{"description":"CABO AL NU CAL 195,7MCM 7FI AMHERST","kgPerKm":273.4,"kgPerMeter":0.2734},{"description":"CABO AL NU CAL 211,6MCM 7FI","kgPerKm":294.7,"kgPerMeter":0.2947},{"description":"CABO AL NU CAL 246,9MCM 7FI ALLIANCE","kgPerKm":344.9,"kgPerMeter":0.3449},{"description":"CABO AL NU CAL 312,8MCM 19FI BUTTE","kgPerKm":436.9,"kgPerMeter":0.4369},{"description":"CABO AL NU CAL 394,5MCM 19FI CANTON","kgPerKm":551.1,"kgPerMeter":0.5511},{"description":"CABO AL NU CAL 465,4MCM 19FI CAIRO","kgPerKm":650.2,"kgPerMeter":0.6502},{"description":"CABO AL NU CAL 559,5MCM 19FI DARIEN","kgPerKm":781.6,"kgPerMeter":0.7816},{"description":"CABO AL NU CAL 652,4MCM 19FI ELGIN","kgPerKm":911.4,"kgPerMeter":0.9114},{"description":"CABO AL NU CAL 740,8MCM 37FI FLINT","kgPerKm":1034.9,"kgPerMeter":1.0349},{"description":"CABO AL NU CAL 350","kgPerKm":487.3,"kgPerMeter":0.4873},{"description":"CABO COB AL 35MM 15KV","kgPerKm":184.0,"kgPerMeter":0.184},{"description":"CABO COB AL 50MM 15KV","kgPerKm":226.0,"kgPerMeter":0.226},{"description":"CABO COB AL 70MM 15KV","kgPerKm":297.0,"kgPerMeter":0.297},{"description":"CABO COB AL 95MM 15KV","kgPerKm":384.0,"kgPerMeter":0.384},{"description":"CABO COB AL 120MM 15KV","kgPerKm":462.0,"kgPerMeter":0.462},{"description":"CABO COB AL 150MM 15KV","kgPerKm":546.0,"kgPerMeter":0.546},{"description":"CABO COB AL 185MM 15KV","kgPerKm":672.0,"kgPerMeter":0.672},{"description":"CABO COB AL 240MM 15KV","kgPerKm":843.0,"kgPerMeter":0.843},{"description":"CABO COB AL 300MM 15KV","kgPerKm":1021.0,"kgPerMeter":1.021},{"description":"CABO COB AL 35MM 25KV","kgPerKm":225.0,"kgPerMeter":0.225},{"description":"CABO COB AL 50MM 25KV","kgPerKm":271.0,"kgPerMeter":0.271},{"description":"CABO COB AL 70MM 25KV","kgPerKm":346.0,"kgPerMeter":0.346},{"description":"CABO COB AL 95MM 25KV","kgPerKm":437.0,"kgPerMeter":0.437},{"description":"CABO COB AL 120MM 25KV","kgPerKm":520.0,"kgPerMeter":0.52},{"description":"CABO COB AL 150MM 25KV","kgPerKm":608.0,"kgPerMeter":0.608},{"description":"CABO COB AL 185MM 25KV","kgPerKm":739.0,"kgPerMeter":0.739},{"description":"CABO COB AL 240MM 25KV","kgPerKm":916.0,"kgPerMeter":0.916},{"description":"CABO COB AL 300MM 25KV","kgPerKm":1101.0,"kgPerMeter":1.101},{"description":"CABO COB AL 70MM 35KV","kgPerKm":879.0,"kgPerMeter":0.879},{"description":"CABO COB AL 95MM 35KV","kgPerKm":953.0,"kgPerMeter":0.953},{"description":"CABO COB AL 120MM 35KV","kgPerKm":1028.0,"kgPerMeter":1.028},{"description":"CABO COB AL 150MM 35KV","kgPerKm":1129.0,"kgPerMeter":1.129},{"description":"CABO COB AL 185MM 35KV","kgPerKm":1230.0,"kgPerMeter":1.23},{"description":"CABO COB AL 240MM 35KV","kgPerKm":1333.0,"kgPerMeter":1.333},{"description":"CABO COB AL 300MM 35KV","kgPerKm":1437.0,"kgPerMeter":1.437},{"description":"Cabo multiplex duplex 10mm² NN","kgPerKm":77.0,"kgPerMeter":0.077},{"description":"Cabo multiplex triplex 10mm² NN","kgPerKm":125.0,"kgPerMeter":0.125},{"description":"Cabo multiplex quadriplex 10mm² NN","kgPerKm":165.0,"kgPerMeter":0.165},{"description":"Cabo multiplex duplex 16mm² NN","kgPerKm":110.0,"kgPerMeter":0.11},{"description":"Cabo multiplex triplex 16mm² NN","kgPerKm":160.0,"kgPerMeter":0.16},{"description":"Cabo multiplex triplex 25mm² NN","kgPerKm":280.0,"kgPerMeter":0.28},{"description":"Cabo multiplex triplex 35mm² NN","kgPerKm":440.0,"kgPerMeter":0.44},{"description":"Cabo multiplex quadriplex 16mm² NN","kgPerKm":230.0,"kgPerMeter":0.23},{"description":"Cabo multiplex quadriplex 25mm² NN","kgPerKm":380.0,"kgPerMeter":0.38},{"description":"Cabo multiplex quadriplex 50mm² NN","kgPerKm":664.0,"kgPerMeter":0.664},{"description":"Cabo multiplex quadriplex 35mm² NN","kgPerKm":506.0,"kgPerMeter":0.506},{"description":"Cabo multiplex quadriplex 70mm² NN","kgPerKm":194.0,"kgPerMeter":0.194},{"description":"Cabo multiplex quadriplex 120mm² NN","kgPerKm":1400.0,"kgPerMeter":1.4}];
+
+        function normalizeMaterialKey(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toUpperCase()
+                .replace(/[^A-Z0-9]+/g, ' ')
+                .trim();
+        }
+
+        function getSucataConversionEntry(material) {
+            if (!material) return null;
+            const candidates = [
+                normalizeMaterialKey(material.description),
+                normalizeMaterialKey(material.code),
+                normalizeMaterialKey(`${material.code} ${material.description}`)
+            ].filter(Boolean);
+
+            let best = null;
+            let bestScore = 0;
+
+            SUCATA_CONVERSION_TABLE.forEach(item => {
+                const tableKey = normalizeMaterialKey(item.description);
+                candidates.forEach(candidate => {
+                    let score = 0;
+                    if (!candidate) return;
+                    if (candidate === tableKey) score = 1000;
+                    else if (candidate.includes(tableKey)) score = tableKey.length;
+                    else if (tableKey.includes(candidate)) score = candidate.length;
+                    else {
+                        const candidateTokens = candidate.split(' ').filter(Boolean);
+                        const tableTokens = tableKey.split(' ').filter(Boolean);
+                        const overlap = tableTokens.filter(token => candidateTokens.includes(token)).join(' ').length;
+                        if (overlap > 0) score = overlap;
+                    }
+                    if (score > bestScore) {
+                        best = item;
+                        bestScore = score;
+                    }
+                });
+            });
+
+            return bestScore >= 6 ? best : null;
+        }
+
+        function getSelectedSucataMaterial() {
+            const materialId = document.getElementById('sucataMaterialId')?.value;
+            if (!materialId) return null;
+            return data.materials.find(mat => mat.id === materialId) || null;
+        }
+
+        function resetSucataMeasurementFields() {
+            const mode = document.getElementById('sucataMeasurementMode');
+            const meters = document.getElementById('sucataMeters');
+            const weight = document.getElementById('sucataWeightKg');
+            if (mode) mode.value = 'kg';
+            if (meters) meters.value = '';
+            if (weight) {
+                weight.readOnly = false;
+                weight.classList.remove('bg-emerald-100', 'font-semibold');
+                weight.placeholder = 'Informe o peso final em KG';
+            }
+            updateSucataMeasurementUI();
+        }
+
+        function updateSucataMeasurementUI() {
+            const box = document.getElementById('sucataMeasurementBox');
+            const metersField = document.getElementById('sucataMetersField');
+            const info = document.getElementById('sucataConversionInfo');
+            const badge = document.getElementById('sucataConversionBadge');
+            const mode = document.getElementById('sucataMeasurementMode');
+            const weight = document.getElementById('sucataWeightKg');
+            const material = getSelectedSucataMaterial();
+            const conversion = getSucataConversionEntry(material);
+
+            if (!box || !metersField || !info || !badge || !mode || !weight) return;
+
+            if (!material || !conversion) {
+                box.classList.add('hidden');
+                metersField.classList.add('hidden');
+                info.classList.add('hidden');
+                badge.classList.add('hidden');
+                mode.value = 'kg';
+                weight.readOnly = false;
+                weight.classList.remove('bg-emerald-100', 'font-semibold');
+                weight.placeholder = 'Informe o peso final em KG';
+                return;
+            }
+
+            box.classList.remove('hidden');
+            badge.classList.remove('hidden');
+            badge.textContent = `${conversion.description} • ${Number(conversion.kgPerMeter).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 6 })} kg/m`;
+
+            if (mode.value === 'meter') {
+                metersField.classList.remove('hidden');
+                weight.readOnly = true;
+                weight.classList.add('bg-emerald-100', 'font-semibold');
+                weight.placeholder = 'Calculado automaticamente';
+                applySucataWeightFromMeters();
+            } else {
+                metersField.classList.add('hidden');
+                weight.readOnly = false;
+                weight.classList.remove('bg-emerald-100', 'font-semibold');
+                weight.placeholder = 'Informe o peso final em KG';
+                const currentWeight = parseFloat(String(weight.value || '0').replace(',', '.')) || 0;
+                info.classList.remove('hidden');
+                info.innerHTML = `<strong>Tabela encontrada:</strong> ${conversion.description} — ${Number(conversion.kgPerKm).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 4 })} kg/km = ${Number(conversion.kgPerMeter).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 6 })} kg/m.<br><span class="text-emerald-700">Se preferir, troca o modo para <b>metro</b> e deixa o cálculo automático.</span>${currentWeight > 0 ? ` Peso atual digitado: <b>${Number(currentWeight).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} KG</b>.` : ''}`;
+            }
+        }
+
+        function applySucataWeightFromMeters() {
+            const material = getSelectedSucataMaterial();
+            const conversion = getSucataConversionEntry(material);
+            const mode = document.getElementById('sucataMeasurementMode');
+            const metersInput = document.getElementById('sucataMeters');
+            const weightInput = document.getElementById('sucataWeightKg');
+            const info = document.getElementById('sucataConversionInfo');
+
+            if (!conversion || !mode || mode.value !== 'meter' || !metersInput || !weightInput || !info) return;
+
+            const meters = parseFloat(String(metersInput.value || '0').replace(',', '.')) || 0;
+            const calculated = meters > 0 ? meters * Number(conversion.kgPerMeter || 0) : 0;
+            weightInput.value = calculated > 0 ? calculated.toFixed(2) : '';
+            info.classList.remove('hidden');
+            info.innerHTML = `<strong>Cálculo automático:</strong> ${Number(meters).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m × ${Number(conversion.kgPerMeter).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 6 })} kg/m = <b>${Number(calculated).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} KG</b>.<br><span class="text-emerald-700">Fonte: aba PESOS da tua planilha técnica.</span>`;
         }
 
         function clearSucataMaterialSearch() {
@@ -1766,6 +1936,7 @@
             document.getElementById('sucataMaterialId').value = '';
             document.getElementById('sucataMaterialSelected').textContent = 'Nenhum material vinculado';
             document.getElementById('sucataMaterialDropdown').classList.add('hidden');
+            resetSucataMeasurementFields();
         }
 
         function updateCertificateBagOptions() {
@@ -2591,11 +2762,17 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 const matFound = data.materials.find(m => m.code.toUpperCase() === sucataSearchTerm.toUpperCase() || sucataSearchTerm.toUpperCase().startsWith(m.code.toUpperCase()));
                 if (matFound) materialId = matFound.id;
             }
+            const selectedMaterial = materialId ? (data.materials.find(m => m.id === materialId) || null) : null;
+            const conversion = getSucataConversionEntry(selectedMaterial);
+            const measurementMode = document.getElementById('sucataMeasurementMode').value;
+            const metersValue = parseFloat(String(document.getElementById('sucataMeters').value || '0').replace(',', '.')) || 0;
             const origin = document.getElementById('sucataOrigin').value.trim();
             const documentRef = document.getElementById('sucataDocument').value.trim();
             const obs = document.getElementById('sucataObs').value.trim();
 
             if (!begCode) { toast.show('Informe o código do BEG.', 'warning'); return; }
+            if (measurementMode === 'meter' && materialId && !conversion) { toast.show('Esse material não tem conversão técnica cadastrada para metro.', 'warning'); return; }
+            if (measurementMode === 'meter' && (!(metersValue > 0))) { toast.show('Informe a metragem para converter em KG.', 'warning'); return; }
             if (!(weightKg > 0)) { toast.show('Informe um peso válido em KG.', 'warning'); return; }
 
             const existingEntry = data.sucata.entries.find(entry => entry.begCode === begCode && !entry.soldCertificateId);
@@ -2607,6 +2784,10 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                     id: 'item_' + Date.now(),
                     materialId,
                     weightKg,
+                    meters: measurementMode === 'meter' ? metersValue : null,
+                    measurementMode,
+                    factorKgPerMeter: conversion ? Number(conversion.kgPerMeter || 0) : null,
+                    conversionDescription: conversion ? conversion.description : null,
                     obs,
                     date: new Date().toISOString(),
                     sourceMovementType: 'manual',
@@ -2622,6 +2803,8 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 saveData();
                 updateSucataViews();
                 this.reset();
+                clearSucataMaterialSearch();
+                resetSucataMeasurementFields();
                 toast.show(`Material adicionado ao BEG ${begCode}.`, 'success');
                 return;
             }
@@ -2638,6 +2821,10 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                     id: 'item_' + Date.now(),
                     materialId,
                     weightKg,
+                    meters: measurementMode === 'meter' ? metersValue : null,
+                    measurementMode,
+                    factorKgPerMeter: conversion ? Number(conversion.kgPerMeter || 0) : null,
+                    conversionDescription: conversion ? conversion.description : null,
                     obs,
                     date: new Date().toISOString(),
                     sourceMovementType: 'manual',
@@ -2650,6 +2837,8 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             saveData();
             updateSucataViews();
             this.reset();
+            clearSucataMaterialSearch();
+            resetSucataMeasurementFields();
             toast.show(`BEG ${begCode} registrado com ${formatWeight(weightKg)}.`, 'success');
         });
 
