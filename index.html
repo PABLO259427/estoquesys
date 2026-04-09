@@ -848,6 +848,7 @@
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Foto do BEG</label>
                                     <input type="file" id="sucataBegPhoto" accept="image/*" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
                                     <p class="text-xs text-gray-500 mt-1">Opcional. Tu pode salvar uma foto do BEG agora ou trocar depois na tabela.</p>
+                                    <p id="sucataBegPhotoFileName" class="text-xs text-emerald-700 mt-1 hidden"></p>
                                 </div>
                                 <div id="sucataBegPhotoPreviewWrapper" class="hidden">
                                     <p class="text-sm font-semibold text-gray-700 mb-2">Pré-visualização da foto do BEG</p>
@@ -2071,14 +2072,24 @@
             const input = document.getElementById('sucataBegPhoto');
             const preview = document.getElementById('sucataBegPhotoPreview');
             const wrapper = document.getElementById('sucataBegPhotoPreviewWrapper');
+            const fileName = document.getElementById('sucataBegPhotoFileName');
             if (input) input.value = '';
-            if (preview) preview.src = '';
+            if (preview) {
+                preview.src = '';
+                preview.onclick = null;
+                preview.classList.remove('cursor-pointer');
+            }
             if (wrapper) wrapper.classList.add('hidden');
+            if (fileName) {
+                fileName.textContent = '';
+                fileName.classList.add('hidden');
+            }
         }
 
         function handleSucataBegPhotoPreview(file) {
             const preview = document.getElementById('sucataBegPhotoPreview');
             const wrapper = document.getElementById('sucataBegPhotoPreviewWrapper');
+            const fileName = document.getElementById('sucataBegPhotoFileName');
             if (!preview || !wrapper) return;
             if (!file) {
                 clearSucataBegPhotoPreview();
@@ -2088,7 +2099,13 @@
             compressImageFile(file, { maxDim: 1200, quality: 0.78 })
                 .then((dataUrl) => {
                     preview.src = dataUrl;
+                    preview.classList.add('cursor-pointer');
+                    preview.onclick = () => openImageModal(dataUrl, `Pré-visualização - ${file.name || 'BEG'}`);
                     wrapper.classList.remove('hidden');
+                    if (fileName) {
+                        fileName.textContent = `Arquivo selecionado: ${file.name}`;
+                        fileName.classList.remove('hidden');
+                    }
                 })
                 .catch(() => {
                     toast.show('Não foi possível carregar a foto do BEG.', 'error');
@@ -2124,7 +2141,7 @@
                     entry.photo = dataUrl;
                     saveData();
                     updateSucataViews();
-                    toast.show(`Foto do BEG ${entry.begCode} atualizada!`, 'success');
+                    toast.show(`Foto do BEG ${entry.begCode} atualizada na tabela!`, 'success');
                 })
                 .catch(() => {
                     toast.show('Não foi possível salvar a foto do BEG.', 'error');
