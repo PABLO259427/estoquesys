@@ -1203,13 +1203,33 @@
     </div>
 
     <!-- Modal for Full Image Preview -->
-    <div id="imagePreviewModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center z-[300] transition-opacity opacity-0" onclick="closeImageModal()">
-        <div class="relative w-full max-w-3xl mx-4 flex flex-col items-center" onclick="event.stopPropagation()">
-            <button onclick="closeImageModal()" class="absolute -top-12 right-0 text-white hover:text-rose-400 text-3xl transition-colors cursor-pointer">
-                <i class="fas fa-times"></i>
-            </button>
-            <img id="largeImagePreview" src="" alt="Ampliada" class="max-w-full max-h-[75vh] rounded-xl shadow-2xl object-contain bg-white/5 p-2 border border-white/10">
-            <p id="largeImageCaption" class="mt-4 text-white text-lg font-semibold bg-slate-800/80 border border-slate-700 px-6 py-2 rounded-full shadow-lg"></p>
+    <div id="imagePreviewModal" class="fixed inset-0 bg-slate-950/92 backdrop-blur-md hidden items-center justify-center z-[300] transition-opacity opacity-0" onclick="closeImageModal()">
+        <div class="relative w-full max-w-5xl mx-4" onclick="event.stopPropagation()">
+            <div class="dark-glass rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+                <div class="flex items-center justify-between gap-4 px-5 py-4 border-b border-white/10">
+                    <div class="min-w-0">
+                        <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400 font-semibold">Visualização de imagem</p>
+                        <p id="largeImageCaption" class="text-white text-base md:text-lg font-semibold truncate">Visualização da imagem</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <a id="downloadImageBtn" href="#" download="imagem-sistema.jpg" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 hover:bg-emerald-500/25 transition text-sm font-semibold">
+                            <i class="fas fa-download"></i> Baixar
+                        </a>
+                        <button onclick="closeImageModal()" class="inline-flex items-center justify-center w-11 h-11 rounded-xl border border-white/10 bg-white/5 text-white hover:text-rose-300 hover:border-rose-400/30 transition cursor-pointer" aria-label="Fechar visualização">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-4 md:p-6">
+                    <div class="rounded-2xl bg-black/25 border border-white/5 min-h-[300px] max-h-[78vh] flex items-center justify-center overflow-hidden">
+                        <img id="largeImagePreview" src="" alt="Ampliada" class="max-w-full max-h-[72vh] object-contain rounded-2xl shadow-2xl bg-white/5 p-2">
+                    </div>
+                    <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-300">
+                        <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10"><i class="fas fa-mouse-pointer mr-2"></i>Clique fora para fechar</span>
+                        <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10"><i class="fas fa-keyboard mr-2"></i>ESC para fechar</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1995,7 +2015,7 @@
 
         function getBegPhotoThumbHtml(entry) {
             if (entry.photo) {
-                return `<img src="${entry.photo}" alt="Foto do ${escapeHtml(entry.begCode)}" class="w-14 h-14 object-cover rounded-lg border border-gray-200 shadow-sm img-hover-zoom mx-auto">`;
+                return `<img src="${entry.photo}" alt="Foto do ${escapeHtml(entry.begCode)}" data-code="${escapeHtml(entry.begCode)}" onclick="openImageModal(this.src, this.dataset.code)" class="w-14 h-14 object-cover rounded-lg border border-gray-200 shadow-sm img-hover-zoom mx-auto cursor-pointer">`;
             }
             return `<div class="w-14 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 mx-auto"><i class="fas fa-camera"></i></div>`;
         }
@@ -2579,24 +2599,41 @@
             const modal = document.getElementById('imagePreviewModal');
             const img = document.getElementById('largeImagePreview');
             const caption = document.getElementById('largeImageCaption');
-            
+            const downloadBtn = document.getElementById('downloadImageBtn');
+            if (!modal || !img || !caption || !downloadBtn || !imgSrc) return;
+
             img.src = imgSrc;
-            caption.innerHTML = `<i class="fas fa-tag text-emerald-400 mr-2"></i>SKU: ${code}`;
-            
+            caption.textContent = code || 'Visualização da imagem';
+            downloadBtn.href = imgSrc;
+            downloadBtn.setAttribute('download', `${(code || 'imagem-sistema').toString().replace(/[^a-z0-9_-]/gi, '_')}.jpg`);
+
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            document.body.classList.add('overflow-hidden');
             setTimeout(() => { modal.classList.remove('opacity-0'); }, 10);
         }
 
         function closeImageModal() {
             const modal = document.getElementById('imagePreviewModal');
+            const img = document.getElementById('largeImagePreview');
+            const downloadBtn = document.getElementById('downloadImageBtn');
+            if (!modal) return;
             modal.classList.add('opacity-0');
+            document.body.classList.remove('overflow-hidden');
             setTimeout(() => { 
                 modal.classList.add('hidden'); 
                 modal.classList.remove('flex'); 
-                document.getElementById('largeImagePreview').src = ''; 
+                if (img) img.src = '';
+                if (downloadBtn) downloadBtn.href = '#';
             }, 300);
         }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('imagePreviewModal');
+                if (modal && !modal.classList.contains('hidden')) closeImageModal();
+            }
+        });
 
         /**
          * Lógica de Verificação Inteligente de Duplicidade
@@ -2650,7 +2687,7 @@
                 const isCrit = stock <= m.minStock;
                 
                 const imgHtml = m.image 
-                    ? `<img src="${m.image}" alt="${m.code}" onclick="openImageModal('${m.image}', '${m.code}')" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
+                    ? `<img src="${m.image}" alt="${m.code}" data-code="${escapeHtml(m.code)}" onclick="openImageModal(this.src, this.dataset.code)" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
                     : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400"><i class="fas fa-camera"></i></div>`;
 
                 tbody.innerHTML += `
@@ -3274,7 +3311,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 const lastObs = lastMov ? (lastMov.obs || lastMov.reason || '-') : '-';
 
                 const imgHtml = m.image 
-                    ? `<img src="${m.image}" alt="${m.code}" onclick="openImageModal('${m.image}', '${m.code}')" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
+                    ? `<img src="${m.image}" alt="${m.code}" data-code="${escapeHtml(m.code)}" onclick="openImageModal(this.src, this.dataset.code)" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
                     : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400"><i class="fas fa-box"></i></div>`;
 
                 tbody.innerHTML += `
@@ -3801,7 +3838,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 const dataStr = new Date(t.dataCadastro).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
                 const statusMeta = getTransformadorStatusMeta(t.status);
                 const fotoHtml = t.foto
-                    ? `<img src="${t.foto}" alt="Foto do trafo" class="w-14 h-14 object-cover rounded-lg border border-gray-200 img-hover-zoom mx-auto">`
+                    ? `<img src="${t.foto}" alt="Foto do trafo" data-code="${escapeHtml(t.codigo)}" onclick="openImageModal(this.src, this.dataset.code)" class="w-14 h-14 object-cover rounded-lg border border-gray-200 img-hover-zoom mx-auto cursor-pointer">`
                     : `<div class="w-14 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 mx-auto"><i class="fas fa-image"></i></div>`;
                 tbody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0 align-top"><td class="p-4 text-xs text-gray-500 font-mono">${dataStr}</td><td class="p-4 text-center">${fotoHtml}</td><td class="p-4 text-sm font-mono font-bold text-blue-600">${t.codigo}</td><td class="p-4 text-sm font-mono text-gray-700">${t.serie}</td><td class="p-4 text-sm text-gray-800">${t.descricao}</td><td class="p-4 text-sm text-gray-600">${t.notaFiscal}</td><td class="p-4 text-sm text-gray-700">${t.localArmazenado || '-'}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-semibold border ${statusMeta.className}">${statusMeta.text}</span>${t.observacao ? `<div class="text-[11px] text-gray-500 mt-2 max-w-[180px]">${t.observacao}</div>` : ''}</td><td class="p-4 text-center whitespace-nowrap"><button onclick="viewTransformadorMovimentos('${t.id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Ver movimentações"><i class="fas fa-history"></i></button><button onclick="registrarMovimentacaoTransformador('${t.id}')" class="text-purple-600 hover:text-purple-800 mr-2" title="Registrar movimentação"><i class="fas fa-exchange-alt"></i></button><button onclick="deleteTransformador('${t.id}')" class="text-red-600 hover:text-red-800" title="Deletar"><i class="fas fa-trash"></i></button></td></tr>`;
             });
