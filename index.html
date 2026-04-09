@@ -801,7 +801,25 @@
                                     <div id="sucataConversionInfo" class="text-xs text-emerald-900 hidden"></div>
                                 </div>
 
-                                <div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tipo de sucata / equipamento</label>
+                                        <select id="sucataAssetType" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+                                            <option value="material">Material vinculado do estoque</option>
+                                            <option value="trafo_avariado">Trafo avariado</option>
+                                            <option value="religadora_avariada">Religadora avariada</option>
+                                            <option value="poste_avariado">Poste avariado</option>
+                                            <option value="outro_avariado">Outro item avariado</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Identificação complementar</label>
+                                        <input type="text" id="sucataAssetDetail" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500" placeholder="Ex: Nº série, patrimônio, local, poste 12/34">
+                                        <p class="text-xs text-gray-500 mt-1">Opcional. Essa identificação também sai no certificado.</p>
+                                    </div>
+                                </div>
+
+                                <div id="sucataMaterialBlock">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Material vinculado</label>
                                     <div class="pep-search-wrapper" id="sucataMaterialWrapper">
                                         <i class="fas fa-search search-icon"></i>
@@ -1709,9 +1727,57 @@
             return formatWeight(item.weightKg);
         }
 
-        function getSucataMaterialLabel(materialId) {
-            const mat = data.materials.find(m => m.id === materialId);
-            return mat ? `${mat.code} - ${mat.description}` : 'Não informado';
+        function getSucataMaterialLabel(materialRef, fallbackLabel = '') {
+            if (materialRef && typeof materialRef === 'object') {
+                if (materialRef.customLabel) return materialRef.customLabel;
+                if (materialRef.assetTypeLabel) {
+                    return materialRef.assetDetail ? `${materialRef.assetTypeLabel} - ${materialRef.assetDetail}` : materialRef.assetTypeLabel;
+                }
+                materialRef = materialRef.materialId || null;
+            }
+
+            const mat = data.materials.find(m => m.id === materialRef);
+            if (mat) return `${mat.code} - ${mat.description}`;
+            return fallbackLabel || 'Não informado';
+        }
+
+        function getSucataAssetTypeLabel(assetType) {
+            const labels = {
+                material: 'Material do estoque',
+                trafo_avariado: 'Trafo avariado',
+                religadora_avariada: 'Religadora avariada',
+                poste_avariado: 'Poste avariado',
+                outro_avariado: 'Outro item avariado'
+            };
+            return labels[assetType] || 'Item avariado';
+        }
+
+        function buildSucataCustomLabel(assetType, assetDetail = '') {
+            const baseLabel = getSucataAssetTypeLabel(assetType);
+            const detail = String(assetDetail || '').trim();
+            return detail ? `${baseLabel} - ${detail}` : baseLabel;
+        }
+
+        function updateSucataAssetTypeUI() {
+            const typeField = document.getElementById('sucataAssetType');
+            const materialBlock = document.getElementById('sucataMaterialBlock');
+            const searchInput = document.getElementById('sucataMaterialSearch');
+            const selectedLabel = document.getElementById('sucataMaterialSelected');
+            const hidden = document.getElementById('sucataMaterialId');
+            if (!typeField || !materialBlock) return;
+
+            const useStockMaterial = typeField.value === 'material';
+            materialBlock.classList.toggle('hidden', !useStockMaterial);
+
+            if (!useStockMaterial) {
+                if (hidden) hidden.value = '';
+                if (searchInput) searchInput.value = '';
+                if (selectedLabel) selectedLabel.textContent = 'Não usa material do estoque nesta entrada';
+            } else if (selectedLabel && !hidden.value) {
+                selectedLabel.textContent = 'Nenhum material vinculado';
+            }
+
+            updateSucataMeasurementUI();
         }
 
         function getSucataEntryTotalWeight(entry) {
@@ -1732,12 +1798,12 @@
             if (!entry) return 'Não informado';
 
             if (Array.isArray(entry.items) && entry.items.length > 0) {
-                const labels = entry.items.map(item => getSucataMaterialLabel(item.materialId));
+                const labels = entry.items.map(item => getSucataMaterialLabel(item.materialId, item.customLabel || '')).filter(Boolean);
                 const unique = [...new Set(labels)];
                 return unique.join(' | ');
             }
 
-            return getSucataMaterialLabel(entry.materialId);
+            return getSucataMaterialLabel(entry.materialId, entry.customLabel || '');
         }
 
         function buildSucataItemsHtml(entry) {
@@ -1749,7 +1815,7 @@
                 return `
                     <div class="flex items-center justify-between gap-2 text-xs border border-gray-200 rounded-lg px-2 py-1 bg-gray-50 mt-1">
                         <div class="min-w-0">
-                            <div class="font-semibold text-gray-700 truncate">${index + 1}. ${escapeHtml(getSucataMaterialLabel(item.materialId))}</div>
+                            <div class="font-semibold text-gray-700 truncate">${index + 1}. ${escapeHtml(getSucataMaterialLabel(item.materialId, item.customLabel || ''))}</div>
                             <div class="text-gray-500 truncate">${escapeHtml(item.obs || '-')}</div>
                             ${item.measurementMode === 'meter' && item.meters ? `<div class="text-[11px] text-emerald-700 truncate">${Number(item.meters).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m × ${Number(item.factorKgPerMeter || 0).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 6 })} kg/m</div>` : ''}
                         </div>
@@ -3043,17 +3109,26 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
         });
 
 
-        document.getElementById('sucataEntryForm').addEventListener('submit', function(e) {
+                const sucataAssetTypeField = document.getElementById('sucataAssetType');
+        if (sucataAssetTypeField) {
+            sucataAssetTypeField.addEventListener('change', updateSucataAssetTypeUI);
+            updateSucataAssetTypeUI();
+        }
+
+document.getElementById('sucataEntryForm').addEventListener('submit', function(e) {
             e.preventDefault();
             ensureSucataData();
             const begCode = document.getElementById('sucataBegCode').value.trim().toUpperCase();
             const weightKg = parseFloat(document.getElementById('sucataWeightKg').value.toString().replace(',', '.'));
+            const assetType = document.getElementById('sucataAssetType').value || 'material';
+            const assetDetail = document.getElementById('sucataAssetDetail').value.trim();
             let materialId = document.getElementById('sucataMaterialId').value || null;
             const sucataSearchTerm = document.getElementById('sucataMaterialSearch').value.trim();
-            if (!materialId && sucataSearchTerm) {
+            if (assetType === 'material' && !materialId && sucataSearchTerm) {
                 const matFound = data.materials.find(m => m.code.toUpperCase() === sucataSearchTerm.toUpperCase() || sucataSearchTerm.toUpperCase().startsWith(m.code.toUpperCase()));
                 if (matFound) materialId = matFound.id;
             }
+            if (assetType !== 'material') materialId = null;
             const selectedMaterial = materialId ? (data.materials.find(m => m.id === materialId) || null) : null;
             const conversion = getSucataConversionEntry(selectedMaterial);
             const measurementMode = document.getElementById('sucataMeasurementMode').value;
@@ -3062,9 +3137,13 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             const documentRef = document.getElementById('sucataDocument').value.trim();
             const obs = document.getElementById('sucataObs').value.trim();
             const begPhoto = getSucataBegPhotoPreviewValue();
+            const customLabel = assetType === 'material'
+                ? (selectedMaterial ? `${selectedMaterial.code} - ${selectedMaterial.description}` : '')
+                : buildSucataCustomLabel(assetType, assetDetail);
 
             if (!begCode) { toast.show('Informe o código do BEG.', 'warning'); return; }
-            if (measurementMode === 'meter' && materialId && !conversion) { toast.show('Esse material não tem conversão técnica cadastrada para metro.', 'warning'); return; }
+            if (assetType === 'material' && !materialId) { toast.show('Selecione o material vinculado do estoque.', 'warning'); return; }
+            if (measurementMode === 'meter' && assetType === 'material' && materialId && !conversion) { toast.show('Esse material não tem conversão técnica cadastrada para metro.', 'warning'); return; }
             if (measurementMode === 'meter' && (!(metersValue > 0))) { toast.show('Informe a metragem para converter em KG.', 'warning'); return; }
             if (!(weightKg > 0)) { toast.show('Informe um peso válido em KG.', 'warning'); return; }
 
@@ -3076,6 +3155,10 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 existingEntry.items.push({
                     id: 'item_' + Date.now(),
                     materialId,
+                    assetType,
+                    assetTypeLabel: getSucataAssetTypeLabel(assetType),
+                    assetDetail,
+                    customLabel,
                     weightKg,
                     meters: measurementMode === 'meter' ? metersValue : null,
                     measurementMode,
@@ -3100,6 +3183,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 clearSucataMaterialSearch();
                 resetSucataMeasurementFields();
                 clearSucataBegPhotoPreview();
+                syncSucataEntryFormAfterReset();
                 toast.show(`Material adicionado ao BEG ${begCode}.`, 'success');
                 return;
             }
@@ -3116,6 +3200,10 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 items: [{
                     id: 'item_' + Date.now(),
                     materialId,
+                    assetType,
+                    assetTypeLabel: getSucataAssetTypeLabel(assetType),
+                    assetDetail,
+                    customLabel,
                     weightKg,
                     meters: measurementMode === 'meter' ? metersValue : null,
                     measurementMode,
@@ -3136,8 +3224,17 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             clearSucataMaterialSearch();
             resetSucataMeasurementFields();
             clearSucataBegPhotoPreview();
+            syncSucataEntryFormAfterReset();
             toast.show(`BEG ${begCode} registrado com ${formatWeight(weightKg)}.`, 'success');
         });
+
+        function syncSucataEntryFormAfterReset() {
+            const assetTypeField = document.getElementById('sucataAssetType');
+            const assetDetailField = document.getElementById('sucataAssetDetail');
+            if (assetTypeField) assetTypeField.value = 'material';
+            if (assetDetailField) assetDetailField.value = '';
+            updateSucataAssetTypeUI();
+        }
 
         document.getElementById('sucataCertificateForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -3172,7 +3269,11 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 bagCodes: bagItems.map(item => item.begCode),
                 bagItems: bagItems.map(item => {
                     const subItems = Array.isArray(item.items) ? item.items.map(sub => ({
-                        materialLabel: getSucataMaterialLabel(sub.materialId),
+                        materialLabel: getSucataMaterialLabel(sub.materialId, sub.customLabel || ''),
+                        assetType: sub.assetType || 'material',
+                        assetTypeLabel: sub.assetTypeLabel || getSucataAssetTypeLabel(sub.assetType || 'material'),
+                        assetDetail: sub.assetDetail || '',
+                        customLabel: sub.customLabel || '',
                         weightKg: Number(sub.weightKg || 0),
                         meters: Number(sub.meters || 0) || null,
                         measurementMode: sub.measurementMode || 'kg',
