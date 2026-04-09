@@ -1337,6 +1337,16 @@
                     updateSucataMeasurementUI();
                 }
             });
+            document.getElementById('sucataBegPhoto')?.addEventListener('change', function(e) {
+                handleSucataBegPhotoPreview(e.target.files?.[0] || null);
+            });
+            document.getElementById('begPhotoQuickInput')?.addEventListener('change', function(e) {
+                const entryId = e.target.dataset.entryId;
+                const file = e.target.files?.[0] || null;
+                if (file && entryId) {
+                    saveBegPhotoFromQuickInput(file, entryId);
+                }
+            });
             updateSucataMeasurementUI();
 
             document.addEventListener('click', function(e) {
