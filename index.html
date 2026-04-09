@@ -826,18 +826,8 @@
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
                                     <input type="text" id="sucataObs" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500" placeholder="Detalhes do lote">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Foto do BEG</label>
-                                    <input type="file" id="sucataBegPhoto" accept="image/*" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
-                                    <p class="text-xs text-gray-500 mt-1">Opcional. Tu pode salvar uma foto do BEG agora ou trocar depois na tabela.</p>
-                                </div>
-                                <div id="sucataBegPhotoPreviewWrapper" class="hidden">
-                                    <p class="text-sm font-semibold text-gray-700 mb-2">Pré-visualização da foto do BEG</p>
-                                    <img id="sucataBegPhotoPreview" class="w-28 h-28 object-cover rounded-xl border border-gray-200 shadow-sm">
-                                </div>
                                 <button type="submit" class="w-full py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-bold flex items-center justify-center gap-2"><i class="fas fa-save"></i> Registrar Entrada</button>
                             </form>
-                            <input type="file" id="begPhotoQuickInput" accept="image/*" class="hidden">
                         </div>
 
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -906,7 +896,6 @@
                                 <thead>
                                     <tr class="bg-gray-50/80 border-b border-gray-200">
                                         <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Data/Hora</th>
-                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Foto</th>
                                         <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">BEG</th>
                                         <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Material</th>
                                         <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Origem</th>
@@ -969,7 +958,7 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                         <div class="relative">
                             <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
-                            <input type="text" id="transformadorSearch" placeholder="Filtrar por código, série, descrição ou local..." class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full outline-none transition-shadow" onkeyup="filterTransformadores()">
+                            <input type="text" id="transformadorSearch" placeholder="Filtrar por código ou série..." class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full outline-none transition-shadow" onkeyup="filterTransformadores()">
                         </div>
                         <div>
                             <input type="date" id="transformadorDateFrom" class="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full outline-none transition-shadow" onchange="filterTransformadores()">
@@ -984,13 +973,11 @@
                             <thead class="sticky top-0 bg-gray-50 shadow-sm z-10">
                                 <tr class="border-b border-gray-200">
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Data/Hora</th>
-                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Foto</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Código</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Série</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Descrição</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Nota Fiscal</th>
-                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Armazenado em</th>
-                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Status / Obs.</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Status</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Ações</th>
                                 </tr>
                             </thead>
@@ -1051,73 +1038,16 @@
 
     <!-- Modal for Transformador Creation -->
     <div id="transformadorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[200]">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
             <h3 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-3">Novo Transformador</h3>
             <form id="transformadorForm" class="space-y-4">
                 <input type="hidden" id="transformadorId">
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Código</label>
-                        <input type="text" id="transformadorCodigo" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Série</label>
-                        <input type="text" id="transformadorSerie" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Descrição</label>
-                    <input type="text" id="transformadorDescricao" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nota Fiscal</label>
-                        <input type="text" id="transformadorNotaFiscal" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Data/Hora</label>
-                        <input type="datetime-local" id="transformadorDataHora" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Status inicial</label>
-                        <select id="transformadorStatus" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                            <option value="em_estoque">Em estoque</option>
-                            <option value="em_campo">Em campo</option>
-                            <option value="avariado">Avariado</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Local de armazenamento</label>
-                        <input type="text" id="transformadorLocal" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Ex: Pátio A / Box 03 / Galpão 2" required>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Foto do transformador</label>
-                    <input type="file" id="transformadorFoto" accept="image/*" onchange="handleTransformadorFotoPreview()" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white">
-                    <p class="text-xs text-gray-500 mt-1">A foto será salva no navegador junto com o cadastro.</p>
-                </div>
-
-                <div id="transformadorFotoPreviewWrapper" class="hidden">
-                    <p class="text-sm font-semibold text-gray-700 mb-2">Pré-visualização</p>
-                    <img id="transformadorFotoPreview" class="w-28 h-28 object-cover rounded-xl border border-gray-200 shadow-sm">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
-                    <textarea id="transformadorObservacao" class="w-full px-4 py-2 border border-gray-300 rounded-lg" rows="3" placeholder="Ex: trafo com vazamento, aguardando inspeção, bobina danificada..."></textarea>
-                </div>
-
-                <div class="flex gap-2 pt-4">
-                    <button type="button" onclick="closeTransformadorModal()" class="flex-1 px-4 py-2 bg-gray-200 rounded-lg">Cancelar</button>
-                    <button type="button" onclick="saveTransformador()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg">Salvar</button>
-                </div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Codigo</label><input type="text" id="transformadorCodigo" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Serie</label><input type="text" id="transformadorSerie" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Descricao</label><input type="text" id="transformadorDescricao" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Nota Fiscal</label><input type="text" id="transformadorNotaFiscal" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">Data/Hora</label><input type="datetime-local" id="transformadorDataHora" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></div>
+                <div class="flex gap-2 pt-4"><button type="button" onclick="closeTransformadorModal()" class="flex-1 px-4 py-2 bg-gray-200 rounded-lg">Cancelar</button><button type="button" onclick="saveTransformador()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg">Salvar</button></div>
             </form>
         </div>
     </div>
@@ -1149,9 +1079,8 @@
     <!-- Modal for Material Creation -->
     <div id="materialModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[200] transition-opacity opacity-0">
         <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="materialModalInner">
-            <h3 id="materialModalTitle" class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-3">Novo Material no Catálogo</h3>
+            <h3 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-3">Novo Material no Catálogo</h3>
             <form id="materialForm" class="space-y-4">
-                <input type="hidden" id="matId">
                 
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -1204,33 +1133,13 @@
     </div>
 
     <!-- Modal for Full Image Preview -->
-    <div id="imagePreviewModal" class="fixed inset-0 bg-slate-950/92 backdrop-blur-md hidden items-center justify-center z-[300] transition-opacity opacity-0" onclick="closeImageModal()">
-        <div class="relative w-full max-w-5xl mx-4" onclick="event.stopPropagation()">
-            <div class="dark-glass rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-                <div class="flex items-center justify-between gap-4 px-5 py-4 border-b border-white/10">
-                    <div class="min-w-0">
-                        <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400 font-semibold">Visualização de imagem</p>
-                        <p id="largeImageCaption" class="text-white text-base md:text-lg font-semibold truncate">Visualização da imagem</p>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <a id="downloadImageBtn" href="#" download="imagem-sistema.jpg" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 hover:bg-emerald-500/25 transition text-sm font-semibold">
-                            <i class="fas fa-download"></i> Baixar
-                        </a>
-                        <button onclick="closeImageModal()" class="inline-flex items-center justify-center w-11 h-11 rounded-xl border border-white/10 bg-white/5 text-white hover:text-rose-300 hover:border-rose-400/30 transition cursor-pointer" aria-label="Fechar visualização">
-                            <i class="fas fa-times text-lg"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="p-4 md:p-6">
-                    <div class="rounded-2xl bg-black/25 border border-white/5 min-h-[300px] max-h-[78vh] flex items-center justify-center overflow-hidden">
-                        <img id="largeImagePreview" src="" alt="Ampliada" class="max-w-full max-h-[72vh] object-contain rounded-2xl shadow-2xl bg-white/5 p-2">
-                    </div>
-                    <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-300">
-                        <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10"><i class="fas fa-mouse-pointer mr-2"></i>Clique fora para fechar</span>
-                        <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10"><i class="fas fa-keyboard mr-2"></i>ESC para fechar</span>
-                    </div>
-                </div>
-            </div>
+    <div id="imagePreviewModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center z-[300] transition-opacity opacity-0" onclick="closeImageModal()">
+        <div class="relative w-full max-w-3xl mx-4 flex flex-col items-center" onclick="event.stopPropagation()">
+            <button onclick="closeImageModal()" class="absolute -top-12 right-0 text-white hover:text-rose-400 text-3xl transition-colors cursor-pointer">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="largeImagePreview" src="" alt="Ampliada" class="max-w-full max-h-[75vh] rounded-xl shadow-2xl object-contain bg-white/5 p-2 border border-white/10">
+            <p id="largeImageCaption" class="mt-4 text-white text-lg font-semibold bg-slate-800/80 border border-slate-700 px-6 py-2 rounded-full shadow-lg"></p>
         </div>
     </div>
 
@@ -1301,7 +1210,7 @@
             }, 300);
         }
 
-        let data = { materials:[], movements:[], pepAllocations: {}, sucata: { entries: [], certificates: [] }, trash: { entries: [], certificates: [] }, transformadores: [], transformadorMovimentos: [] };
+        let data = { materials:[], movements:[], pepAllocations: {}, sucata: { entries: [], certificates: [] }, trash: { entries: [], certificates: [] } };
         const COMPANY_LOGO = "data:image/png;base64,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";
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1353,11 +1262,9 @@
                     data.pepAllocations = parsed.pepAllocations || {};
                     data.sucata = parsed.sucata || { entries: [], certificates: [] };
                     data.trash = parsed.trash || { entries: [], certificates: [] };
-                    data.transformadores = parsed.transformadores || [];
-                    data.transformadorMovimentos = parsed.transformadorMovimentos || [];
                 }
             } catch (e) {
-                data = { materials:[], movements:[], pepAllocations: {}, sucata: { entries: [], certificates: [] }, trash: { entries: [], certificates: [] }, transformadores: [], transformadorMovimentos: [] };
+                data = { materials:[], movements:[], pepAllocations: {}, sucata: { entries: [], certificates: [] }, trash: { entries: [], certificates: [] } };
             }
         }
 
@@ -1986,99 +1893,6 @@
             updateSucataMeasurementUI();
         }
 
-        function getSucataBegPhotoPreviewValue() {
-            const preview = document.getElementById('sucataBegPhotoPreview');
-            return preview && isUsableImageSrc(preview.src) ? preview.src : '';
-        }
-
-        function clearSucataBegPhotoPreview() {
-            const input = document.getElementById('sucataBegPhoto');
-            const preview = document.getElementById('sucataBegPhotoPreview');
-            const wrapper = document.getElementById('sucataBegPhotoPreviewWrapper');
-            if (input) input.value = '';
-            if (preview) preview.src = '';
-            if (wrapper) wrapper.classList.add('hidden');
-        }
-
-        function handleSucataBegPhotoPreview(file) {
-            const preview = document.getElementById('sucataBegPhotoPreview');
-            const wrapper = document.getElementById('sucataBegPhotoPreviewWrapper');
-            if (!preview || !wrapper) return;
-            if (!file) {
-                clearSucataBegPhotoPreview();
-                return;
-            }
-
-            compressImageFile(file, { maxDim: 1200, quality: 0.78 })
-                .then((dataUrl) => {
-                    preview.src = dataUrl;
-                    wrapper.classList.remove('hidden');
-                })
-                .catch(() => {
-                    toast.show('Não foi possível carregar a foto do BEG.', 'error');
-                    clearSucataBegPhotoPreview();
-                });
-        }
-
-        
-function getBegPhotoThumbHtml(entry) {
-    if (
-        entry.photo &&
-        typeof entry.photo === 'string' &&
-        entry.photo.startsWith('data:image')
-    ) {
-        const code = escapeHtml(entry.begCode || 'BEG');
-
-        return `
-            <img
-                src="${entry.photo}"
-                alt="Foto ${code}"
-                onclick="openImageModal(this.src)"
-                onerror="this.outerHTML='<div class=&quot;w-14 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-400 mx-auto&quot;><i class=&quot;fas fa-camera&quot;></i></div>'"
-                class="w-14 h-14 object-cover rounded-lg border border-gray-200 shadow-sm mx-auto cursor-pointer img-hover-zoom"
-            >
-        `;
-    }
-
-    return `
-        <div class="w-14 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-400 mx-auto">
-            <i class="fas fa-camera"></i>
-        </div>
-    `;
-}
-" alt="Foto do ${escapeHtml(entry.begCode)}" data-code="${escapeHtml(entry.begCode)}" onclick="openImageModal(this.src, this.dataset.code)" onerror="this.outerHTML='<div class=\"w-14 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 mx-auto\"><i class=\"fas fa-camera\"></i></div>'" class="w-14 h-14 object-cover rounded-lg border border-gray-200 shadow-sm img-hover-zoom mx-auto cursor-pointer">`;
-            }
-            return `<div class="w-14 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 mx-auto"><i class="fas fa-camera"></i></div>`;
-        }
-
-        function promptBegPhotoUpload(entryId) {
-            const picker = document.getElementById('begPhotoQuickInput');
-            if (!picker) return;
-            picker.dataset.entryId = entryId;
-            picker.value = '';
-            picker.click();
-        }
-
-        function saveBegPhotoFromQuickInput(file, entryId) {
-            if (!file || !entryId) return;
-            const entry = data?.sucata?.entries?.find(item => item.id === entryId);
-            if (!entry) {
-                toast.show('BEG não encontrado para receber a foto.', 'error');
-                return;
-            }
-
-            compressImageFile(file, { maxDim: 1200, quality: 0.78 })
-                .then((dataUrl) => {
-                    entry.photo = dataUrl;
-                    saveData();
-                    updateSucataViews();
-                    toast.show(`Foto do BEG ${entry.begCode} atualizada!`, 'success');
-                })
-                .catch(() => {
-                    toast.show('Não foi possível salvar a foto do BEG.', 'error');
-                });
-        }
-
         function updateSucataMeasurementUI() {
             const box = document.getElementById('sucataMeasurementBox');
             const metersField = document.getElementById('sucataMetersField');
@@ -2198,7 +2012,7 @@ function getBegPhotoThumbHtml(entry) {
                 entriesTable.innerHTML = '';
                 const ordered = [...data.sucata.entries].sort((a, b) => new Date(b.date) - new Date(a.date));
                 if (ordered.length === 0) {
-                    entriesTable.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-400">Nenhuma entrada de sucata registrada.</td></tr>';
+                    entriesTable.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Nenhuma entrada de sucata registrada.</td></tr>';
                 } else {
                     ordered.forEach(entry => {
                         const statusHtml = entry.soldCertificateId
@@ -2207,7 +2021,6 @@ function getBegPhotoThumbHtml(entry) {
                         entriesTable.innerHTML += `
                             <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0 align-top">
                                 <td class="p-4 text-xs text-gray-500 font-mono">${new Date(entry.date).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
-                                <td class="p-4 text-center">${getBegPhotoThumbHtml(entry)}</td>
                                 <td class="p-4 text-sm font-mono font-bold text-blue-600">${escapeHtml(entry.begCode)}</td>
                                 <td class="p-4 text-sm text-gray-800">
                                     <div class="font-semibold">${escapeHtml(getSucataEntryMaterialsLabel(entry))}</div>
@@ -2222,9 +2035,6 @@ function getBegPhotoThumbHtml(entry) {
                                 <td class="p-4 text-sm">${statusHtml}</td>
                                 <td class="p-4 text-center">
                                     <div class="flex flex-col items-center gap-2">
-                                        <button class="px-2 py-1 text-[11px] bg-indigo-50 text-indigo-600 border border-indigo-200 rounded hover:bg-indigo-100 transition" onclick="promptBegPhotoUpload('${entry.id}')">
-                                            <i class="fas fa-camera"></i> Foto
-                                        </button>
                                         ${entry.soldCertificateId ? '<span class="text-xs text-gray-400">travado</span>' : `
                                             <button class="px-2 py-1 text-[11px] bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100 transition" onclick="addMaterialToExistingBeg('${entry.id}')">
                                                 <i class="fas fa-plus"></i> Material
@@ -2573,67 +2383,38 @@ function getBegPhotoThumbHtml(entry) {
             });
         }
 
-
-        function isUsableImageSrc(value) {
-            return typeof value === 'string' && /^(data:image\/|blob:|https?:|file:)/i.test(value.trim());
-        }
-
-        function compressImageFile(file, options = {}) {
-            const maxDim = Number(options.maxDim || 1200);
-            const quality = Number(options.quality || 0.78);
-            const mimeType = options.mimeType || 'image/jpeg';
-
-            return new Promise((resolve, reject) => {
-                if (!file) {
-                    resolve('');
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > height && width > maxDim) {
-                            height = Math.round(height * (maxDim / width));
-                            width = maxDim;
-                        } else if (height >= width && height > maxDim) {
-                            width = Math.round(width * (maxDim / height));
-                            height = maxDim;
-                        }
-
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL(mimeType, quality));
-                    };
-                    img.onerror = reject;
-                    img.src = e.target.result;
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
         function previewMaterialImage(input) {
             const file = input.files[0];
             if (!file) { clearImagePreview(); return; }
-
-            compressImageFile(file, { maxDim: 900, quality: 0.72 })
-                .then((compressedDataUrl) => {
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 200;
+                    
+                    if (width > height && width > maxDim) {
+                        height *= maxDim / width; width = maxDim;
+                    } else if (height > maxDim) {
+                        width *= maxDim / height; height = maxDim;
+                    }
+                    
+                    canvas.width = width; canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); 
                     document.getElementById('matImageBase64').value = compressedDataUrl;
                     document.getElementById('matImagePreview').src = compressedDataUrl;
                     document.getElementById('matImagePreview').classList.remove('hidden');
                     document.getElementById('matImagePlaceholder').classList.add('hidden');
-                })
-                .catch(() => {
-                    toast.show('Não foi possível carregar a foto do material.', 'error');
-                    clearImagePreview();
-                });
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
         function clearImagePreview() {
@@ -2644,148 +2425,85 @@ function getBegPhotoThumbHtml(entry) {
             document.getElementById('matImage').value = '';
         }
 
-        function openMaterialModal(materialId = null) {
+        function openMaterialModal() {
             const modal = document.getElementById('materialModal');
             const inner = document.getElementById('materialModalInner');
-            const title = document.getElementById('materialModalTitle');
-
-            document.getElementById('materialForm').reset();
-            clearImagePreview();
-            document.getElementById('matId').value = '';
-
-            if (materialId) {
-                const material = data.materials.find(item => item.id === materialId);
-                if (material) {
-                    document.getElementById('matId').value = material.id;
-                    document.getElementById('matCode').value = material.code || '';
-                    document.getElementById('matDesc').value = material.description || '';
-                    document.getElementById('matUnit').value = material.unit || 'UN';
-                    document.getElementById('matMinStock').value = material.minStock ?? 0;
-                    if (material.image && isUsableImageSrc(material.image)) {
-                        document.getElementById('matImageBase64').value = material.image;
-                        document.getElementById('matImagePreview').src = material.image;
-                        document.getElementById('matImagePreview').classList.remove('hidden');
-                        document.getElementById('matImagePlaceholder').classList.add('hidden');
-                    }
-                    if (title) title.textContent = 'Editar Material do Catálogo';
-                }
-            } else if (title) {
-                title.textContent = 'Novo Material no Catálogo';
-            }
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                inner.classList.remove('scale-95');
-                document.getElementById('matCode').focus();
-            }, 10);
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); document.getElementById('matCode').focus(); }, 10);
         }
 
         function closeMaterialModal() {
             const modal = document.getElementById('materialModal');
             const inner = document.getElementById('materialModalInner');
             modal.classList.add('opacity-0'); inner.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); document.getElementById('materialForm').reset(); document.getElementById('matId').value = ''; if (document.getElementById('materialModalTitle')) document.getElementById('materialModalTitle').textContent = 'Novo Material no Catálogo'; clearImagePreview(); }, 300);
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); document.getElementById('materialForm').reset(); clearImagePreview(); }, 300);
         }
 
         function openImageModal(imgSrc, code) {
             const modal = document.getElementById('imagePreviewModal');
             const img = document.getElementById('largeImagePreview');
             const caption = document.getElementById('largeImageCaption');
-            const downloadBtn = document.getElementById('downloadImageBtn');
-            if (!modal || !img || !caption || !downloadBtn || !isUsableImageSrc(imgSrc)) {
-                toast.show('Essa foto ainda não está disponível para abrir.', 'warning');
-                return;
-            }
-
-            img.onerror = function() {
-                toast.show('Não foi possível abrir esta imagem.', 'error');
-                closeImageModal();
-            };
+            
             img.src = imgSrc;
-            caption.textContent = code || 'Visualização da imagem';
-            downloadBtn.href = imgSrc;
-            downloadBtn.setAttribute('download', `${(code || 'imagem-sistema').toString().replace(/[^a-z0-9_-]/gi, '_')}.jpg`);
-
+            caption.innerHTML = `<i class="fas fa-tag text-emerald-400 mr-2"></i>SKU: ${code}`;
+            
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            document.body.classList.add('overflow-hidden');
             setTimeout(() => { modal.classList.remove('opacity-0'); }, 10);
         }
 
         function closeImageModal() {
             const modal = document.getElementById('imagePreviewModal');
-            const img = document.getElementById('largeImagePreview');
-            const downloadBtn = document.getElementById('downloadImageBtn');
-            if (!modal) return;
             modal.classList.add('opacity-0');
-            document.body.classList.remove('overflow-hidden');
             setTimeout(() => { 
                 modal.classList.add('hidden'); 
                 modal.classList.remove('flex'); 
-                if (img) img.src = '';
-                if (downloadBtn) downloadBtn.href = '#';
+                document.getElementById('largeImagePreview').src = ''; 
             }, 300);
         }
 
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                const modal = document.getElementById('imagePreviewModal');
-                if (modal && !modal.classList.contains('hidden')) closeImageModal();
-            }
-        });
-
         /**
-         * Lógica de Verificação Inteligente de Duplicidade + Edição
+         * Lógica de Verificação Inteligente de Duplicidade
          */
         document.getElementById('materialForm').addEventListener('submit', function(e) {
             e.preventDefault();
-
+            
+            // 1. Obter e normalizar o código
             const rawCode = document.getElementById('matCode').value;
             const normalizedCode = rawCode.trim().toUpperCase();
-            const editingId = document.getElementById('matId').value || null;
-            const existingMaterial = editingId ? data.materials.find(material => material.id === editingId) : null;
 
-            const codeExists = data.materials.some(material => material.code === normalizedCode && material.id !== editingId);
+            // 2. Verificar se o código já existe no banco de dados (data.materials)
+            const codeExists = data.materials.some(material => material.code === normalizedCode);
 
             if (codeExists) {
+                // 3. Emitir alerta imediato e focar no campo
                 toast.show(`Alerta de Duplicidade: O código "${normalizedCode}" já está cadastrado no sistema.`, 'error');
                 document.getElementById('matCode').classList.add('ring-2', 'ring-rose-500');
                 document.getElementById('matCode').focus();
-
+                
+                // Remover destaque após 3 segundos
                 setTimeout(() => {
                     document.getElementById('matCode').classList.remove('ring-2', 'ring-rose-500');
                 }, 3000);
 
-                return;
+                return; // Interrompe o processo de salvamento
             }
 
-            const payload = {
-                id: editingId || Date.now().toString(),
+            // Se não houver duplicidade, prosseguir com o cadastro
+            data.materials.push({
+                id: Date.now().toString(),
                 code: normalizedCode,
                 description: document.getElementById('matDesc').value,
                 unit: document.getElementById('matUnit').value,
                 minStock: parseFloat(document.getElementById('matMinStock').value.toString().replace(',', '.')) || 0,
-                image: document.getElementById('matImageBase64').value || (existingMaterial ? existingMaterial.image : null) || null,
-                createdAt: existingMaterial?.createdAt || new Date().toISOString()
-            };
-
-            if (existingMaterial) {
-                existingMaterial.code = payload.code;
-                existingMaterial.description = payload.description;
-                existingMaterial.unit = payload.unit;
-                existingMaterial.minStock = payload.minStock;
-                existingMaterial.image = payload.image;
-                toast.show(`Material ${normalizedCode} atualizado com sucesso!`, 'success');
-            } else {
-                data.materials.push(payload);
-                toast.show(`Material ${normalizedCode} cadastrado com sucesso!`, 'success');
-            }
-
-            saveData();
-            updateAllViews();
+                image: document.getElementById('matImageBase64').value || null,
+                createdAt: new Date().toISOString()
+            });
+            
+            saveData(); 
+            updateAllViews(); 
             closeMaterialModal();
+            toast.show(`Material ${normalizedCode} cadastrado com sucesso!`, 'success');
         });
 
         function updateMaterialsTable() {
@@ -2796,7 +2514,7 @@ function getBegPhotoThumbHtml(entry) {
                 const isCrit = stock <= m.minStock;
                 
                 const imgHtml = m.image 
-                    ? `<img src="${m.image}" alt="${m.code}" data-code="${escapeHtml(m.code)}" onclick="openImageModal(this.src, this.dataset.code)" onerror="this.outerHTML='<div class=\"w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400\"><i class=\"fas fa-camera\"></i></div>'" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
+                    ? `<img src="${m.image}" alt="${m.code}" onclick="openImageModal('${m.image}', '${m.code}')" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
                     : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400"><i class="fas fa-camera"></i></div>`;
 
                 tbody.innerHTML += `
@@ -2812,14 +2530,9 @@ function getBegPhotoThumbHtml(entry) {
                         </td>
                         <td class="p-4 text-sm text-gray-600 font-mono">R$ ${getMaterialValue(m.id).toFixed(2)}</td>
                         <td class="p-4 text-center">
-                            <div class="flex items-center justify-center gap-1">
-                                <button onclick="openMaterialModal('${m.id}')" class="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-1.5 rounded transition" title="Editar material">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                                <button onclick="deleteMaterial('${m.id}')" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded transition" title="Excluir material">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
+                            <button onclick="deleteMaterial('${m.id}')" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded transition">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -3085,7 +2798,6 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             const origin = document.getElementById('sucataOrigin').value.trim();
             const documentRef = document.getElementById('sucataDocument').value.trim();
             const obs = document.getElementById('sucataObs').value.trim();
-            const begPhoto = getSucataBegPhotoPreviewValue();
 
             if (!begCode) { toast.show('Informe o código do BEG.', 'warning'); return; }
             if (measurementMode === 'meter' && materialId && !conversion) { toast.show('Esse material não tem conversão técnica cadastrada para metro.', 'warning'); return; }
@@ -3114,7 +2826,6 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
 
                 if (origin && !existingEntry.origin) existingEntry.origin = origin;
                 if (documentRef && !existingEntry.documentRef) existingEntry.documentRef = documentRef;
-                if (begPhoto) existingEntry.photo = begPhoto;
 
                 existingEntry.weightKg = getSucataEntryTotalWeight(existingEntry);
 
@@ -3123,7 +2834,6 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 this.reset();
                 clearSucataMaterialSearch();
                 resetSucataMeasurementFields();
-                clearSucataBegPhotoPreview();
                 toast.show(`Material adicionado ao BEG ${begCode}.`, 'success');
                 return;
             }
@@ -3134,7 +2844,6 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 origin,
                 documentRef,
                 obs,
-                photo: begPhoto || '',
                 date: new Date().toISOString(),
                 soldCertificateId: null,
                 items: [{
@@ -3159,7 +2868,6 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             this.reset();
             clearSucataMaterialSearch();
             resetSucataMeasurementFields();
-            clearSucataBegPhotoPreview();
             toast.show(`BEG ${begCode} registrado com ${formatWeight(weightKg)}.`, 'success');
         });
 
@@ -3425,7 +3133,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 const lastObs = lastMov ? (lastMov.obs || lastMov.reason || '-') : '-';
 
                 const imgHtml = m.image 
-                    ? `<img src="${m.image}" alt="${m.code}" data-code="${escapeHtml(m.code)}" onclick="openImageModal(this.src, this.dataset.code)" onerror="this.outerHTML='<div class=\"w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400\"><i class=\"fas fa-camera\"></i></div>'" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
+                    ? `<img src="${m.image}" alt="${m.code}" onclick="openImageModal('${m.image}', '${m.code}')" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
                     : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400"><i class="fas fa-box"></i></div>`;
 
                 tbody.innerHTML += `
@@ -3839,90 +3547,21 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             toast.show('Timeline de Movimentacao exportada para Word.', 'success');
         }
         // ==================== TRANSFORMADORES ====================
-        function openTransformadorModal() {
-            document.getElementById('transformadorModal').classList.remove('hidden');
-            document.getElementById('transformadorModal').classList.add('flex');
-        }
-        function closeTransformadorModal() {
-            document.getElementById('transformadorModal').classList.add('hidden');
-            document.getElementById('transformadorModal').classList.remove('flex');
-        }
-        function getTransformadorStatusMeta(status) {
-            switch (status) {
-                case 'em_estoque':
-                    return { text: 'Em Estoque', className: 'bg-green-50 text-green-700 border-green-200' };
-                case 'em_campo':
-                    return { text: 'Em Campo', className: 'bg-orange-50 text-orange-700 border-orange-200' };
-                case 'avariado':
-                    return { text: 'Avariado', className: 'bg-red-50 text-red-700 border-red-200' };
-                default:
-                    return { text: 'Sem status', className: 'bg-gray-50 text-gray-700 border-gray-200' };
-            }
-        }
-        function handleTransformadorFotoPreview() {
-            const input = document.getElementById('transformadorFoto');
-            const preview = document.getElementById('transformadorFotoPreview');
-            const wrapper = document.getElementById('transformadorFotoPreviewWrapper');
-            if (!input || !preview || !wrapper) return;
-            const file = input.files && input.files[0];
-            if (!file) {
-                wrapper.classList.add('hidden');
-                preview.src = '';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                wrapper.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
+        function openTransformadorModal() { document.getElementById('transformadorModal').classList.remove('hidden'); document.getElementById('transformadorModal').classList.add('flex'); }
+        function closeTransformadorModal() { document.getElementById('transformadorModal').classList.add('hidden'); document.getElementById('transformadorModal').classList.remove('flex'); }
         function saveTransformador() {
             const codigo = document.getElementById('transformadorCodigo').value.trim();
             const serie = document.getElementById('transformadorSerie').value.trim();
             const descricao = document.getElementById('transformadorDescricao').value.trim();
             const notaFiscal = document.getElementById('transformadorNotaFiscal').value.trim();
             const dataHora = document.getElementById('transformadorDataHora').value;
-            const status = document.getElementById('transformadorStatus').value;
-            const localArmazenado = document.getElementById('transformadorLocal').value.trim();
-            const observacao = document.getElementById('transformadorObservacao').value.trim();
-            const fotoPreview = document.getElementById('transformadorFotoPreview');
-            const foto = fotoPreview && isUsableImageSrc(fotoPreview.src) ? fotoPreview.src : '';
-            if (!codigo || !serie || !descricao || !notaFiscal || !dataHora || !localArmazenado) {
-                toast.show('Preencha todos os campos obrigatórios!', 'error');
-                return;
-            }
+            if (!codigo || !serie || !descricao || !notaFiscal || !dataHora) { toast.show('Preencha todos os campos!', 'error'); return; }
             if (!data.transformadores) data.transformadores = [];
             if (!data.transformadorMovimentos) data.transformadorMovimentos = [];
             const id = 'trf_' + Date.now();
-            data.transformadores.push({
-                id,
-                codigo,
-                serie,
-                descricao,
-                notaFiscal,
-                dataCadastro: dataHora,
-                status,
-                localArmazenado,
-                observacao,
-                foto
-            });
-            data.transformadorMovimentos.push({
-                id: 'mov_' + Date.now(),
-                transformadorId: id,
-                tipo: 'entrada',
-                data: dataHora,
-                de: notaFiscal,
-                para: localArmazenado,
-                observacao: observacao || 'Cadastro inicial'
-            });
-            saveData();
-            updateTransformadoresTable();
-            closeTransformadorModal();
-            document.getElementById('transformadorForm').reset();
-            document.getElementById('transformadorFotoPreviewWrapper').classList.add('hidden');
-            document.getElementById('transformadorFotoPreview').src = '';
-            toast.show('Transformador salvo com sucesso!', 'success');
+            data.transformadores.push({ id, codigo, serie, descricao, notaFiscal, dataCadastro: dataHora, status: 'em_estoque' });
+            data.transformadorMovimentos.push({ id: 'mov_' + Date.now(), transformadorId: id, tipo: 'entrada', data: dataHora, de: notaFiscal, para: 'Estoque', observacao: 'Cadastro inicial' });
+            saveData(); updateTransformadoresTable(); closeTransformadorModal(); toast.show('Transformador salvo!', 'success');
         }
         function updateTransformadoresTable() {
             const tbody = document.getElementById('transformadoresTable');
@@ -3933,28 +3572,16 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             const dateFrom = document.getElementById('transformadorDateFrom')?.value;
             const dateTo = document.getElementById('transformadorDateTo')?.value;
             let filtered = data.transformadores;
-            if (searchText) {
-                filtered = filtered.filter(t =>
-                    (t.codigo || '').toLowerCase().includes(searchText) ||
-                    (t.serie || '').toLowerCase().includes(searchText) ||
-                    (t.descricao || '').toLowerCase().includes(searchText) ||
-                    (t.localArmazenado || '').toLowerCase().includes(searchText)
-                );
-            }
+            if (searchText) filtered = filtered.filter(t => t.codigo.toLowerCase().includes(searchText) || t.serie.toLowerCase().includes(searchText));
             if (dateFrom) filtered = filtered.filter(t => t.dataCadastro >= dateFrom);
             if (dateTo) filtered = filtered.filter(t => t.dataCadastro <= dateTo + 'T23:59:59');
             filtered.sort((a, b) => new Date(b.dataCadastro) - new Date(a.dataCadastro));
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-400">Nenhum transformador cadastrado.</td></tr>';
-                return;
-            }
+            if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Nenhum transformador cadastrado.</td></tr>'; return; }
             filtered.forEach(t => {
-                const dataStr = new Date(t.dataCadastro).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
-                const statusMeta = getTransformadorStatusMeta(t.status);
-                const fotoHtml = t.foto
-                    ? `<img src="${t.foto}" alt="Foto do trafo" data-code="${escapeHtml(t.codigo)}" onclick="openImageModal(this.src, this.dataset.code)" onerror="this.outerHTML='<div class=\"w-14 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 mx-auto\"><i class=\"fas fa-image\"></i></div>'" class="w-14 h-14 object-cover rounded-lg border border-gray-200 img-hover-zoom mx-auto cursor-pointer">`
-                    : `<div class="w-14 h-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 mx-auto"><i class="fas fa-image"></i></div>`;
-                tbody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0 align-top"><td class="p-4 text-xs text-gray-500 font-mono">${dataStr}</td><td class="p-4 text-center">${fotoHtml}</td><td class="p-4 text-sm font-mono font-bold text-blue-600">${t.codigo}</td><td class="p-4 text-sm font-mono text-gray-700">${t.serie}</td><td class="p-4 text-sm text-gray-800">${t.descricao}</td><td class="p-4 text-sm text-gray-600">${t.notaFiscal}</td><td class="p-4 text-sm text-gray-700">${t.localArmazenado || '-'}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-semibold border ${statusMeta.className}">${statusMeta.text}</span>${t.observacao ? `<div class="text-[11px] text-gray-500 mt-2 max-w-[180px]">${t.observacao}</div>` : ''}</td><td class="p-4 text-center whitespace-nowrap"><button onclick="viewTransformadorMovimentos('${t.id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Ver movimentações"><i class="fas fa-history"></i></button><button onclick="registrarMovimentacaoTransformador('${t.id}')" class="text-purple-600 hover:text-purple-800 mr-2" title="Registrar movimentação"><i class="fas fa-exchange-alt"></i></button><button onclick="deleteTransformador('${t.id}')" class="text-red-600 hover:text-red-800" title="Deletar"><i class="fas fa-trash"></i></button></td></tr>`;
+                const dataStr = new Date(t.dataCadastro).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                const statusClass = t.status === 'em_estoque' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-700 border-orange-200';
+                const statusText = t.status === 'em_estoque' ? 'Em Estoque' : 'Em Campo';
+                tbody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0"><td class="p-4 text-xs text-gray-500 font-mono">${dataStr}</td><td class="p-4 text-sm font-mono font-bold text-blue-600">${t.codigo}</td><td class="p-4 text-sm font-mono text-gray-700">${t.serie}</td><td class="p-4 text-sm text-gray-800">${t.descricao}</td><td class="p-4 text-sm text-gray-600">${t.notaFiscal}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-semibold border ${statusClass}">${statusText}</span></td><td class="p-4 text-center"><button onclick="viewTransformadorMovimentos('${t.id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Ver movimentações"><i class="fas fa-history"></i></button><button onclick="registrarMovimentacaoTransformador('${t.id}')" class="text-purple-600 hover:text-purple-800 mr-2" title="Registrar movimentação"><i class="fas fa-exchange-alt"></i></button><button onclick="deleteTransformador('${t.id}')" class="text-red-600 hover:text-red-800" title="Deletar"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         }
         function filterTransformadores() { updateTransformadoresTable(); }
@@ -3988,20 +3615,11 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             const obs = document.getElementById('movimentacaoObs').value.trim();
             if (!tipo || !de || !para) { toast.show('Preencha todos os campos obrigatórios!', 'error'); return; }
             if (!data.transformadorMovimentos) data.transformadorMovimentos = [];
-            if (!data.transformadores) data.transformadores = [];
             const transformador = data.transformadores.find(t => t.id === transformadorId);
             if (!transformador) return;
             data.transformadorMovimentos.push({ id: 'mov_' + Date.now(), transformadorId, tipo, data: new Date().toISOString(), de, para, observacao: obs });
-            if (tipo === 'saida') {
-                transformador.status = 'em_campo';
-                transformador.localArmazenado = para;
-            } else if (tipo === 'retorno' || tipo === 'entrada') {
-                transformador.status = 'em_estoque';
-                transformador.localArmazenado = para;
-            }
-            if ((obs || '').toLowerCase().includes('avariado') || (obs || '').toLowerCase().includes('danificado')) {
-                transformador.status = 'avariado';
-            }
+            if (tipo === 'saida') transformador.status = 'em_campo';
+            else if (tipo === 'retorno') transformador.status = 'em_estoque';
             saveData(); updateTransformadoresTable(); updateTransformadorHistoricoTable(); closeMovimentacaoTransformadorModal(); toast.show('Movimentação registrada!', 'success');
         }
         function viewTransformadorMovimentos(transformadorId) {
