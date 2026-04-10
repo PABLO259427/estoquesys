@@ -1621,9 +1621,11 @@
             return formatWeight(item.weightKg);
         }
 
-        function getSucataMaterialLabel(materialId) {
+        function getSucataMaterialLabel(materialId, fallbackLabel = '') {
             const mat = data.materials.find(m => m.id === materialId);
-            return mat ? `${mat.code} - ${mat.description}` : 'Não informado';
+            if (mat) return `${mat.code} - ${mat.description}`;
+            if (fallbackLabel && String(fallbackLabel).trim()) return String(fallbackLabel).trim();
+            return 'Material sem vínculo';
         }
 
         function getSucataEntryTotalWeight(entry) {
@@ -1644,12 +1646,12 @@
             if (!entry) return 'Não informado';
 
             if (Array.isArray(entry.items) && entry.items.length > 0) {
-                const labels = entry.items.map(item => getSucataMaterialLabel(item.materialId));
+                const labels = entry.items.map(item => getSucataMaterialLabel(item.materialId, item.materialLabel || item.obs || 'Transformador avariado'));
                 const unique = [...new Set(labels)];
                 return unique.join(' | ');
             }
 
-            return getSucataMaterialLabel(entry.materialId);
+            return getSucataMaterialLabel(entry.materialId, entry.materialLabel || entry.obs || entry.origin || 'Transformador avariado');
         }
 
         function buildSucataItemsHtml(entry) {
@@ -1661,7 +1663,7 @@
                 return `
                     <div class="flex items-center justify-between gap-2 text-xs border border-gray-200 rounded-lg px-2 py-1 bg-gray-50 mt-1">
                         <div class="min-w-0">
-                            <div class="font-semibold text-gray-700 truncate">${index + 1}. ${escapeHtml(getSucataMaterialLabel(item.materialId))}</div>
+                            <div class="font-semibold text-gray-700 truncate">${index + 1}. ${escapeHtml(getSucataMaterialLabel(item.materialId, item.materialLabel || item.obs || 'Transformador avariado'))}</div>
                             <div class="text-gray-500 truncate">${escapeHtml(item.obs || '-')}</div>
                             ${item.measurementMode === 'meter' && item.meters ? `<div class="text-[11px] text-emerald-700 truncate">${Number(item.meters).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m × ${Number(item.factorKgPerMeter || 0).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 6 })} kg/m</div>` : ''}
                         </div>
@@ -3595,6 +3597,7 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                     items: [{
                         id: 'item_' + Date.now(),
                         materialId: null,
+                        materialLabel: 'Transformador avariado - ' + codigo,
                         weightKg: 0,
                         obs: 'Transformador ' + codigo + ' / Série ' + serie + ' - ' + descricao,
                         date: dataHora,
