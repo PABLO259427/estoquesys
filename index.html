@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -341,9 +342,15 @@
                 <div id="content-materials" class="tab-content hidden animate-fade-in p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Cadastro de Materiais</h2>
-                        <button onclick="openMaterialModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-md">
-                            <i class="fas fa-plus"></i> Novo Material
-                        </button>
+                        <div class="flex gap-2 flex-wrap justify-end">
+                            <button onclick="document.getElementById('excelMaterialImport').click()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-2 shadow-md">
+                                <i class="fas fa-file-excel"></i> Importar Excel
+                            </button>
+                            <input type="file" id="excelMaterialImport" class="hidden" accept=".xlsx,.xls" onchange="importMaterialsFromExcel(this)">
+                            <button onclick="openMaterialModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-md">
+                                <i class="fas fa-plus"></i> Novo Material
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-100">
                         <table class="w-full text-left border-collapse">
@@ -3247,9 +3254,139 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 try {
                     const imp = JSON.parse(e.target.result);
                     if(confirm('Isso sobrescreverá a instância ativa. Confirmar bypass?')) { data = imp; saveData(); updateAllViews(); }
-                } catch(err) { toast.show('Falha na integridade do arquivo.', 'error'); }
+                } catch(err) { toast.show('Falha na integridade do arquivo JSON.', 'error'); }
             };
             r.readAsText(f); input.value = '';
+        }
+
+        function normalizeExcelHeader(value) {
+            return (value || '')
+                .toString()
+                .normalize('NFD')
+                .replace(/[̀-ͯ]/g, '')
+                .toLowerCase()
+                .trim();
+        }
+
+        function parseExcelNumber(value, fallback = 0) {
+            if (value === null || value === undefined || value === '') return fallback;
+            if (typeof value === 'number') return value;
+            const normalized = value.toString().trim().replace(/\./g, '').replace(',', '.');
+            const parsed = parseFloat(normalized);
+            return Number.isFinite(parsed) ? parsed : fallback;
+        }
+
+        function findExcelField(row, aliases) {
+            const entries = Object.entries(row || {});
+            for (const [key, value] of entries) {
+                const normalizedKey = normalizeExcelHeader(key);
+                if (aliases.includes(normalizedKey)) return value;
+            }
+            return '';
+        }
+
+        function importMaterialsFromExcel(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (typeof XLSX === 'undefined') {
+                toast.show('Biblioteca de Excel não carregada no navegador.', 'error');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const workbook = XLSX.read(e.target.result, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[firstSheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+                    if (!rows.length) {
+                        toast.show('A planilha está vazia.', 'warning');
+                        input.value = '';
+                        return;
+                    }
+
+                    let imported = 0;
+                    let skipped = 0;
+
+                    rows.forEach(row => {
+                        const rawCode = findExcelField(row, ['codigo', 'cod', 'sku', 'codigo interno']);
+                        const rawDescription = findExcelField(row, ['descricao', 'descricao', 'material', 'nome', 'nome do material']);
+                        const rawUnit = findExcelField(row, ['un', 'und', 'unidade', 'unidade de medida']);
+                        const rawStock = findExcelField(row, ['estoque atual', 'saldo fisico', 'saldo físico', 'estoque', 'quantidade', 'qtd', 'qtde']);
+                        const rawMinStock = findExcelField(row, ['estoque minimo', 'estoque mínimo', 'minimo', 'mínimo', 'min stock', 'minstock']);
+                        const rawValue = findExcelField(row, ['valor unitario', 'valor unitário', 'valor', 'preco', 'preço', 'preco unitario', 'preço unitário']);
+
+                        const code = (rawCode || '').toString().trim().toUpperCase();
+                        const description = (rawDescription || '').toString().trim();
+
+                        if (!code || !description) {
+                            skipped++;
+                            return;
+                        }
+
+                        const existing = data.materials.some(material => (material.code || '').toUpperCase() === code);
+                        if (existing) {
+                            skipped++;
+                            return;
+                        }
+
+                        const materialId = 'mat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+                        const unit = (rawUnit || 'UN').toString().trim() || 'UN';
+                        const minStock = parseExcelNumber(rawMinStock, 0);
+                        const initialStock = parseExcelNumber(rawStock, 0);
+                        const unitValue = parseExcelNumber(rawValue, 0);
+
+                        data.materials.push({
+                            id: materialId,
+                            code,
+                            description,
+                            unit,
+                            minStock,
+                            image: ''
+                        });
+
+                        if (initialStock > 0 || unitValue > 0) {
+                            data.movements.push({
+                                id: 'mov_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                                type: 'entry',
+                                subType: 'supplier',
+                                materialId,
+                                quantity: initialStock > 0 ? initialStock : 0,
+                                value: unitValue,
+                                pep: null,
+                                supplier: 'Importação Excel',
+                                document: file.name,
+                                obs: 'Carga inicial importada por planilha Excel',
+                                date: new Date().toISOString(),
+                                user: 'Eng. Admin'
+                            });
+                        }
+
+                        imported++;
+                    });
+
+                    if (!imported) {
+                        toast.show('Nenhum material novo foi importado. Verifique códigos duplicados ou colunas da planilha.', 'warning');
+                        input.value = '';
+                        return;
+                    }
+
+                    saveData();
+                    updateAllViews();
+                    switchTab('materials');
+                    toast.show(`Importação Excel concluída: ${imported} material(is) novo(s) e ${skipped} linha(s) ignorada(s).`, 'success');
+                } catch (error) {
+                    console.error(error);
+                    toast.show('Falha ao ler a planilha Excel.', 'error');
+                } finally {
+                    input.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
         }
 
         function exportToWord() {
