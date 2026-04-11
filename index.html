@@ -1145,6 +1145,54 @@
         </div>
     </div>
 
+
+
+    <!-- Modal for Stock Adjustment -->
+    <div id="stockAdjustModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[220] transition-opacity opacity-0">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="stockAdjustModalInner">
+            <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+                <h3 class="text-xl font-bold text-gray-800">Ajustar Saldo Físico</h3>
+                <button type="button" onclick="closeStockAdjustModal()" class="text-gray-400 hover:text-gray-700 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="stockAdjustForm" class="space-y-4">
+                <input type="hidden" id="stockAdjustMaterialId">
+
+                <div class="rounded-xl border border-blue-100 bg-blue-50 p-4">
+                    <p class="text-xs uppercase tracking-wider font-semibold text-blue-700 mb-1">Material selecionado</p>
+                    <p id="stockAdjustMaterialLabel" class="text-sm font-bold text-gray-800">-</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Saldo atual</label>
+                        <div id="stockAdjustCurrentStock" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-700 font-semibold">0 UN</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Novo saldo físico</label>
+                        <input type="number" id="stockAdjustNewStock" step="0.01" min="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500" required>
+                    </div>
+                </div>
+
+                <div id="stockAdjustDelta" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                    Sem alteração
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
+                    <input type="text" id="stockAdjustObs" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="Motivo do ajuste manual">
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeStockAdjustModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition">Cancelar</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 font-semibold transition shadow-lg shadow-amber-500/30">Salvar ajuste</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal for Full Image Preview -->
     <div id="imagePreviewModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center z-[300] transition-opacity opacity-0" onclick="closeImageModal()">
         <div class="relative w-full max-w-3xl mx-4 flex flex-col items-center" onclick="event.stopPropagation()">
@@ -2508,9 +2556,13 @@
             deltaBox.textContent = `${label}: ${Math.abs(delta)} ${unit}`;
         }
 
-        document.getElementById('stockAdjustNewStock').addEventListener('input', updateStockAdjustPreview);
+        const stockAdjustNewStockEl = document.getElementById('stockAdjustNewStock');
+        if (stockAdjustNewStockEl) {
+            stockAdjustNewStockEl.addEventListener('input', updateStockAdjustPreview);
+        }
 
-        document.getElementById('stockAdjustForm').addEventListener('submit', function(e) {
+        const stockAdjustFormEl = document.getElementById('stockAdjustForm');
+        if (stockAdjustFormEl) stockAdjustFormEl.addEventListener('submit', function(e) {
             e.preventDefault();
             const materialId = document.getElementById('stockAdjustMaterialId').value;
             const material = data.materials.find(m => m.id === materialId);
