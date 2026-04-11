@@ -2597,9 +2597,18 @@
             });
 
             saveData();
-            updateAllViews();
+
+            try { updateMaterialsTable(); } catch(e) { console.error('Materials Error', e); }
+            try { updateStockTable(); } catch(e) { console.error('Stock Error', e); }
+            try { updateHistoryTable(); } catch(e) { console.error('History Error', e); }
+            try { updateDashboard(); } catch(e) { console.error('Dashboard Error', e); }
+            try { updateSucataViews(); } catch(e) { console.error('Sucata Error', e); }
+
             closeStockAdjustModal();
-            toast.show(`Saldo físico de ${material.code} atualizado para ${newStock} ${material.unit}.`, 'success');
+
+            setTimeout(() => {
+                toast.show(`Saldo físico de ${material.code} atualizado para ${newStock} ${material.unit}.`, 'success');
+            }, 50);
         });
 
         function openImageModal(imgSrc, code) {
