@@ -634,6 +634,7 @@
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Material</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Saldo Físico</th>
                                     <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500">Última Observação</th>
+                                    <th class="p-4 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="stockTable" class="divide-y divide-gray-100 skeleton-target">
@@ -2453,6 +2454,102 @@
             setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); document.getElementById('materialForm').reset(); clearImagePreview(); }, 300);
         }
 
+
+        function openStockAdjustModal(materialId) {
+            const material = data.materials.find(m => m.id === materialId);
+            if (!material) {
+                toast.show('Material não encontrado para ajuste.', 'error');
+                return;
+            }
+
+            const currentStock = getMaterialStock(materialId);
+            document.getElementById('stockAdjustMaterialId').value = materialId;
+            document.getElementById('stockAdjustMaterialLabel').textContent = `${material.code} - ${material.description}`;
+            document.getElementById('stockAdjustCurrentStock').textContent = `${currentStock} ${material.unit}`;
+            document.getElementById('stockAdjustNewStock').value = currentStock;
+            document.getElementById('stockAdjustNewStock').dataset.unit = material.unit || 'UN';
+            document.getElementById('stockAdjustObs').value = 'Ajuste manual de saldo físico';
+            updateStockAdjustPreview();
+
+            const modal = document.getElementById('stockAdjustModal');
+            const inner = document.getElementById('stockAdjustModalInner');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                inner.classList.remove('scale-95');
+                document.getElementById('stockAdjustNewStock').focus();
+                document.getElementById('stockAdjustNewStock').select();
+            }, 10);
+        }
+
+        function closeStockAdjustModal() {
+            const modal = document.getElementById('stockAdjustModal');
+            const inner = document.getElementById('stockAdjustModalInner');
+            modal.classList.add('opacity-0');
+            inner.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.getElementById('stockAdjustForm').reset();
+                document.getElementById('stockAdjustMaterialId').value = '';
+            }, 300);
+        }
+
+        function updateStockAdjustPreview() {
+            const materialId = document.getElementById('stockAdjustMaterialId').value;
+            const deltaBox = document.getElementById('stockAdjustDelta');
+            if (!materialId || !deltaBox) return;
+            const currentStock = getMaterialStock(materialId);
+            const newStock = parseFloat(String(document.getElementById('stockAdjustNewStock').value || '0').replace(',', '.'));
+            const delta = (isNaN(newStock) ? 0 : newStock) - currentStock;
+            const unit = document.getElementById('stockAdjustNewStock').dataset.unit || 'UN';
+            const label = delta > 0 ? 'Entrada de ajuste' : delta < 0 ? 'Saída de ajuste' : 'Sem alteração';
+            deltaBox.textContent = `${label}: ${Math.abs(delta)} ${unit}`;
+        }
+
+        document.getElementById('stockAdjustNewStock').addEventListener('input', updateStockAdjustPreview);
+
+        document.getElementById('stockAdjustForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const materialId = document.getElementById('stockAdjustMaterialId').value;
+            const material = data.materials.find(m => m.id === materialId);
+            if (!material) {
+                toast.show('Material não encontrado para ajuste.', 'error');
+                return;
+            }
+
+            const currentStock = getMaterialStock(materialId);
+            const newStock = parseFloat(String(document.getElementById('stockAdjustNewStock').value || '0').replace(',', '.'));
+            if (isNaN(newStock) || newStock < 0) {
+                toast.show('Informe um saldo físico válido.', 'warning');
+                return;
+            }
+
+            const delta = newStock - currentStock;
+            if (delta === 0) {
+                toast.show('Nenhuma alteração de saldo foi identificada.', 'warning');
+                return;
+            }
+
+            data.movements.push({
+                id: Date.now().toString(),
+                type: delta > 0 ? 'entry' : 'exit',
+                subType: 'adjustment',
+                materialId,
+                quantity: Math.abs(delta),
+                supplier: 'Ajuste Manual de Estoque',
+                obs: document.getElementById('stockAdjustObs').value.trim() || 'Ajuste manual de saldo físico',
+                date: new Date().toISOString(),
+                user: 'Eng. Admin'
+            });
+
+            saveData();
+            updateAllViews();
+            closeStockAdjustModal();
+            toast.show(`Saldo físico de ${material.code} atualizado para ${newStock} ${material.unit}.`, 'success');
+        });
+
         function openImageModal(imgSrc, code) {
             const modal = document.getElementById('imagePreviewModal');
             const img = document.getElementById('largeImagePreview');
@@ -2544,9 +2641,14 @@
                         </td>
                         <td class="p-4 text-sm text-gray-600 font-mono">R$ ${getMaterialValue(m.id).toFixed(2)}</td>
                         <td class="p-4 text-center">
-                            <button onclick="deleteMaterial('${m.id}')" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded transition">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openStockAdjustModal('${m.id}')" class="text-amber-500 hover:text-amber-700 hover:bg-amber-50 p-1.5 rounded transition" title="Ajustar saldo físico">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button onclick="deleteMaterial('${m.id}')" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded transition" title="Excluir material">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -3157,6 +3259,11 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                         <td class="p-4 text-sm font-medium text-gray-800">${highlightMatch(m.description, searchText)}</td>
                         <td class="p-4 text-sm"><span class="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold border border-gray-200">${stock} ${m.unit}</span></td>
                         <td class="p-4 text-xs text-gray-500 italic max-w-xs truncate" title="${lastObs}">${lastObs}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="openStockAdjustModal('${m.id}')" class="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition text-xs font-semibold">
+                                <i class="fas fa-pen mr-1"></i> Ajustar
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
@@ -3186,8 +3293,8 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 const dStr = new Date(m.date).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
                 let tCls = '', tTxt = '';
                 
-                if(m.type==='entry'){ tCls='text-emerald-600 bg-emerald-50 border-emerald-200'; tTxt=m.subType==='return'?'Devolução (In)':'Entrada'; }
-                else if(m.type==='exit'){ tCls='text-rose-600 bg-rose-50 border-rose-200'; tTxt='Saída (Out)'; }
+                if(m.type==='entry'){ tCls='text-emerald-600 bg-emerald-50 border-emerald-200'; tTxt=m.subType==='return'?'Devolução (In)':(m.subType==='adjustment'?'Ajuste (+)':'Entrada'); }
+                else if(m.type==='exit'){ tCls='text-rose-600 bg-rose-50 border-rose-200'; tTxt=m.subType==='adjustment'?'Ajuste (-)':'Saída (Out)'; }
                 else { tCls='text-purple-600 bg-purple-50 border-purple-200'; tTxt='Retorno'; }
                 
                 const displayCode = mat ? highlightMatch(mat.code, searchText) : '---';
