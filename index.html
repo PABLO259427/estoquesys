@@ -342,11 +342,11 @@
                 <div id="content-materials" class="tab-content hidden animate-fade-in p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Cadastro de Materiais</h2>
-                        <div class="flex gap-2 flex-wrap justify-end">
-                            <button onclick="document.getElementById('excelMaterialImport').click()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-2 shadow-md">
+                        <div class="flex gap-2 flex-wrap">
+                            <button onclick="document.getElementById('importMaterialsExcelFile').click()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-2 shadow-md">
                                 <i class="fas fa-file-excel"></i> Importar Excel
                             </button>
-                            <input type="file" id="excelMaterialImport" class="hidden" accept=".xlsx,.xls" onchange="importMaterialsFromExcel(this)">
+                            <input type="file" id="importMaterialsExcelFile" class="hidden" accept=".xlsx,.xls" onchange="importMaterialsExcel(this)">
                             <button onclick="openMaterialModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-md">
                                 <i class="fas fa-plus"></i> Novo Material
                             </button>
@@ -3241,6 +3241,169 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
         function filterStock() { updateStockTable(); }
         function filterHistory() { updateHistoryTable(); }
 
+
+        function normalizeImportString(value) {
+            return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        }
+
+        function normalizeImportCode(value) {
+            return normalizeImportString(value).toUpperCase();
+        }
+
+        function normalizeImportDescription(value) {
+            return normalizeImportString(value).replace(/\s+/g, ' ').toLowerCase();
+        }
+
+        function parseExcelNumber(value) {
+            if (value === null || value === undefined || value === '') return 0;
+            if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+            const cleaned = String(value).replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+            const parsed = parseFloat(cleaned);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function getRowValueByAliases(row, aliases) {
+            const entries = Object.entries(row || {});
+            for (const [key, value] of entries) {
+                const normalizedKey = normalizeImportDescription(key);
+                if (aliases.includes(normalizedKey)) return value;
+            }
+            return '';
+        }
+
+        function importMaterialsExcel(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+
+            if (typeof XLSX === 'undefined') {
+                toast.show('Leitor de Excel não carregado.', 'error');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const workbook = XLSX.read(e.target.result, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+                    if (!rows.length) {
+                        toast.show('A planilha está vazia.', 'warning');
+                        input.value = '';
+                        return;
+                    }
+
+                    const aggregated = new Map();
+
+                    rows.forEach((row) => {
+                        const codeRaw = getRowValueByAliases(row, ['codigo', 'código', 'cod', 'sku', 'material']);
+                        const descRaw = getRowValueByAliases(row, ['descricao', 'descrição', 'material descricao', 'material descrição', 'nome', 'texto breve de material', 'texto breve', 'descricao do material', 'descrição do material']);
+                        const unitRaw = getRowValueByAliases(row, ['un', 'unidade', 'um basica', 'um básica', 'unidade de medida']);
+                        const qtyRaw = getRowValueByAliases(row, ['estoque atual', 'saldo fisico', 'saldo físico', 'quantidade', 'qtde', 'utilizacao livre', 'utilização livre', 'qtd']);
+                        const totalValueRaw = getRowValueByAliases(row, ['val.utiliz.livre', 'valor total', 'valor em estoque', 'val estoque', 'val.estoque']);
+                        const unitValueRaw = getRowValueByAliases(row, ['valor unitario', 'valor unitário', 'preco', 'preço', 'valor']);
+
+                        const code = normalizeImportCode(codeRaw);
+                        const description = normalizeImportString(descRaw);
+                        const unit = normalizeImportString(unitRaw).toUpperCase() || 'UN';
+                        const quantity = parseExcelNumber(qtyRaw);
+                        const totalValue = parseExcelNumber(totalValueRaw);
+                        let unitValue = parseExcelNumber(unitValueRaw);
+
+                        if (!code && !description) return;
+
+                        if (!(unitValue > 0) && totalValue > 0 && quantity > 0) {
+                            unitValue = totalValue / quantity;
+                        }
+
+                        const key = code || normalizeImportDescription(description);
+                        if (!key) return;
+
+                        if (!aggregated.has(key)) {
+                            aggregated.set(key, {
+                                code,
+                                description: description || code,
+                                unit,
+                                quantity: 0,
+                                unitValue: unitValue > 0 ? unitValue : 0
+                            });
+                        }
+
+                        const item = aggregated.get(key);
+                        item.quantity += quantity > 0 ? quantity : 0;
+                        if (!item.description && description) item.description = description;
+                        if ((!item.unit || item.unit === 'UN') && unit) item.unit = unit;
+                        if (!(item.unitValue > 0) && unitValue > 0) item.unitValue = unitValue;
+                    });
+
+                    let created = 0;
+                    let updated = 0;
+                    let importedRows = 0;
+                    const importSource = `Importação Excel: ${file.name}`;
+
+                    aggregated.forEach((item) => {
+                        let existing = null;
+
+                        if (item.code) {
+                            existing = data.materials.find(m => normalizeImportCode(m.code) === item.code);
+                        }
+
+                        if (!existing && item.description) {
+                            existing = data.materials.find(m => normalizeImportDescription(m.description) === normalizeImportDescription(item.description));
+                        }
+
+                        if (!existing) {
+                            existing = {
+                                id: Date.now().toString() + Math.random().toString(16).slice(2),
+                                code: item.code || ('IMP-' + Date.now().toString().slice(-6) + Math.random().toString(16).slice(2, 6).toUpperCase()),
+                                description: item.description || item.code || 'MATERIAL IMPORTADO',
+                                unit: item.unit || 'UN',
+                                minStock: 0,
+                                image: null,
+                                createdAt: new Date().toISOString()
+                            };
+                            data.materials.push(existing);
+                            created++;
+                        } else {
+                            updated++;
+                        }
+
+                        if (item.quantity > 0 || item.unitValue > 0) {
+                            data.movements.push({
+                                id: Date.now().toString() + Math.random().toString(16).slice(2),
+                                type: 'entry',
+                                subType: 'supplier',
+                                materialId: existing.id,
+                                quantity: item.quantity > 0 ? item.quantity : 0,
+                                value: item.unitValue > 0 ? item.unitValue : 0,
+                                pep: null,
+                                supplier: importSource,
+                                document: file.name,
+                                obs: 'Carga inicial por planilha Excel',
+                                date: new Date().toISOString(),
+                                user: 'Eng. Admin'
+                            });
+                        }
+
+                        importedRows++;
+                    });
+
+                    saveData();
+                    updateAllViews();
+                    toast.show(`Importação concluída: ${importedRows} item(ns), ${created} novo(s), ${updated} já existente(s).`, 'success');
+                } catch (error) {
+                    console.error(error);
+                    toast.show('Falha ao importar a planilha Excel.', 'error');
+                } finally {
+                    input.value = '';
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+
         function exportData() {
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}));
@@ -3254,139 +3417,9 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 try {
                     const imp = JSON.parse(e.target.result);
                     if(confirm('Isso sobrescreverá a instância ativa. Confirmar bypass?')) { data = imp; saveData(); updateAllViews(); }
-                } catch(err) { toast.show('Falha na integridade do arquivo JSON.', 'error'); }
+                } catch(err) { toast.show('Falha na integridade do arquivo.', 'error'); }
             };
             r.readAsText(f); input.value = '';
-        }
-
-        function normalizeExcelHeader(value) {
-            return (value || '')
-                .toString()
-                .normalize('NFD')
-                .replace(/[̀-ͯ]/g, '')
-                .toLowerCase()
-                .trim();
-        }
-
-        function parseExcelNumber(value, fallback = 0) {
-            if (value === null || value === undefined || value === '') return fallback;
-            if (typeof value === 'number') return value;
-            const normalized = value.toString().trim().replace(/\./g, '').replace(',', '.');
-            const parsed = parseFloat(normalized);
-            return Number.isFinite(parsed) ? parsed : fallback;
-        }
-
-        function findExcelField(row, aliases) {
-            const entries = Object.entries(row || {});
-            for (const [key, value] of entries) {
-                const normalizedKey = normalizeExcelHeader(key);
-                if (aliases.includes(normalizedKey)) return value;
-            }
-            return '';
-        }
-
-        function importMaterialsFromExcel(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            if (typeof XLSX === 'undefined') {
-                toast.show('Biblioteca de Excel não carregada no navegador.', 'error');
-                input.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const workbook = XLSX.read(e.target.result, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const sheet = workbook.Sheets[firstSheetName];
-                    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-
-                    if (!rows.length) {
-                        toast.show('A planilha está vazia.', 'warning');
-                        input.value = '';
-                        return;
-                    }
-
-                    let imported = 0;
-                    let skipped = 0;
-
-                    rows.forEach(row => {
-                        const rawCode = findExcelField(row, ['codigo', 'cod', 'sku', 'codigo interno']);
-                        const rawDescription = findExcelField(row, ['descricao', 'descricao', 'material', 'nome', 'nome do material']);
-                        const rawUnit = findExcelField(row, ['un', 'und', 'unidade', 'unidade de medida']);
-                        const rawStock = findExcelField(row, ['estoque atual', 'saldo fisico', 'saldo físico', 'estoque', 'quantidade', 'qtd', 'qtde']);
-                        const rawMinStock = findExcelField(row, ['estoque minimo', 'estoque mínimo', 'minimo', 'mínimo', 'min stock', 'minstock']);
-                        const rawValue = findExcelField(row, ['valor unitario', 'valor unitário', 'valor', 'preco', 'preço', 'preco unitario', 'preço unitário']);
-
-                        const code = (rawCode || '').toString().trim().toUpperCase();
-                        const description = (rawDescription || '').toString().trim();
-
-                        if (!code || !description) {
-                            skipped++;
-                            return;
-                        }
-
-                        const existing = data.materials.some(material => (material.code || '').toUpperCase() === code);
-                        if (existing) {
-                            skipped++;
-                            return;
-                        }
-
-                        const materialId = 'mat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-                        const unit = (rawUnit || 'UN').toString().trim() || 'UN';
-                        const minStock = parseExcelNumber(rawMinStock, 0);
-                        const initialStock = parseExcelNumber(rawStock, 0);
-                        const unitValue = parseExcelNumber(rawValue, 0);
-
-                        data.materials.push({
-                            id: materialId,
-                            code,
-                            description,
-                            unit,
-                            minStock,
-                            image: ''
-                        });
-
-                        if (initialStock > 0 || unitValue > 0) {
-                            data.movements.push({
-                                id: 'mov_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-                                type: 'entry',
-                                subType: 'supplier',
-                                materialId,
-                                quantity: initialStock > 0 ? initialStock : 0,
-                                value: unitValue,
-                                pep: null,
-                                supplier: 'Importação Excel',
-                                document: file.name,
-                                obs: 'Carga inicial importada por planilha Excel',
-                                date: new Date().toISOString(),
-                                user: 'Eng. Admin'
-                            });
-                        }
-
-                        imported++;
-                    });
-
-                    if (!imported) {
-                        toast.show('Nenhum material novo foi importado. Verifique códigos duplicados ou colunas da planilha.', 'warning');
-                        input.value = '';
-                        return;
-                    }
-
-                    saveData();
-                    updateAllViews();
-                    switchTab('materials');
-                    toast.show(`Importação Excel concluída: ${imported} material(is) novo(s) e ${skipped} linha(s) ignorada(s).`, 'success');
-                } catch (error) {
-                    console.error(error);
-                    toast.show('Falha ao ler a planilha Excel.', 'error');
-                } finally {
-                    input.value = '';
-                }
-            };
-            reader.readAsArrayBuffer(file);
         }
 
         function exportToWord() {
