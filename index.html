@@ -196,6 +196,7 @@
         .img-hover-zoom { transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .img-hover-zoom:hover { transform: scale(1.1); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); z-index: 10; }
     </style>
+<base target="_blank">
 </head>
 <body class="p-4 md:p-8">
     
@@ -3825,27 +3826,48 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             let totalMovimentos = 0;
             let totalEntradas = 0;
             let totalSaidas = 0;
-            
+
+            // NOVO: Calcular quantidade total do material filtrado
+            let totalQuantidadeMaterial = 0;
+            let materialFiltradoInfo = '';
+
             const mvs = data.movements.sort((a,b)=>new Date(a.date)-new Date(b.date));
-            
+
+            // Se houver filtro de material, identificar o material e calcular total
+            let materialFiltrado = null;
+            if (searchText) {
+                materialFiltrado = data.materials.find(m => 
+                    m.code.toLowerCase().includes(searchText) || 
+                    m.description.toLowerCase().includes(searchText)
+                );
+                if (materialFiltrado) {
+                    materialFiltradoInfo = materialFiltrado.code + ' - ' + materialFiltrado.description;
+                }
+            }
+
             mvs.forEach(function(m) {
                 const mat = data.materials.find(function(x){return x.id===m.materialId;});
                 const movDate = new Date(m.date);
                 const fromDate = dateFrom ? new Date(dateFrom) : null;
                 const toDate = dateTo ? new Date(dateTo + 'T23:59:59') : null;
-                
+
                 if ((fromDate && movDate < fromDate) || (toDate && movDate > toDate)) return;
                 if (searchText && (!mat || (!mat.code.toLowerCase().includes(searchText) && !mat.description.toLowerCase().includes(searchText)))) return;
-                
+
                 totalMovimentos++;
                 const isOut = m.type==='exit';
                 if(isOut) totalSaidas++; else totalEntradas++;
-                
+
+                // NOVO: Acumular quantidade do material filtrado
+                if (materialFiltrado && mat && mat.id === materialFiltrado.id) {
+                    totalQuantidadeMaterial += Number(m.quantity || 0);
+                }
+
                 const dataHora = movDate.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
                 const tipoTxt = isOut ? 'Saida' : (m.type==='return'?'Retorno':'Entrada');
                 const corTipo = isOut ? '#dc2626' : '#2563eb';
                 const bgRow = isOut ? '#fff5f5' : '#f0f9ff';
-                
+
                 movRows += '<tr style="background:' + bgRow + '">' +
                     '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt;font-family:Consolas,monospace">' + dataHora + '</td>' +
                     '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt;color:' + corTipo + ';font-weight:bold">' + tipoTxt + '</td>' +
@@ -3855,12 +3877,28 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                     '<td style="border:1px solid #d1d5db;padding:7px;font-size:10pt">' + (m.pep||m.supplier||m.obs||'-') + '</td>' +
                     '</tr>';
             });
-            
+
+            // NOVO: Seção de resumo do material filtrado
+            let materialResumoHtml = '';
+            if (materialFiltrado && totalQuantidadeMaterial > 0) {
+                materialResumoHtml = '<div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:16px;margin-bottom:20px">' +
+                    '<h3 style="font-size:14pt;color:#92400e;margin:0 0 8px 0;font-weight:bold"><i class="fas fa-calculator"></i> RESUMO DO MATERIAL FILTRADO</h3>' +
+                    '<p style="margin:0;font-size:11pt;color:#78350f"><strong>Código:</strong> ' + materialFiltrado.code + '</p>' +
+                    '<p style="margin:4px 0 0;font-size:11pt;color:#78350f"><strong>Descrição:</strong> ' + materialFiltrado.description + '</p>' +
+                    '<p style="margin:4px 0 0;font-size:11pt;color:#78350f"><strong>Unidade:</strong> ' + materialFiltrado.unit + '</p>' +
+                    '<div style="margin-top:10px;padding:10px;background:#fff;border-radius:6px;border:1px solid #fbbf24">' +
+                    '<p style="margin:0;font-size:16pt;color:#b45309;font-weight:bold;text-align:center">QUANTIDADE TOTAL MOVIMENTADA: ' + 
+                    totalQuantidadeMaterial.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ' + materialFiltrado.unit + '</p>' +
+                    '</div>' +
+                    '</div>';
+            }
+
             const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Timeline Movimentacao</title></head><body style="font-family:Arial,sans-serif;margin:2cm">' +
                 '<div style="text-align:center;margin-bottom:24px">' +
                 '<h1 style="font-size:18pt;color:#1e3a5f;margin:0">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>' +
                 '<h2 style="font-size:15pt;color:#374151;margin:6px 0">Timeline de Movimentacao</h2>' +
                 '<p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ' + now + (dateFrom || dateTo ? ' | Periodo: ' + (dateFrom||'Inicio') + ' a ' + (dateTo||'Hoje') : '') + '</p></div>' +
+                materialResumoHtml +
                 '<table style="width:100%;border-collapse:collapse;margin-bottom:20px">' +
                 '<tr>' +
                 '<td style="width:33%;background:#eff6ff;border:1px solid #bfdbfe;padding:12px;text-align:center">' +
