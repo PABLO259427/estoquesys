@@ -200,6 +200,13 @@
 </head>
 <body class="p-4 md:p-8">
     
+    <div id="loading-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[200] hidden flex items-center justify-center">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
+            <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-slate-700 font-bold">Processando dados...</p>
+        </div>
+    </div>
+
     <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
     <div class="max-w-7xl mx-auto">
@@ -1249,9 +1256,19 @@
         }
 
         function renderWithSkeleton(callback) {
-            const activeTabId = document.querySelector('.tab-active').id.replace('tab-', 'content-');
-            const targets = document.getElementById(activeTabId).querySelectorAll('.skeleton-target');
+            const activeTab = document.querySelector('.tab-active');
+            if (!activeTab) { callback(); return; }
+            const activeTabId = activeTab.id.replace('tab-', 'content-');
+            const contentEl = document.getElementById(activeTabId);
+            if (!contentEl) { callback(); return; }
             
+            const targets = contentEl.querySelectorAll('.skeleton-target');
+            
+            if (targets.length === 0) {
+                callback();
+                return;
+            }
+
             targets.forEach(t => {
                 if(t.tagName === 'TBODY') {
                     t.innerHTML = `
@@ -1264,12 +1281,13 @@
                 }
             });
 
+            // Reduced delay for better perceived performance
             setTimeout(() => {
                 callback(); 
                 targets.forEach(t => {
                     if(t.tagName !== 'TBODY') t.classList.remove('opacity-50', 'pointer-events-none');
                 });
-            }, 300);
+            }, 50);
         }
 
         let data = { materials:[], movements:[], pepAllocations: {}, sucata: { entries: [], certificates: [] }, trash: { entries: [], certificates: [] } };
@@ -1314,24 +1332,34 @@
             });
         }
 
+        function showLoading(show) {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                if (show) overlay.classList.remove('hidden');
+                else overlay.classList.add('hidden');
+            }
+        }
+
         function loadData() {
             try {
                 const saved = localStorage.getItem('pepStockData');
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    data.materials = parsed.materials ||[];
-                    data.movements = parsed.movements ||[];
+                    data.materials = parsed.materials || [];
+                    data.movements = parsed.movements || [];
                     data.pepAllocations = parsed.pepAllocations || {};
                     data.sucata = parsed.sucata || { entries: [], certificates: [] };
                     data.trash = parsed.trash || { entries: [], certificates: [] };
                 }
             } catch (e) {
+                console.error("Error loading data:", e);
                 data = { materials:[], movements:[], pepAllocations: {}, sucata: { entries: [], certificates: [] }, trash: { entries: [], certificates: [] } };
             }
         }
 
         function saveData() {
             try {
+                invalidateStockCache();
                 localStorage.setItem('pepStockData', JSON.stringify(data));
                 localStorage.setItem('pepStockData_backup', JSON.stringify({ data: data, savedAt: new Date().toISOString() }));
                 toast.show('Banco de dados sincronizado.', 'success');
@@ -1341,12 +1369,17 @@
         }
 
         function updateAllViews() {
+            invalidateStockCache();
             ensureSucataData();
-            try { updateDashboard(); } catch(e) { console.error('Dashboard Error', e); }
-            try { updateMaterialsTable(); } catch(e) { console.error('Materials Error', e); }
-            try { updateStockTable(); } catch(e) { console.error('Stock Error', e); }
-            try { updateHistoryTable(); } catch(e) { console.error('History Error', e); }
-            try { updateSucataViews(); } catch(e) { console.error('Sucata Error', e); }
+            
+            // Optimization: Use requestAnimationFrame for smoother rendering
+            requestAnimationFrame(() => {
+                try { updateDashboard(); } catch(e) { console.error('Dashboard Error', e); }
+                try { updateMaterialsTable(); } catch(e) { console.error('Materials Error', e); }
+                try { updateStockTable(); } catch(e) { console.error('Stock Error', e); }
+                try { updateHistoryTable(); } catch(e) { console.error('History Error', e); }
+                try { updateSucataViews(); } catch(e) { console.error('Sucata Error', e); }
+            });
         }
 
         function getAvailablePeps() { return Object.keys(data.pepAllocations).sort(); }
@@ -2324,19 +2357,35 @@
             document.getElementById('totalMaterials').textContent = data.materials.length;
             
             let totalVal = 0;
-            let activePeps = new Set();
-            data.materials.forEach(m => totalVal += getMaterialValue(m.id) * getMaterialStock(m.id));
-            Object.keys(data.pepAllocations).forEach(p => { if (Object.keys(data.pepAllocations[p]).length > 0) activePeps.add(p); });
+            let activePepsCount = 0;
+            
+            // Optimization: Single loop for value calculation
+            for (let i = 0; i < data.materials.length; i++) {
+                const m = data.materials[i];
+                totalVal += getMaterialValue(m.id) * getMaterialStock(m.id);
+            }
+            
+            // Optimization: Efficient active PEPs count
+            for (const p in data.pepAllocations) {
+                if (Object.keys(data.pepAllocations[p]).length > 0) activePepsCount++;
+            }
             
             document.getElementById('totalValue').textContent = 'R$ ' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('activePEPs').textContent = activePeps.size;
+            document.getElementById('activePEPs').textContent = activePepsCount;
             
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('todayMovements').textContent = data.movements.filter(m => m.date.startsWith(today)).length;
+            let todayCount = 0;
+            for (let i = data.movements.length - 1; i >= 0; i--) {
+                if (data.movements[i].date.startsWith(today)) todayCount++;
+            }
+            document.getElementById('todayMovements').textContent = todayCount;
             
-            updateCharts();
-            updateAlerts();
-            updatePepSummary(); 
+            // Defer secondary updates to keep UI responsive
+            setTimeout(() => {
+                updateCharts();
+                updateAlerts();
+                updatePepSummary();
+            }, 50);
         }
 
         function updateCharts() {
@@ -3295,63 +3344,85 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
 
         function updateStockTable() {
             const tbody = document.getElementById('stockTable');
-            tbody.innerHTML = '';
             const searchText = (document.getElementById('stockSearch').value || '').toLowerCase();
             
+            // Optimization: Use DocumentFragment for batch DOM updates
+            const fragment = document.createDocumentFragment();
+            
+            // Pre-calculate last movements for all materials if needed, or do it efficiently
+            const lastMovements = new Map();
+            for (let i = data.movements.length - 1; i >= 0; i--) {
+                const mov = data.movements[i];
+                if (!lastMovements.has(mov.materialId)) {
+                    lastMovements.set(mov.materialId, mov);
+                }
+            }
+
             data.materials.forEach(m => {
                 if (searchText && !m.description.toLowerCase().includes(searchText) && !m.code.toLowerCase().includes(searchText)) return;
                 
                 const stock = getMaterialStock(m.id);
-                
-                // Buscar a última observação registrada para este material
-                const lastMov = [...data.movements]
-                    .filter(mov => mov.materialId === m.id)
-                    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-                
+                const lastMov = lastMovements.get(m.id);
                 const lastObs = lastMov ? (lastMov.obs || lastMov.reason || '-') : '-';
 
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-blue-50/30 transition border-b border-gray-50 last:border-0';
+                
                 const imgHtml = m.image 
                     ? `<img src="${m.image}" alt="${m.code}" onclick="openImageModal('${m.image}', '${m.code}')" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm mx-auto img-hover-zoom cursor-pointer relative bg-white">` 
                     : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto text-gray-400"><i class="fas fa-box"></i></div>`;
 
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0">
-                        <td class="p-4 text-center">${imgHtml}</td>
-                        <td class="p-4 text-sm font-mono text-blue-600 font-semibold">${highlightMatch(m.code, searchText)}</td>
-                        <td class="p-4 text-sm font-medium text-gray-800">${highlightMatch(m.description, searchText)}</td>
-                        <td class="p-4 text-sm"><span class="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold border border-gray-200">${stock} ${m.unit}</span></td>
-                        <td class="p-4 text-xs text-gray-500 italic max-w-xs truncate" title="${lastObs}">${lastObs}</td>
-                        <td class="p-4 text-center">
-                            <button onclick="openStockAdjustModal('${m.id}')" class="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition text-xs font-semibold">
-                                <i class="fas fa-pen mr-1"></i> Ajustar
-                            </button>
-                        </td>
-                    </tr>
+                tr.innerHTML = `
+                    <td class="p-4 text-center">${imgHtml}</td>
+                    <td class="p-4 text-sm font-mono text-blue-600 font-semibold">${m.code}</td>
+                    <td class="p-4 text-sm text-gray-700 font-medium">${m.description}</td>
+                    <td class="p-4 text-sm text-gray-800 font-bold">${stock} ${m.unit}</td>
+                    <td class="p-4 text-sm text-gray-500 italic">${lastObs}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="openStockAdjustModal('${m.id}')" class="text-amber-500 hover:text-amber-700 hover:bg-amber-50 p-1.5 rounded transition" title="Ajustar saldo físico">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                    </td>
                 `;
+                fragment.appendChild(tr);
             });
+            
+            tbody.innerHTML = '';
+            tbody.appendChild(fragment);
         }
 
         function updateHistoryTable() {
             const tbody = document.getElementById('historyTable');
-            tbody.innerHTML = '';
             const dateFrom = document.getElementById('historyDateFrom').value;
             const dateTo = document.getElementById('historyDateTo').value;
             const searchText = (document.getElementById('historySearch')?.value || '').toLowerCase();
             
-            let sorted =[...data.movements].sort((a, b) => new Date(b.date) - new Date(a.date));
+            // Optimization: Create a material map for faster lookup
+            const materialMap = new Map();
+            data.materials.forEach(m => materialMap.set(m.id, m));
+
+            let sorted = [...data.movements].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
             if (dateFrom) sorted = sorted.filter(m => m.date >= dateFrom);
             if (dateTo) sorted = sorted.filter(m => m.date <= dateTo + 'T23:59:59');
             
             if (searchText) {
                 sorted = sorted.filter(m => {
-                    const mat = data.materials.find(mat => mat.id === m.materialId);
+                    const mat = materialMap.get(m.materialId);
                     if (!mat) return false;
                     return mat.code.toLowerCase().includes(searchText) || mat.description.toLowerCase().includes(searchText);
                 });
             }
             
-            sorted.forEach(m => {
-                const mat = data.materials.find(mat => mat.id === m.materialId);
+            // Optimization: DocumentFragment for batch DOM updates
+            const fragment = document.createDocumentFragment();
+            
+            // Limit visible history to improve performance
+            const displayLimit = 100;
+            const toDisplay = sorted.slice(0, displayLimit);
+
+            toDisplay.forEach(m => {
+                const mat = materialMap.get(m.materialId);
                 const dStr = new Date(m.date).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
                 let tCls = '', tTxt = '';
                 
@@ -3362,17 +3433,28 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
                 const displayCode = mat ? highlightMatch(mat.code, searchText) : '---';
                 const displayDesc = mat ? `<br><span class="text-[11px] text-gray-500 font-normal">${highlightMatch(mat.description, searchText)}</span>` : '';
                 
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0" id="hist-row-${m.id}">
-                        <td class="p-3 text-xs text-gray-500 font-mono">${dStr}</td>
-                        <td class="p-3 text-xs"><span class="px-2 py-1 border rounded font-semibold ${tCls}">${tTxt}</span></td>
-                        <td class="p-3 text-sm text-gray-800 font-medium leading-tight">${displayCode}${displayDesc}</td>
-                        <td class="p-3 text-sm font-bold text-gray-700">${m.quantity}</td>
-                        <td class="p-3 text-xs text-gray-600 font-mono">${m.pep || m.supplier || '-'}</td>
-                        <td class="p-3 text-center"><button class="btn-delete-history" onclick="deleteMovement('${m.id}')"><i class="fas fa-trash"></i></button></td>
-                    </tr>
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition border-b border-gray-100 last:border-0';
+                tr.id = `hist-row-${m.id}`;
+                tr.innerHTML = `
+                    <td class="p-3 text-xs text-gray-500 font-mono">${dStr}</td>
+                    <td class="p-3 text-xs"><span class="px-2 py-1 border rounded font-semibold ${tCls}">${tTxt}</span></td>
+                    <td class="p-3 text-sm text-gray-800 font-medium leading-tight">${displayCode}${displayDesc}</td>
+                    <td class="p-3 text-sm font-bold text-gray-700">${m.quantity}</td>
+                    <td class="p-3 text-xs text-gray-600 font-mono">${m.pep || m.supplier || '-'}</td>
+                    <td class="p-3 text-center"><button class="btn-delete-history" onclick="deleteMovement('${m.id}')"><i class="fas fa-trash"></i></button></td>
                 `;
+                fragment.appendChild(tr);
             });
+            
+            tbody.innerHTML = '';
+            tbody.appendChild(fragment);
+            
+            if (sorted.length > displayLimit) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="6" class="p-4 text-center text-gray-400 text-xs italic">Exibindo as últimas ${displayLimit} de ${sorted.length} movimentações. Use os filtros para buscar registros mais antigos.</td>`;
+                tbody.appendChild(tr);
+            }
         }
 
         function deleteMovement(id) {
@@ -3394,15 +3476,32 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             }
         }
 
+        // Cache for material stock to avoid recalculating every time
+        const stockCache = new Map();
+        
         function getMaterialStock(materialId) {
+            if (stockCache.has(materialId)) {
+                return stockCache.get(materialId);
+            }
+            
             let stock = 0;
-            data.movements.forEach(m => {
+            for (let i = 0; i < data.movements.length; i++) {
+                const m = data.movements[i];
                 if(m.materialId === materialId){ 
                     if(m.type==='entry'||m.type==='return') stock += Number(m.quantity); 
                     else if(m.type==='exit') stock -= Number(m.quantity); 
                 }
-            });
+            }
+            stockCache.set(materialId, stock);
             return stock;
+        }
+        
+        function invalidateStockCache(materialId = null) {
+            if (materialId) {
+                stockCache.delete(materialId);
+            } else {
+                stockCache.clear();
+            }
         }
         
         function getMaterialValue(materialId) { const e = data.movements.filter(m => m.materialId===materialId && m.type==='entry' && m.value); return e.length>0?e[e.length-1].value:0; }
