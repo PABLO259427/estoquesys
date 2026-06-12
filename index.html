@@ -268,6 +268,9 @@
                     <button onclick="switchTab('sucata')" id="tab-sucata" class="tab-btn px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800 transition whitespace-nowrap">
                         <i class="fas fa-recycle mr-2"></i>Relatório Sucata
                     </button>
+                    <button onclick="switchTab('expedicao')" id="tab-expedicao" class="tab-btn px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800 transition whitespace-nowrap">
+                        <i class="fas fa-truck mr-2"></i>Controle Expedição
+                    </button>
                                     </nav>
             </div>
 
@@ -4116,6 +4119,833 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
             });
         }
         function filterTransformadorHistorico() { updateTransformadorHistoricoTable(); }
+    </script>
+
+    <!-- ===================== MÓDULO: CONTROLE DE EXPEDIÇÃO ===================== -->
+    <script>
+
+    /* ================================================================
+       MÓDULO: CONTROLE DE EXPEDIÇÃO
+       - Não altera nenhuma função original do sistema
+       - Usa o mesmo objeto `data` e funções saveData/toast já existentes
+    ================================================================ */
+
+    // ---- Garantir estrutura de dados de expedição ----
+    function ensureExpedicaoData() {
+        if (!data.expedicao) data.expedicao = [];
+    }
+
+    // ---- Gerar HTML da aba ----
+    function getExpedicaoHTML() {
+        return `
+        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-truck text-indigo-500 mr-2"></i>Controle de Expedição</h2>
+                <p class="text-sm text-gray-500 mt-1">Gerencie a separação, conferência e saída de materiais por PEP</p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="openExpedicaoModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 text-sm font-medium shadow-md">
+                    <i class="fas fa-plus"></i> Nova Expedição
+                </button>
+                <button onclick="exportExpedicaoWord()" class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition flex items-center gap-2 text-sm font-medium">
+                    <i class="fas fa-file-word"></i> Relatório Geral
+                </button>
+            </div>
+        </div>
+
+        <!-- Cards de resumo -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600"><i class="fas fa-clipboard-list"></i></div>
+                    <div><p class="text-xs text-gray-500">Total PEPs</p><p class="text-2xl font-bold text-gray-800" id="expCard_total">0</p></div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600"><i class="fas fa-box-open"></i></div>
+                    <div><p class="text-xs text-gray-500">Aguardando Separação</p><p class="text-2xl font-bold text-gray-800" id="expCard_aguardando">0</p></div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div><p class="text-xs text-gray-500">Alerta +7 Dias</p><p class="text-2xl font-bold text-rose-600" id="expCard_alerta">0</p></div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600"><i class="fas fa-check-circle"></i></div>
+                    <div><p class="text-xs text-gray-500">Expedições Concluídas</p><p class="text-2xl font-bold text-gray-800" id="expCard_concluidas">0</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm mb-4 flex flex-wrap gap-3 items-center">
+            <div class="relative flex-1 min-w-[180px]">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" id="expFiltro" placeholder="Filtrar por PEP ou solicitante..." class="pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm w-full outline-none" oninput="updateExpedicaoTable()">
+            </div>
+            <select id="expFiltroStatus" class="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm outline-none" onchange="updateExpedicaoTable()">
+                <option value="">Todos os Status</option>
+                <option value="programado">Programado</option>
+                <option value="separado">Separado</option>
+                <option value="conferido">Conferido</option>
+                <option value="expedido">Expedido</option>
+                <option value="devolvido">Devolvido</option>
+            </select>
+            <label class="flex items-center gap-2 text-sm text-rose-600 font-semibold cursor-pointer">
+                <input type="checkbox" id="expFiltroAlerta" onchange="updateExpedicaoTable()" class="rounded">
+                <i class="fas fa-exclamation-triangle"></i> Somente Alertas
+            </label>
+        </div>
+
+        <!-- Tabela principal -->
+        <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead class="sticky top-0 bg-gray-50 z-10">
+                    <tr class="border-b border-gray-200">
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">PEP</th>
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Solicitante</th>
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Dt. Programação</th>
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Dt. Separação</th>
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Separado por</th>
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Sep. Conf.</th>
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Mat. Conf.</th>
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Conferido por</th>
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Status</th>
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Alerta</th>
+                        <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500 text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="expedicaoTable" class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+        `;
+    }
+
+// ---- Função para abrir modal de expedição com busca/cadastro de PEP ----
+    function openExpedicaoModal(id) {
+        ensureExpedicaoData();
+        let rec = id ? data.expedicao.find(e => e.id === id) : null;
+        const today = new Date().toISOString().split('T')[0];
+
+        // Construir lista de PEPs disponíveis
+        const peps = new Set();
+        data.movements.forEach(m => { if (m.pep) peps.add(m.pep); });
+        Object.keys(data.pepAllocations || {}).forEach(p => peps.add(p));
+        const pepArray = Array.from(peps).sort();
+        const pepOptions = pepArray.map(p => `<option value="${p}" ${rec && rec.pep === p ? 'selected' : ''}>${p}</option>`).join('');
+
+        const modal = document.createElement('div');
+        modal.id = 'expedicaoModal';
+        modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[250]';
+        modal.innerHTML = `
+        <div class="bg-white rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-5 border-b border-gray-100 pb-4">
+                <h3 class="text-xl font-bold text-gray-800"><i class="fas fa-truck text-indigo-500 mr-2"></i>${rec ? 'Editar' : 'Nova'} Expedição</h3>
+                <button onclick="closeExpedicaoModal()" class="text-gray-400 hover:text-gray-700 transition text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="expedicaoForm" class="space-y-4" onsubmit="saveExpedicao(event, '${id || ''}')">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1"><i class="fas fa-code-branch text-purple-500 mr-1"></i> PEP</label>
+                        <div class="relative">
+                            <div class="flex gap-2">
+                                <input type="text" id="expPepSearch" placeholder="Buscar ou criar PEP..." class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="filterExpPepDropdown()" value="${rec ? rec.pep || '' : ''}">
+                                <button type="button" onclick="createNewExpPep()" class="px-3 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-sm font-medium" title="Criar novo PEP">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div id="expPepDropdown" class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden z-50">
+                                ${pepArray.length === 0 ? '<div class="p-3 text-sm text-gray-500 text-center">Nenhum PEP disponível. Crie um novo.</div>' : pepArray.map(p => `<div class="pep-dropdown-item px-4 py-2 hover:bg-indigo-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-0" onclick="selectExpPep('${p}')">${p}</div>`).join('')}
+                            </div>
+                            <input type="hidden" id="expPep" value="${rec ? rec.pep || '' : ''}" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1"><i class="fas fa-user text-blue-500 mr-1"></i> Solicitante da PEP</label>
+                        <input type="text" id="expSolicitante" value="${rec ? rec.solicitante || '' : ''}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Nome do solicitante" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1"><i class="fas fa-calendar-alt text-indigo-500 mr-1"></i> Data de Programação</label>
+                        <input type="date" id="expDataProgramacao" value="${rec ? rec.dataProgramacao || today : today}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1"><i class="fas fa-calendar-check text-green-500 mr-1"></i> Data de Separação</label>
+                        <input type="date" id="expDataSeparacao" value="${rec ? rec.dataSeparacao || '' : ''}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1"><i class="fas fa-hard-hat text-amber-500 mr-1"></i> Colaborador que Separou</label>
+                        <input type="text" id="expColaboradorSeparacao" value="${rec ? rec.colaboradorSeparacao || '' : ''}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Nome do colaborador">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1"><i class="fas fa-hard-hat text-teal-500 mr-1"></i> Colaborador que Conferiu</label>
+                        <input type="text" id="expColaboradorConferencia" value="${rec ? rec.colaboradorConferencia || '' : ''}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Nome do conferente">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                        <input type="checkbox" id="expConfirmacaoSeparacao" ${rec && rec.confirmacaoSeparacao ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <label for="expConfirmacaoSeparacao" class="text-sm font-semibold text-gray-700 cursor-pointer">Separação Confirmada</label>
+                    </div>
+                    <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                        <input type="checkbox" id="expConfirmacaoConferencia" ${rec && rec.confirmacaoConferencia ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <label for="expConfirmacaoConferencia" class="text-sm font-semibold text-gray-700 cursor-pointer">Material Conferido</label>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1"><i class="fas fa-sign-out-alt text-rose-500 mr-1"></i> Data de Saída</label>
+                        <input type="date" id="expDataSaida" value="${rec ? rec.dataSaida || '' : ''}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1"><i class="fas fa-undo text-blue-500 mr-1"></i> Data de Devolução</label>
+                        <input type="date" id="expDataDevolucao" value="${rec ? rec.dataDevolucao || '' : ''}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1"><i class="fas fa-sticky-note text-gray-400 mr-1"></i> Observações</label>
+                    <textarea id="expObs" rows="2" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Informações adicionais...">${rec ? rec.obs || '' : ''}</textarea>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeExpedicaoModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition">Cancelar</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-semibold transition shadow-lg shadow-indigo-500/30">Salvar</button>
+                </div>
+            </form>
+        </div>`;
+        document.body.appendChild(modal);
+        
+        // Focar no campo de busca
+        setTimeout(() => {
+            const searchInput = document.getElementById('expPepSearch');
+            if (searchInput) searchInput.focus();
+        }, 100);
+    }
+
+    function filterExpPepDropdown() {
+        const q = document.getElementById('expPepSearch').value.trim().toLowerCase();
+        const peps = new Set();
+        data.movements.forEach(m => { if (m.pep) peps.add(m.pep); });
+        Object.keys(data.pepAllocations || {}).forEach(p => peps.add(p));
+        let list = Array.from(peps).sort();
+        if (q) list = list.filter(p => p.toLowerCase().includes(q));
+        
+        const drop = document.getElementById('expPepDropdown');
+        drop.innerHTML = '';
+        if (list.length === 0) {
+            drop.innerHTML = '<div class="p-3 text-sm text-gray-500 text-center">Nenhum PEP encontrado. Use o botão + para criar.</div>';
+        } else {
+            list.forEach(p => {
+                const d = document.createElement('div');
+                d.className = 'pep-dropdown-item px-4 py-2 hover:bg-indigo-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-0';
+                d.innerHTML = highlightMatch(p, q);
+                d.onclick = () => selectExpPep(p);
+                drop.appendChild(d);
+            });
+        }
+        drop.classList.remove('hidden');
+    }
+
+    function selectExpPep(pep) {
+        document.getElementById('expPepSearch').value = pep;
+        document.getElementById('expPep').value = pep;
+        document.getElementById('expPepDropdown').classList.add('hidden');
+    }
+
+    function createNewExpPep() {
+        const pepName = document.getElementById('expPepSearch').value.trim().toUpperCase();
+        if (!pepName) {
+            toast.show('Digite o nome do novo PEP antes de criar.', 'warning');
+            return;
+        }
+        
+        // Verificar se já existe
+        const peps = new Set();
+        data.movements.forEach(m => { if (m.pep) peps.add(m.pep); });
+        Object.keys(data.pepAllocations || {}).forEach(p => peps.add(p));
+        if (peps.has(pepName)) {
+            toast.show(`PEP "${pepName}" já existe.`, 'info');
+            selectExpPep(pepName);
+            return;
+        }
+        
+        // Criar novo PEP
+        if (!data.pepAllocations) data.pepAllocations = {};
+        data.pepAllocations[pepName] = {};
+        
+        selectExpPep(pepName);
+        toast.show(`PEP "${pepName}" criado com sucesso.`, 'success');
+    }
+
+    function closeExpedicaoModal() {
+        const m = document.getElementById('expedicaoModal');
+        if (m) m.remove();
+    }
+
+    function saveExpedicao(e, editId) {
+        e.preventDefault();
+        ensureExpedicaoData();
+        const pep = document.getElementById('expPep').value;
+        const solicitante = document.getElementById('expSolicitante').value.trim();
+        const dataProgramacao = document.getElementById('expDataProgramacao').value;
+        const dataSeparacao = document.getElementById('expDataSeparacao').value;
+        const colaboradorSeparacao = document.getElementById('expColaboradorSeparacao').value.trim();
+        const colaboradorConferencia = document.getElementById('expColaboradorConferencia').value.trim();
+        const confirmacaoSeparacao = document.getElementById('expConfirmacaoSeparacao').checked;
+        const confirmacaoConferencia = document.getElementById('expConfirmacaoConferencia').checked;
+        const dataSaida = document.getElementById('expDataSaida').value;
+        const dataDevolucao = document.getElementById('expDataDevolucao').value;
+        const obs = document.getElementById('expObs').value.trim();
+
+        if (!pep || !solicitante || !dataProgramacao) {
+            toast.show('Preencha PEP, solicitante e data de programação.', 'warning');
+            return;
+        }
+
+        // Calcular status automaticamente
+        let status = 'programado';
+        if (dataDevolucao) status = 'devolvido';
+        else if (dataSaida) status = 'expedido';
+        else if (confirmacaoConferencia) status = 'conferido';
+        else if (confirmacaoSeparacao) status = 'separado';
+
+        const evento = {
+            id: editId || ('exp_' + Date.now()),
+            pep, solicitante, dataProgramacao, dataSeparacao,
+            colaboradorSeparacao, colaboradorConferencia,
+            confirmacaoSeparacao, confirmacaoConferencia,
+            dataSaida, dataDevolucao, obs, status,
+            criadoEm: editId ? (data.expedicao.find(e => e.id === editId)?.criadoEm || new Date().toISOString()) : new Date().toISOString(),
+            atualizadoEm: new Date().toISOString()
+        };
+
+        if (editId) {
+            const idx = data.expedicao.findIndex(e => e.id === editId);
+            if (idx !== -1) {
+                evento.historico = data.expedicao[idx].historico || [];
+                const old = data.expedicao[idx];
+                if (old.status !== status || old.dataSaida !== dataSaida || old.dataDevolucao !== dataDevolucao ||
+                    old.confirmacaoSeparacao !== confirmacaoSeparacao || old.confirmacaoConferencia !== confirmacaoConferencia) {
+                    evento.historico.push({
+                        data: new Date().toISOString(),
+                        tipo: 'atualizacao',
+                        descricao: `Status alterado para: ${getExpStatusLabel(status)}. Atualizado por sistema.`,
+                        statusAnterior: old.status,
+                        statusNovo: status
+                    });
+                }
+                data.expedicao[idx] = evento;
+            }
+        } else {
+            evento.historico = [{
+                data: new Date().toISOString(),
+                tipo: 'criacao',
+                descricao: `Expedição criada por ${solicitante}. Status: ${getExpStatusLabel(status)}.`,
+                statusAnterior: null,
+                statusNovo: status
+            }];
+            data.expedicao.push(evento);
+        }
+
+        saveData();
+        updateExpedicaoTable();
+        closeExpedicaoModal();
+        toast.show(editId ? 'Expedição atualizada com sucesso.' : 'Expedição registrada com sucesso.', 'success');
+    }
+
+    // ---- Função auxiliar para destacar correspondências ----
+    function highlightMatch(text, query) {
+        if (!query) return text;
+        const regex = new RegExp(`(${query})`, 'gi');
+        return text.replace(regex, '<strong class="bg-yellow-200 font-bold">$1</strong>');
+    }
+
+    function saveExpedicao(e, editId) {
+        e.preventDefault();
+        ensureExpedicaoData();
+        const pep = document.getElementById('expPep').value;
+        const solicitante = document.getElementById('expSolicitante').value.trim();
+        const dataProgramacao = document.getElementById('expDataProgramacao').value;
+        const dataSeparacao = document.getElementById('expDataSeparacao').value;
+        const colaboradorSeparacao = document.getElementById('expColaboradorSeparacao').value.trim();
+        const colaboradorConferencia = document.getElementById('expColaboradorConferencia').value.trim();
+        const confirmacaoSeparacao = document.getElementById('expConfirmacaoSeparacao').checked;
+        const confirmacaoConferencia = document.getElementById('expConfirmacaoConferencia').checked;
+        const dataSaida = document.getElementById('expDataSaida').value;
+        const dataDevolucao = document.getElementById('expDataDevolucao').value;
+        const obs = document.getElementById('expObs').value.trim();
+
+        if (!pep || !solicitante || !dataProgramacao) {
+            toast.show('Preencha PEP, solicitante e data de programação.', 'warning');
+            return;
+        }
+
+        // Calcular status automaticamente
+        let status = 'programado';
+        if (dataDevolucao) status = 'devolvido';
+        else if (dataSaida) status = 'expedido';
+        else if (confirmacaoConferencia) status = 'conferido';
+        else if (confirmacaoSeparacao) status = 'separado';
+
+        const evento = {
+            id: editId || ('exp_' + Date.now()),
+            pep, solicitante, dataProgramacao, dataSeparacao,
+            colaboradorSeparacao, colaboradorConferencia,
+            confirmacaoSeparacao, confirmacaoConferencia,
+            dataSaida, dataDevolucao, obs, status,
+            criadoEm: editId ? (data.expedicao.find(e => e.id === editId)?.criadoEm || new Date().toISOString()) : new Date().toISOString(),
+            atualizadoEm: new Date().toISOString()
+        };
+
+        if (editId) {
+            const idx = data.expedicao.findIndex(e => e.id === editId);
+            if (idx !== -1) {
+                // Preservar histórico de eventos
+                evento.historico = data.expedicao[idx].historico || [];
+                // Registrar mudança de status no histórico
+                const old = data.expedicao[idx];
+                if (old.status !== status || old.dataSaida !== dataSaida || old.dataDevolucao !== dataDevolucao ||
+                    old.confirmacaoSeparacao !== confirmacaoSeparacao || old.confirmacaoConferencia !== confirmacaoConferencia) {
+                    evento.historico.push({
+                        data: new Date().toISOString(),
+                        tipo: 'atualizacao',
+                        descricao: `Status alterado para: ${getExpStatusLabel(status)}. Atualizado por sistema.`,
+                        statusAnterior: old.status,
+                        statusNovo: status
+                    });
+                }
+                data.expedicao[idx] = evento;
+            }
+        } else {
+            evento.historico = [{
+                data: new Date().toISOString(),
+                tipo: 'criacao',
+                descricao: `Expedição criada por ${solicitante}. Status: ${getExpStatusLabel(status)}.`,
+                statusAnterior: null,
+                statusNovo: status
+            }];
+            data.expedicao.push(evento);
+        }
+
+        saveData();
+        updateExpedicaoTable();
+        closeExpedicaoModal();
+        toast.show(editId ? 'Expedição atualizada com sucesso.' : 'Expedição registrada com sucesso.', 'success');
+    }
+
+    function deleteExpedicao(id) {
+        if (!confirm('Deseja excluir este registro de expedição?')) return;
+        ensureExpedicaoData();
+        data.expedicao = data.expedicao.filter(e => e.id !== id);
+        saveData();
+        updateExpedicaoTable();
+        toast.show('Registro de expedição excluído.', 'success');
+    }
+
+    function getExpStatusLabel(status) {
+        const labels = { programado: 'Programado', separado: 'Separado', conferido: 'Conferido', expedido: 'Expedido', devolvido: 'Devolvido' };
+        return labels[status] || status;
+    }
+
+    function getExpStatusBadge(rec) {
+        const now = new Date();
+        const alerta = isExpAlerta(rec);
+
+        if (rec.status === 'devolvido') return '<span class="px-2 py-1 rounded border text-xs font-semibold text-blue-600 bg-blue-50 border-blue-200">Devolvido</span>';
+        if (rec.status === 'expedido') return '<span class="px-2 py-1 rounded border text-xs font-semibold text-emerald-600 bg-emerald-50 border-emerald-200">Expedido</span>';
+        if (rec.status === 'conferido') return '<span class="px-2 py-1 rounded border text-xs font-semibold text-teal-600 bg-teal-50 border-teal-200">Conferido</span>';
+        if (rec.status === 'separado') return '<span class="px-2 py-1 rounded border text-xs font-semibold text-amber-600 bg-amber-50 border-amber-200">Separado</span>';
+        return '<span class="px-2 py-1 rounded border text-xs font-semibold text-gray-600 bg-gray-50 border-gray-200">Programado</span>';
+    }
+
+    function isExpAlerta(rec) {
+        if (rec.status === 'expedido' || rec.status === 'devolvido') return false;
+        if (!rec.dataSeparacao) return false;
+        const sep = new Date(rec.dataSeparacao);
+        const now = new Date();
+        const diffDays = (now - sep) / (1000 * 60 * 60 * 24);
+        return diffDays >= 7;
+    }
+
+    function updateExpedicaoTable() {
+        ensureExpedicaoData();
+        const tbody = document.getElementById('expedicaoTable');
+        if (!tbody) return;
+
+        const filtro = (document.getElementById('expFiltro')?.value || '').toLowerCase();
+        const filtroStatus = document.getElementById('expFiltroStatus')?.value || '';
+        const filtroAlerta = document.getElementById('expFiltroAlerta')?.checked || false;
+
+        let lista = [...data.expedicao].sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+
+        if (filtro) lista = lista.filter(e => e.pep.toLowerCase().includes(filtro) || (e.solicitante || '').toLowerCase().includes(filtro));
+        if (filtroStatus) lista = lista.filter(e => e.status === filtroStatus);
+        if (filtroAlerta) lista = lista.filter(e => isExpAlerta(e));
+
+        // Atualizar cards
+        const total = data.expedicao.length;
+        const aguardando = data.expedicao.filter(e => e.status === 'programado').length;
+        const alerta = data.expedicao.filter(e => isExpAlerta(e)).length;
+        const concluidas = data.expedicao.filter(e => e.status === 'expedido' || e.status === 'devolvido').length;
+        const cardTotal = document.getElementById('expCard_total');
+        const cardAguardando = document.getElementById('expCard_aguardando');
+        const cardAlerta = document.getElementById('expCard_alerta');
+        const cardConcluidas = document.getElementById('expCard_concluidas');
+        if (cardTotal) cardTotal.textContent = total;
+        if (cardAguardando) cardAguardando.textContent = aguardando;
+        if (cardAlerta) cardAlerta.textContent = alerta;
+        if (cardConcluidas) cardConcluidas.textContent = concluidas;
+
+        if (lista.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" class="p-6 text-center text-gray-400">Nenhuma expedição registrada.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = lista.map(rec => {
+            const alerta = isExpAlerta(rec);
+            const alertaBadge = alerta
+                ? '<span class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs font-bold text-rose-600 bg-rose-50 border-rose-200 animate-pulse"><i class="fas fa-exclamation-triangle"></i> +7d</span>'
+                : '<span class="text-gray-300 text-xs">—</span>';
+            const rowClass = alerta ? 'bg-rose-50/30' : 'hover:bg-gray-50';
+            const sepCheck = rec.confirmacaoSeparacao
+                ? '<span class="text-emerald-600"><i class="fas fa-check-circle"></i></span>'
+                : '<span class="text-gray-300"><i class="fas fa-circle"></i></span>';
+            const confCheck = rec.confirmacaoConferencia
+                ? '<span class="text-teal-600"><i class="fas fa-check-circle"></i></span>'
+                : '<span class="text-gray-300"><i class="fas fa-circle"></i></span>';
+
+            return `<tr class="${rowClass} transition border-b border-gray-100 last:border-0">
+                <td class="p-3 font-mono font-bold text-indigo-700 text-sm">${rec.pep}</td>
+                <td class="p-3 text-sm text-gray-700">${rec.solicitante || '-'}</td>
+                <td class="p-3 text-xs text-gray-600">${rec.dataProgramacao ? new Date(rec.dataProgramacao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                <td class="p-3 text-xs text-gray-600">${rec.dataSeparacao ? new Date(rec.dataSeparacao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                <td class="p-3 text-xs text-gray-700">${rec.colaboradorSeparacao || '-'}</td>
+                <td class="p-3 text-center">${sepCheck}</td>
+                <td class="p-3 text-center">${confCheck}</td>
+                <td class="p-3 text-xs text-gray-700">${rec.colaboradorConferencia || '-'}</td>
+                <td class="p-3">${getExpStatusBadge(rec)}</td>
+                <td class="p-3 text-center">${alertaBadge}</td>
+                <td class="p-3">
+                    <div class="flex items-center justify-center gap-1">
+                        <button onclick="openExpedicaoModal('${rec.id}')" class="px-2 py-1 text-xs bg-indigo-50 text-indigo-600 border border-indigo-200 rounded hover:bg-indigo-100 transition" title="Editar"><i class="fas fa-edit"></i></button>
+                        <button onclick="openExpHistoricoModal('${rec.id}')" class="px-2 py-1 text-xs bg-slate-50 text-slate-600 border border-slate-200 rounded hover:bg-slate-100 transition" title="Histórico"><i class="fas fa-history"></i></button>
+                        <button onclick="deleteExpedicao('${rec.id}')" class="px-2 py-1 text-xs bg-rose-50 text-rose-600 border border-rose-200 rounded hover:bg-rose-100 transition" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ---- Modal de Histórico da PEP ----
+    function openExpHistoricoModal(id) {
+        ensureExpedicaoData();
+        const rec = data.expedicao.find(e => e.id === id);
+        if (!rec) return;
+
+        const hist = (rec.historico || []).slice().reverse();
+        const movimentos = (data.movements || []).filter(m => m.pep === rec.pep).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        const histRows = hist.length === 0
+            ? '<tr><td colspan="3" class="p-4 text-center text-gray-400">Sem eventos registrados.</td></tr>'
+            : hist.map(h => {
+                const dataH = new Date(h.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const tipoClass = h.tipo === 'criacao' ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-indigo-600 bg-indigo-50 border-indigo-200';
+                const tipoLabel = h.tipo === 'criacao' ? 'Criação' : 'Atualização';
+                return `<tr class="border-b border-gray-100">
+                    <td class="p-3 text-xs text-gray-500 font-mono">${dataH}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded border text-xs font-semibold ${tipoClass}">${tipoLabel}</span></td>
+                    <td class="p-3 text-sm text-gray-700">${h.descricao}</td>
+                </tr>`;
+            }).join('');
+
+        const movRows = movimentos.length === 0
+            ? '<tr><td colspan="5" class="p-4 text-center text-gray-400">Nenhuma movimentação de estoque para este PEP.</td></tr>'
+            : movimentos.map(m => {
+                const mat = (data.materials || []).find(x => x.id === m.materialId);
+                const dataM = new Date(m.date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const isOut = m.type === 'exit';
+                const tipoLabel = isOut ? 'Saída' : (m.type === 'return' ? 'Retorno' : 'Entrada');
+                const tipoClass = isOut ? 'text-rose-600 bg-rose-50 border-rose-200' : (m.type === 'return' ? 'text-blue-600 bg-blue-50 border-blue-200' : 'text-emerald-600 bg-emerald-50 border-emerald-200');
+                return `<tr class="border-b border-gray-100">
+                    <td class="p-3 text-xs text-gray-500 font-mono">${dataM}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded border text-xs font-semibold ${tipoClass}">${tipoLabel}</span></td>
+                    <td class="p-3 text-xs font-mono text-blue-700">${mat ? mat.code : '---'}</td>
+                    <td class="p-3 text-sm text-gray-700">${mat ? mat.description : '---'}</td>
+                    <td class="p-3 text-sm font-bold text-gray-800">${m.quantity} ${mat ? mat.unit : ''}</td>
+                </tr>`;
+            }).join('');
+
+        const modal = document.createElement('div');
+        modal.id = 'expHistoricoModal';
+        modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[260]';
+        modal.innerHTML = `
+        <div class="bg-white rounded-2xl p-6 w-full max-w-4xl mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-5 border-b border-gray-100 pb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800"><i class="fas fa-history text-indigo-500 mr-2"></i>Histórico da PEP: <span class="text-indigo-700">${rec.pep}</span></h3>
+                    <p class="text-sm text-gray-500 mt-1">Solicitante: <strong>${rec.solicitante || '-'}</strong> | Status: <strong>${getExpStatusLabel(rec.status)}</strong></p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="printExpHistorico('${id}')" class="px-3 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition text-sm flex items-center gap-2"><i class="fas fa-print"></i> Imprimir</button>
+                    <button onclick="closeExpHistoricoModal()" class="text-gray-400 hover:text-gray-700 transition text-xl ml-2"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <!-- Ficha resumo -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+                <div><p class="text-xs text-gray-500">Programação</p><p class="text-sm font-semibold text-gray-800">${rec.dataProgramacao ? new Date(rec.dataProgramacao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p></div>
+                <div><p class="text-xs text-gray-500">Separação</p><p class="text-sm font-semibold text-gray-800">${rec.dataSeparacao ? new Date(rec.dataSeparacao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p></div>
+                <div><p class="text-xs text-gray-500">Saída</p><p class="text-sm font-semibold text-gray-800">${rec.dataSaida ? new Date(rec.dataSaida + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p></div>
+                <div><p class="text-xs text-gray-500">Devolução</p><p class="text-sm font-semibold text-gray-800">${rec.dataDevolucao ? new Date(rec.dataDevolucao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p></div>
+                <div><p class="text-xs text-gray-500">Separado por</p><p class="text-sm font-semibold text-gray-800">${rec.colaboradorSeparacao || '-'}</p></div>
+                <div><p class="text-xs text-gray-500">Conferido por</p><p class="text-sm font-semibold text-gray-800">${rec.colaboradorConferencia || '-'}</p></div>
+                <div><p class="text-xs text-gray-500">Sep. Confirmada</p><p class="text-sm font-semibold ${rec.confirmacaoSeparacao ? 'text-emerald-600' : 'text-gray-400'}">${rec.confirmacaoSeparacao ? 'Sim' : 'Não'}</p></div>
+                <div><p class="text-xs text-gray-500">Mat. Conferido</p><p class="text-sm font-semibold ${rec.confirmacaoConferencia ? 'text-teal-600' : 'text-gray-400'}">${rec.confirmacaoConferencia ? 'Sim' : 'Não'}</p></div>
+            </div>
+
+            <!-- Eventos de expedição -->
+            <h4 class="text-base font-bold text-gray-700 mb-2"><i class="fas fa-stream text-indigo-400 mr-1"></i> Eventos de Expedição</h4>
+            <div class="overflow-x-auto bg-white rounded-xl border border-gray-100 mb-6">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-gray-50">
+                        <tr class="border-b border-gray-200">
+                            <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Data/Hora</th>
+                            <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Tipo</th>
+                            <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">${histRows}</tbody>
+                </table>
+            </div>
+
+            <!-- Movimentações de estoque -->
+            <h4 class="text-base font-bold text-gray-700 mb-2"><i class="fas fa-boxes text-blue-400 mr-1"></i> Movimentações de Estoque do PEP</h4>
+            <div class="overflow-x-auto bg-white rounded-xl border border-gray-100">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-gray-50">
+                        <tr class="border-b border-gray-200">
+                            <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Data/Hora</th>
+                            <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Tipo</th>
+                            <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Código</th>
+                            <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Material</th>
+                            <th class="p-3 text-xs uppercase tracking-wider font-semibold text-gray-500">Qtde</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">${movRows}</tbody>
+                </table>
+            </div>
+            ${rec.obs ? `<div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-700"><strong>Obs:</strong> ${rec.obs}</div>` : ''}
+        </div>`;
+        document.body.appendChild(modal);
+    }
+
+    function closeExpHistoricoModal() {
+        const m = document.getElementById('expHistoricoModal');
+        if (m) m.remove();
+    }
+
+    // ---- Impressão do histórico da PEP ----
+    function printExpHistorico(id) {
+        ensureExpedicaoData();
+        const rec = data.expedicao.find(e => e.id === id);
+        if (!rec) return;
+
+        const now = new Date().toLocaleString('pt-BR');
+        const hist = (rec.historico || []).slice().reverse();
+        const movimentos = (data.movements || []).filter(m => m.pep === rec.pep).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const histRows = hist.map(h => {
+            const dataH = new Date(h.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            return `<tr>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-family:Consolas,monospace">${dataH}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-weight:bold;color:${h.tipo === 'criacao' ? '#059669' : '#4f46e5'}">${h.tipo === 'criacao' ? 'Criação' : 'Atualização'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt">${h.descricao}</td>
+            </tr>`;
+        }).join('');
+
+        const movRows = movimentos.map(m => {
+            const mat = (data.materials || []).find(x => x.id === m.materialId);
+            const dataM = new Date(m.date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const isOut = m.type === 'exit';
+            const tipoLabel = isOut ? 'Saída' : (m.type === 'return' ? 'Retorno' : 'Entrada');
+            const cor = isOut ? '#dc2626' : (m.type === 'return' ? '#2563eb' : '#059669');
+            return `<tr>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-family:Consolas,monospace">${dataM}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-weight:bold;color:${cor}">${tipoLabel}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-family:Consolas,monospace;color:#1d4ed8">${mat ? mat.code : '---'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt">${mat ? mat.description : '---'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-weight:bold;text-align:center">${m.quantity} ${mat ? mat.unit : ''}</td>
+            </tr>`;
+        }).join('');
+
+        const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="utf-8"><title>Histórico PEP ${rec.pep}</title></head>
+        <body style="font-family:Arial,sans-serif;margin:2cm;color:#111827">
+            <div style="text-align:center;margin-bottom:20px;border-bottom:3px solid #4f46e5;padding-bottom:16px">
+                <h1 style="font-size:18pt;color:#1e3a5f;margin:0">CONTROLE DE EXPEDIÇÃO — HISTÓRICO DA PEP</h1>
+                <h2 style="font-size:14pt;color:#4f46e5;margin:6px 0">PEP: ${rec.pep}</h2>
+                <p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ${now}</p>
+            </div>
+
+            <table style="width:100%;border-collapse:collapse;margin-bottom:20px;background:#f8f9ff;border:1px solid #c7d2fe">
+                <tr><td style="padding:6px 10px;font-size:10pt;width:25%"><strong>Solicitante:</strong></td><td style="padding:6px 10px;font-size:10pt">${rec.solicitante || '-'}</td>
+                    <td style="padding:6px 10px;font-size:10pt;width:25%"><strong>Status:</strong></td><td style="padding:6px 10px;font-size:10pt;font-weight:bold;color:#4f46e5">${getExpStatusLabel(rec.status)}</td></tr>
+                <tr><td style="padding:6px 10px;font-size:10pt"><strong>Dt. Programação:</strong></td><td style="padding:6px 10px;font-size:10pt">${rec.dataProgramacao ? new Date(rec.dataProgramacao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                    <td style="padding:6px 10px;font-size:10pt"><strong>Dt. Separação:</strong></td><td style="padding:6px 10px;font-size:10pt">${rec.dataSeparacao ? new Date(rec.dataSeparacao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td></tr>
+                <tr><td style="padding:6px 10px;font-size:10pt"><strong>Separado por:</strong></td><td style="padding:6px 10px;font-size:10pt">${rec.colaboradorSeparacao || '-'}</td>
+                    <td style="padding:6px 10px;font-size:10pt"><strong>Sep. Confirmada:</strong></td><td style="padding:6px 10px;font-size:10pt;font-weight:bold;color:${rec.confirmacaoSeparacao ? '#059669' : '#9ca3af'}">${rec.confirmacaoSeparacao ? 'SIM' : 'NÃO'}</td></tr>
+                <tr><td style="padding:6px 10px;font-size:10pt"><strong>Conferido por:</strong></td><td style="padding:6px 10px;font-size:10pt">${rec.colaboradorConferencia || '-'}</td>
+                    <td style="padding:6px 10px;font-size:10pt"><strong>Mat. Conferido:</strong></td><td style="padding:6px 10px;font-size:10pt;font-weight:bold;color:${rec.confirmacaoConferencia ? '#059669' : '#9ca3af'}">${rec.confirmacaoConferencia ? 'SIM' : 'NÃO'}</td></tr>
+                <tr><td style="padding:6px 10px;font-size:10pt"><strong>Data de Saída:</strong></td><td style="padding:6px 10px;font-size:10pt">${rec.dataSaida ? new Date(rec.dataSaida + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                    <td style="padding:6px 10px;font-size:10pt"><strong>Data de Devolução:</strong></td><td style="padding:6px 10px;font-size:10pt">${rec.dataDevolucao ? new Date(rec.dataDevolucao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td></tr>
+                ${rec.obs ? `<tr><td style="padding:6px 10px;font-size:10pt"><strong>Observações:</strong></td><td colspan="3" style="padding:6px 10px;font-size:10pt">${rec.obs}</td></tr>` : ''}
+            </table>
+
+            <h3 style="font-size:12pt;color:#1e3a5f;margin-bottom:8px;border-bottom:2px solid #4f46e5;padding-bottom:4px">Eventos de Expedição</h3>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+                <thead><tr style="background:#4f46e5;color:white">
+                    <th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Data/Hora</th>
+                    <th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Tipo</th>
+                    <th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Descrição</th>
+                </tr></thead>
+                <tbody>${histRows || '<tr><td colspan="3" style="padding:8px;text-align:center;color:#9ca3af;font-size:10pt">Sem eventos registrados.</td></tr>'}</tbody>
+            </table>
+
+            <h3 style="font-size:12pt;color:#1e3a5f;margin-bottom:8px;border-bottom:2px solid #1e3a5f;padding-bottom:4px">Movimentações de Estoque do PEP</h3>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+                <thead><tr style="background:#1e3a5f;color:white">
+                    <th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Data/Hora</th>
+                    <th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Tipo</th>
+                    <th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Código</th>
+                    <th style="border:1px solid #ccc;padding:7px;text-align:left;font-size:10pt">Material</th>
+                    <th style="border:1px solid #ccc;padding:7px;text-align:center;font-size:10pt">Qtde</th>
+                </tr></thead>
+                <tbody>${movRows || '<tr><td colspan="5" style="padding:8px;text-align:center;color:#9ca3af;font-size:10pt">Nenhuma movimentação de estoque.</td></tr>'}</tbody>
+            </table>
+
+            <p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP — PABLO LEANDRO MARTINS DUARTE</p>
+        </body></html>`;
+
+        const blob = new Blob([html], { type: 'application/msword' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Historico_PEP_${rec.pep.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.doc`;
+        a.click();
+        toast.show('Histórico da PEP exportado para Word.', 'success');
+    }
+
+    // ---- Relatório geral de expedição ----
+    function exportExpedicaoWord() {
+        ensureExpedicaoData();
+        const now = new Date().toLocaleString('pt-BR');
+        const lista = [...data.expedicao].sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+
+        const rows = lista.map(rec => {
+            const alerta = isExpAlerta(rec);
+            return `<tr style="${alerta ? 'background:#fff1f2' : ''}">
+                <td style="border:1px solid #ccc;padding:5px;font-family:Consolas,monospace;font-size:10pt;color:#4f46e5;font-weight:bold">${rec.pep}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt">${rec.solicitante || '-'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;text-align:center">${rec.dataProgramacao ? new Date(rec.dataProgramacao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;text-align:center">${rec.dataSeparacao ? new Date(rec.dataSeparacao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt">${rec.colaboradorSeparacao || '-'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;text-align:center;font-weight:bold;color:${rec.confirmacaoSeparacao ? '#059669' : '#9ca3af'}">${rec.confirmacaoSeparacao ? 'SIM' : 'NÃO'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;text-align:center;font-weight:bold;color:${rec.confirmacaoConferencia ? '#059669' : '#9ca3af'}">${rec.confirmacaoConferencia ? 'SIM' : 'NÃO'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt">${rec.colaboradorConferencia || '-'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;text-align:center">${rec.dataSaida ? new Date(rec.dataSaida + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;text-align:center">${rec.dataDevolucao ? new Date(rec.dataDevolucao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;font-weight:bold;color:#4f46e5">${getExpStatusLabel(rec.status)}</td>
+                <td style="border:1px solid #ccc;padding:5px;font-size:10pt;text-align:center;font-weight:bold;color:${alerta ? '#dc2626' : '#9ca3af'}">${alerta ? 'ALERTA' : '-'}</td>
+            </tr>`;
+        }).join('');
+
+        const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="utf-8"><title>Relatório de Expedição</title></head>
+        <body style="font-family:Arial,sans-serif;margin:1.5cm;color:#111827">
+            <div style="text-align:center;margin-bottom:20px;border-bottom:3px solid #4f46e5;padding-bottom:16px">
+                <h1 style="font-size:18pt;color:#1e3a5f;margin:0">SISTEMA DE CONTROLE DE ESTOQUE PEP</h1>
+                <h2 style="font-size:14pt;color:#4f46e5;margin:6px 0">Relatório de Controle de Expedição</h2>
+                <p style="font-size:10pt;color:#6b7280;margin:0">Emitido em: ${now}</p>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:9pt">
+                <thead><tr style="background:#4f46e5;color:white">
+                    <th style="border:1px solid #ccc;padding:6px">PEP</th>
+                    <th style="border:1px solid #ccc;padding:6px">Solicitante</th>
+                    <th style="border:1px solid #ccc;padding:6px">Dt. Prog.</th>
+                    <th style="border:1px solid #ccc;padding:6px">Dt. Sep.</th>
+                    <th style="border:1px solid #ccc;padding:6px">Separou</th>
+                    <th style="border:1px solid #ccc;padding:6px">Sep.Conf.</th>
+                    <th style="border:1px solid #ccc;padding:6px">Mat.Conf.</th>
+                    <th style="border:1px solid #ccc;padding:6px">Conferiu</th>
+                    <th style="border:1px solid #ccc;padding:6px">Saída</th>
+                    <th style="border:1px solid #ccc;padding:6px">Devolução</th>
+                    <th style="border:1px solid #ccc;padding:6px">Status</th>
+                    <th style="border:1px solid #ccc;padding:6px">Alerta</th>
+                </tr></thead>
+                <tbody>${rows || '<tr><td colspan="12" style="padding:10px;text-align:center;color:#9ca3af">Nenhuma expedição registrada.</td></tr>'}</tbody>
+            </table>
+            <p style="margin-top:30px;font-size:9pt;color:#9ca3af;text-align:center">Documento gerado automaticamente pelo Sistema de Controle de Estoque PEP — PABLO LEANDRO MARTINS DUARTE</p>
+        </body></html>`;
+
+        const blob = new Blob([html], { type: 'application/msword' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Relatorio_Expedicao_${new Date().toISOString().split('T')[0]}.doc`;
+        a.click();
+        toast.show('Relatório de expedição exportado para Word.', 'success');
+    }
+
+    // ---- Inicializar aba quando selecionada (hook no switchTab) ----
+    const _origSwitchTab = switchTab;
+    switchTab = function(tabName) {
+        _origSwitchTab(tabName);
+        if (tabName === 'expedicao') {
+            ensureExpedicaoData();
+            updateExpedicaoTable();
+        }
+    };
+
+    // ---- Integrar na exportação/importação de dados ----
+    const _origExportData = exportData;
+    exportData = function() {
+        ensureExpedicaoData();
+        _origExportData();
+    };
+
+    // ---- Integrar no loadData (garantir que expedicao seja carregado) ----
+    const _origLoadData = loadData;
+    loadData = function() {
+        _origLoadData();
+        ensureExpedicaoData();
+    };
+
+    // ---- Injetar HTML da aba no DOM ----
+    (function injectExpedicaoTab() {
+        // Aguardar o DOM estar pronto
+        function doInject() {
+            var container = document.querySelector('#content-transformadores-historico');
+            if (!container) return;
+            var parent = container.parentNode;
+            if (!parent) return;
+            if (document.getElementById('content-expedicao')) return; // já injetado
+            var expDiv = document.createElement('div');
+            expDiv.id = 'content-expedicao';
+            expDiv.className = 'tab-content hidden animate-fade-in p-6';
+            expDiv.innerHTML = getExpedicaoHTML();
+            parent.appendChild(expDiv);
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', doInject);
+        } else {
+            doInject();
+        }
+    })();
+
     </script>
 </body>
 </html>
