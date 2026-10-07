@@ -3,128 +3,678 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acesso Gratuito | Método Low Ticket</title>
-    <!-- Tailwind CSS via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fonte Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Sistema de Controle de Estoque - Construção Civil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
-        .btn-pulse { animation: pulse-green 2s infinite; }
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
         }
-        /* Loader simples */
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #22c55e; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
+        .navbar { background-color: var(--primary-color); }
+        .nav-link.active { background-color: var(--secondary-color) !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; }
+        .status-programado { background-color: #fff3cd; color: #856404; }
+        .status-separado { background-color: #cce5ff; color: #004085; }
+        .status-conferido { background-color: #d4edda; color: #155724; }
+        .status-expedido { background-color: #d1ecf1; color: #0c5460; }
+        .alert-7d { background-color: #f8d7da; color: #721c24; border-left: 4px solid #f5c6cb; }
+        .timeline-item { border-left: 3px solid var(--secondary-color); padding-left: 15px; margin-bottom: 15px; }
+        .shortcut-hint { font-size: 0.75em; color: #6c757d; }
+        .foto-material { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+        .checklist-item { margin-right: 15px; }
+        .residuo-classe-i { border-left: 4px solid #dc3545; }
+        .residuo-classe-ii-a { border-left: 4px solid #ffc107; }
+        .residuo-classe-ii-b { border-left: 4px solid #28a745; }
     </style>
 </head>
-<body class="gradient-bg min-h-screen flex items-center justify-center p-4 text-white">
-
-    <div class="max-w-lg w-full bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-8 shadow-2xl">
-        <!-- Cabeçalho -->
-        <div class="text-center mb-8">
-            <span class="inline-block py-1 px-3 rounded-full bg-green-500/10 text-green-400 text-xs font-bold tracking-wider mb-3 border border-green-500/20">VAGAS LIMITADAS</span>
-            <h1 class="text-3xl md:text-4xl font-bold leading-tight mb-3">Acesse o Curso Completo <br><span class="text-green-400">100% Gratuito</span></h1>
-            <p class="text-slate-400 text-sm">Aprenda a estrutura exata de produtos Low Ticket que geram vendas diárias sem aparecer.</p>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-hard-hat"></i> Controle de Estoque - Construção Civil
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="nav-link text-light">
+                    <i class="fas fa-user"></i> Pablo Leandro Martins Duarte
+                </span>
+                <button class="btn btn-outline-light btn-sm ms-2" onclick="abrirAssistenteIA()">
+                    <i class="fas fa-robot"></i> Assistente IA
+                </button>
+                <button class="btn btn-outline-light btn-sm ms-2" onclick="exportarJSON()">
+                    <i class="fas fa-file-code"></i> JSON
+                </button>
+                <button class="btn btn-outline-light btn-sm ms-2" onclick="gerarRelatorio()">
+                    <i class="fas fa-file-alt"></i> Relatório
+                </button>
+                <button class="btn btn-outline-light btn-sm ms-2" onclick="importarDados()">
+                    <i class="fas fa-file-import"></i> Importar
+                </button>
+            </div>
         </div>
+    </nav>
 
-        <!-- Formulário -->
-        <form id="leadForm" class="space-y-4">
-            <div>
-                <label for="name" class="sr-only">Nome</label>
-                <input type="text" id="name" required placeholder="Seu melhor nome" 
-                    class="w-full px-4 py-3 bg-slate-900/80 border border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all placeholder-slate-500">
+    <div class="container-fluid mt-3">
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#commandCenter">
+                    <i class="fas fa-tachometer-alt"></i> Command Center
+                    <span class="shortcut-hint">(Alt+C)</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#assistenteIA">
+                    <i class="fas fa-robot"></i> Assistente IA
+                    <span class="shortcut-hint">(Alt+I)</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#materiais">
+                    <i class="fas fa-boxes"></i> Materiais
+                    <span class="shortcut-hint">(Alt+M)</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#entrada">
+                    <i class="fas fa-arrow-down"></i> Entrada
+                    <span class="shortcut-hint">(Alt+E)</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#saida">
+                    <i class="fas fa-arrow-up"></i> Saída
+                    <span class="shortcut-hint">(Alt+S)</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#devolucao">
+                    <i class="fas fa-undo"></i> Devolução
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#estoque">
+                    <i class="fas fa-warehouse"></i> Estoque
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#historico">
+                    <i class="fas fa-history"></i> Histórico
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#equipamentos">
+                    <i class="fas fa-tools"></i> Equipamentos de Obra
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#residuos">
+                    <i class="fas fa-trash"></i> Resíduos/Entulho
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#expedicao">
+                    <i class="fas fa-truck"></i> Controle Expedição
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#faltas">
+                    <i class="fas fa-exclamation-triangle"></i> Faltas por Obra
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-3">
+            <!-- COMMAND CENTER -->
+            <div class="tab-pane fade show active" id="commandCenter">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Obras/PEPs</h5>
+                                <h2 id="totalPEPs">0</h2>
+                                <button class="btn btn-sm btn-primary" onclick="verExpedicoes()">Ver expedições</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Programados</h5>
+                                <h2 id="totalProgramados">0</h2>
+                                <button class="btn btn-sm btn-warning" onclick="filtrarStatus('Programado')">Filtrar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Separados</h5>
+                                <h2 id="totalSeparados">0</h2>
+                                <button class="btn btn-sm btn-info" onclick="filtrarStatus('Separado')">Filtrar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Conferidos</h5>
+                                <h2 id="totalConferidos">0</h2>
+                                <button class="btn btn-sm btn-success" onclick="filtrarStatus('Conferido')">Filtrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Expedidos</h5>
+                                <h2 id="totalExpedidos">0</h2>
+                                <button class="btn btn-sm btn-secondary" onclick="filtrarStatus('Expedido')">Filtrar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center alert-7d">
+                            <div class="card-body">
+                                <h5 class="card-title">Alertas +7d</h5>
+                                <h2 id="totalAlertas">0</h2>
+                                <button class="btn btn-sm btn-danger" onclick="filtrarAlertas()">Filtrar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">% Entregues</h5>
+                                <h2 id="percentualEntregue">0%</h2>
+                                <small id="infoEntregue">0 de 0 retiradas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Expedições por Status (últimos 30 dias)</div>
+                            <div class="card-body" id="graficoExpedicoes">
+                                <canvas id="chartExpedicoes"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Desempenho por Solicitante/Mestre</div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Solicitante</th>
+                                            <th>PEPs Solic.</th>
+                                            <th>Retiradas</th>
+                                            <th>Entregues</th>
+                                            <th>Desempenho</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabelaDesempenho"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <div>
-                <label for="email" class="sr-only">E-mail</label>
-                <input type="email" id="email" required placeholder="Seu melhor e-mail" 
-                    class="w-full px-4 py-3 bg-slate-900/80 border border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all placeholder-slate-500">
+
+            <!-- ASSISTENTE IA -->
+            <div class="tab-pane fade" id="assistenteIA">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-robot"></i> Assistente IA - Especialista em Construção Civil (Gemini)
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label>Pergunte sobre estoque, perdas, resíduos ou gestão de obra:</label>
+                            <textarea id="perguntaIA" class="form-control" rows="3" placeholder="Ex: Analise o consumo de aço da Obra X e compare com o índice de perda de 2%"></textarea>
+                        </div>
+                        <button class="btn btn-primary" onclick="consultarIA()">
+                            <i class="fas fa-paper-plane"></i> Consultar IA
+                        </button>
+                        <div id="respostaIA" class="mt-3 p-3 bg-light border rounded" style="display:none;"></div>
+                    </div>
+                </div>
             </div>
 
-            <div>
-                <label for="phone" class="sr-only">WhatsApp</label>
-                <input type="tel" id="phone" required placeholder="WhatsApp (com DDD)" 
-                    class="w-full px-4 py-3 bg-slate-900/80 border border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all placeholder-slate-500">
+            <!-- MATERIAIS -->
+            <div class="tab-pane fade" id="materiais">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-boxes"></i> Cadastro de Materiais
+                        <button class="btn btn-sm btn-success float-end" onclick="abrirModalNovoMaterial()">
+                            <i class="fas fa-plus"></i> Novo Material
+                        </button>
+                        <button class="btn btn-sm btn-info float-end me-2" onclick="importarExcel()">
+                            <i class="fas fa-file-excel"></i> Importar Excel
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Foto</th>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>UN</th>
+                                    <th>Estoque Atual</th>
+                                    <th>Valor Unit.</th>
+                                    <th>Perda Adm.</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaMateriais"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
-            <button type="submit" id="submitBtn" 
-                class="w-full btn-pulse bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-lg transition-all flex items-center justify-center gap-2 mt-2">
-                <span id="btnText">QUERO ACESSO GRATUITO AGORA</span>
-                <div id="btnLoader" class="loader"></div>
-            </button>
-        </form>
-
-        <!-- Prova Social / Segurança -->
-        <div class="mt-6 pt-6 border-t border-slate-700/50 flex items-center justify-between text-xs text-slate-500">
-            <div class="flex items-center gap-1">
-                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                Dados 100% seguros
+            <!-- ENTRADA -->
+            <div class="tab-pane fade" id="entrada">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-arrow-down"></i> Recebimento Logístico (Entrada)
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label>Tipo de Entrada</label>
+                                <select id="tipoEntrada" class="form-control">
+                                    <option value="Compra">Compra / Almoxarifado</option>
+                                    <option value="Devolucao">Devolução de Campo (Obra)</option>
+                                    <option value="Transferencia">Transferência entre Obras</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label>Fornecedor / Origem</label>
+                                <input type="text" id="fornecedorEntrada" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label>Local de Descarga</label>
+                                <select id="localDescarga" class="form-control">
+                                    <option>Almoxarifado Central</option>
+                                    <option>Canteiro Obra 01</option>
+                                    <option>Canteiro Obra 02</option>
+                                    <option>Depósito Temporário</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label>Material</label>
+                                <select id="materialEntrada" class="form-control"></select>
+                            </div>
+                            <div class="col-md-2">
+                                <label>Quantidade</label>
+                                <input type="number" id="qtdEntrada" class="form-control" step="0.01">
+                            </div>
+                            <div class="col-md-2">
+                                <label>Valor Unitário (R$)</label>
+                                <input type="number" id="valorEntrada" class="form-control" step="0.01">
+                            </div>
+                            <div class="col-md-2">
+                                <label>Documento / NF</label>
+                                <input type="text" id="docEntrada" class="form-control">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-10">
+                                <label>Observações / Conferente</label>
+                                <input type="text" id="obsEntrada" class="form-control" placeholder="Ex: Conferido por João - NF OK">
+                            </div>
+                            <div class="col-md-2">
+                                <label>&nbsp;</label>
+                                <button class="btn btn-success w-100" onclick="confirmarEntrada()">
+                                    <i class="fas fa-check"></i> Confirmar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <span>+3.400 alunos inscritos</span>
-        </div>
-    </div>
 
-    <!-- Mensagem de Sucesso (Oculta por padrão) -->
-    <div id="successMsg" class="hidden max-w-lg w-full bg-slate-800/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-8 shadow-2xl text-center">
-        <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-        </div>
-        <h2 class="text-2xl font-bold mb-2">Inscrição Confirmada! 🎉</h2>
-        <p class="text-slate-400 mb-6">Você receberá o acesso no seu e-mail em até 5 minutos. Verifique também sua caixa de spam.</p>
-        <a href="#" class="inline-block bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-6 rounded-lg transition-all">Entrar no Grupo VIP do WhatsApp</a>
-    </div>
+            <!-- SAÍDA -->
+            <div class="tab-pane fade" id="saida">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-arrow-up"></i> Liberação para Campo (Saída)
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label>Obra / PEP de Destino</label>
+                                <input type="text" id="pepDestino" class="form-control" placeholder="Ex: Obra Res. Flores - Bloco A">
+                            </div>
+                            <div class="col-md-4">
+                                <label>Frente de Serviço / Ambiente</label>
+                                <input type="text" id="frenteServico" class="form-control" placeholder="Ex: Alvenaria 1º Pavimento, Fundação">
+                                <small class="text-muted">Para rateio de custos por etapa</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label>Solicitante / Mestre</label>
+                                <input type="text" id="solicitante" class="form-control">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label>Material</label>
+                                <select id="materialSaida" class="form-control" onchange="atualizarDisponivel()"></select>
+                                <small class="text-muted">Disponível Geral: <span id="disponivelGeral">0</span></small>
+                            </div>
+                            <div class="col-md-2">
+                                <label>Quantidade</label>
+                                <input type="number" id="qtdSaida" class="form-control" step="0.01">
+                            </div>
+                            <div class="col-md-2">
+                                <label>Data Necessidade</label>
+                                <input type="date" id="dataNecessidade" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <label>Status</label>
+                                <select id="statusSaida" class="form-control">
+                                    <option>Programado</option>
+                                    <option>Separado</option>
+                                    <option>Conferido</option>
+                                    <option>Expedido</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-10">
+                                <label>Observações</label>
+                                <input type="text" id="obsSaida" class="form-control" placeholder="Ex: Material frágil, entregar no 2º pavimento">
+                            </div>
+                            <div class="col-md-2">
+                                <label>&nbsp;</label>
+                                <button class="btn btn-primary w-100" onclick="efetivarSaida()">
+                                    <i class="fas fa-check"></i> Efetivar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-<script>
-document.getElementById('leadForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const btn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const loader = document.getElementById('btnLoader');
-    const form = this;
-    const successMsg = document.getElementById('successMsg');
+            <!-- DEVOLUÇÃO -->
+            <div class="tab-pane fade" id="devolucao">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-undo"></i> Retorno de Sobra (Devolução da Obra)
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label>Obra / PEP de Origem</label>
+                                <input type="text" id="pepOrigem" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label>Material Utilizado</label>
+                                <select id="materialDevolucao" class="form-control"></select>
+                            </div>
+                            <div class="col-md-2">
+                                <label>Qtde Devolvida</label>
+                                <input type="number" id="qtdDevolucao" class="form-control" step="0.01">
+                            </div>
+                            <div class="col-md-2">
+                                <label>Condição Física</label>
+                                <select id="condicaoDevolucao" class="form-control">
+                                    <option value="Intacto">Sobra Limpa (Original)</option>
+                                    <option value="Usado">Reaproveitável (Bom)</option>
+                                    <option value="Avariado">Perda Total / Resíduo</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-8">
+                                <label>Motivo do Retorno</label>
+                                <input type="text" id="motivoDevolucao" class="form-control" placeholder="Ex: Fim da frente de serviço, Sobras de corte">
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" id="enviarSucata">
+                                    <label class="form-check-label">
+                                        Enviar para Resíduos se Avariado
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="camposResiduo" style="display:none;" class="mt-3 p-3 bg-light border rounded">
+                            <h6>Dados do Resíduo (se Avariado)</h6>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label>Nº MTR / Comprovante</label>
+                                    <input type="text" id="numMTR" class="form-control">
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Classe do Resíduo</label>
+                                    <select id="classeResiduo" class="form-control">
+                                        <option value="II_B">Classe II B (Inerte - Entulho)</option>
+                                        <option value="II_A">Classe II A (Não Inerte - Madeira)</option>
+                                        <option value="I">Classe I (Perigoso - Tintas)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Peso (KG)</label>
+                                    <input type="number" id="pesoResiduo" class="form-control">
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Destinação</label>
+                                    <select id="destinacaoResiduo" class="form-control">
+                                        <option>Aterro de Inertes</option>
+                                        <option>Usina de Reciclagem</option>
+                                        <option>Reuso na Obra</option>
+                                        <option>Empresa Especializada</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-warning mt-3" onclick="processarDevolucao()">
+                            <i class="fas fa-check"></i> Processar Retorno
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-    // Estado de loading
-    btn.disabled = true;
-    btn.classList.remove('btn-pulse', 'hover:bg-green-500');
-    btnText.textContent = 'PROCESSANDO...';
-    loader.style.display = 'block';
+            <!-- ESTOQUE -->
+            <div class="tab-pane fade" id="estoque">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-warehouse"></i> Balanço Físico Geral
+                        <button class="btn btn-sm btn-secondary float-end" onclick="exportarRelatorioEstoque()">
+                            <i class="fas fa-file-export"></i> Relatório
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Foto</th>
+                                    <th>Código</th>
+                                    <th>Material</th>
+                                    <th>Saldo Físico</th>
+                                    <th>Última Observação</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaEstoque"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-    // Coleta dados
-    const data = {
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value
-    };
+            <!-- HISTÓRICO -->
+            <div class="tab-pane fade" id="historico">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-history"></i> Timeline de Movimentação
+                        <button class="btn btn-sm btn-secondary float-end" onclick="exportarHistorico()">
+                            <i class="fas fa-file-export"></i> Exportar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Operação</th>
+                                    <th>Item</th>
+                                    <th>Qtd</th>
+                                    <th>Alvo (Obra/Fornecedor)</th>
+                                    <th>Apagar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaHistorico"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-    try {
-        // ⚠️ SUBSTITUA ESTA URL PELA SUA API REAL (ex: webhook do n8n, Make, Supabase, etc.)
-        // Por enquanto, simula um delay de rede
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // TODO: Implementar fetch real aqui
-        // const response = await fetch('SUA_API_URL', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-        
-        // Sucesso
-        form.parentElement.classList.add('hidden');
-        successMsg.classList.remove('hidden');
-        
-        // Opcional: Enviar evento para pixel/analytics
-        console.log('Lead capturado:', data);
-        
-    } catch (error) {
-        alert('Erro ao processar inscrição. Tente novamente.');
-        btn.disabled = false;
-        btn.classList.add('btn-pulse', 'hover:bg-green-500');
-        btnText.textContent = 'QUERO ACESSO GRATUITO AGORA';
-        loader.style.display = 'none';
-    }
-});
-</script>
-</body>
-</html>
+            <!-- EQUIPAMENTOS DE OBRA -->
+            <div class="tab-pane fade" id="equipamentos">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-tools"></i> Gestão de Equipamentos de Obra (Andaimes, Betoneiras, Compactadores)
+                        <button class="btn btn-sm btn-success float-end" onclick="abrirModalNovoEquipamento()">
+                            <i class="fas fa-plus"></i> Novo Equipamento
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Local</th>
+                                    <th>Nota Fiscal</th>
+                                    <th>Situação</th>
+                                    <th>Foto</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaEquipamentos"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card mt-3">
+                    <div class="card-header">Histórico de Movimentações - Equipamentos</div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Tipo</th>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>De/Para</th>
+                                    <th>Obs.</th>
+                                    <th>Apagar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaHistoricoEquipamentos"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RESÍDUOS/ENTULHO -->
+            <div class="tab-pane fade" id="residuos">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-trash"></i> Gestão de Resíduos e Perdas (Entulho/MTR)
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5>BEGs/MTRs</h5>
+                                        <h2 id="totalBEGs">0</h2>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5>KG Disponíveis</h5>
+                                        <h2 id="kgDisponiveis">0 KG</h2>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5>KG Baixados</h5>
+                                        <h2 id="kgBaixados">0 KG</h2>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5>Certificados</h5>
+                                        <h2 id="totalCertificados">0</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mt-3">
+                            <div class="card-header">Entrada de Resíduo por MTR/BEG</div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label>Código MTR/BEG</label>
+                                        <input type="text" id="codigoBEG" class="form-control">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label>Peso (KG)</label>
+                                        <input type="number" id="pesoBEG" class="form-control">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label>Classe</label>
+                                        <select id="classeBEG" class="form-control">
+                                            <option value="II_B">II B (Inerte)</option>
+                                            <option value="II_A">II A (Não Inerte)</option>
+                                            <option value="I">I (Perigoso)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>Origem / Obra</label>
+                                        <input type="text" id="origemBEG" class="form-control">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label>Documento/NF</label>
+                                        <input type="text" id="docBEG" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-10">
+                                        <label>Observações</label>
+                                        <input type="text" id="obsBEG" class="form-control">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label>&nbsp;</label>
+                                        <button class="btn btn-danger w-100" onclick="registrarResiduo()">
+                                            <i class="fas fa-plus"></i> Registrar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mt-3">
+                            <div class="card-header">Tabela de Resíduos Registrados</div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
