@@ -1,730 +1,1448 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Controle de Estoque - Construção Civil</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-        }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
-        .navbar { background-color: var(--primary-color); }
-        .nav-link.active { background-color: var(--secondary-color) !important; }
-        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; }
-        .status-programado { background-color: #fff3cd; color: #856404; }
-        .status-separado { background-color: #cce5ff; color: #004085; }
-        .status-conferido { background-color: #d4edda; color: #155724; }
-        .status-expedido { background-color: #d1ecf1; color: #0c5460; }
-        .alert-7d { background-color: #f8d7da; color: #721c24; border-left: 4px solid #f5c6cb; }
-        .shortcut-hint { font-size: 0.75em; color: #6c757d; }
-        .foto-material { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-hard-hat"></i> Controle de Estoque - Construção Civil
-            </a>
-            <div class="navbar-nav ms-auto">
-                <span class="nav-link text-light">
-                    <i class="fas fa-user"></i> Pablo Leandro Martins Duarte
-                </span>
-                <button class="btn btn-outline-light btn-sm ms-2" onclick="abrirAssistenteIA()">
-                    <i class="fas fa-robot"></i> Assistente IA
-                </button>
-                <button class="btn btn-outline-light btn-sm ms-2" onclick="exportarJSON()">
-                    <i class="fas fa-file-code"></i> JSON
-                </button>
-                <button class="btn btn-outline-light btn-sm ms-2" onclick="gerarRelatorio()">
-                    <i class="fas fa-file-alt"></i> Relatório
-                </button>
+<div class="container-fluid mt-3">
+    <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#dashboard">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cronograma">
+                <i class="fas fa-calendar-alt"></i> Cronograma
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#curvaS">
+                <i class="fas fa-chart-line"></i> Curva S
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#diario">
+                <i class="fas fa-book"></i> Diário de Obra
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#alertas">
+                <i class="fas fa-bell"></i> Alertas
+                <span class="badge bg-danger" id="badgeAlertas">0</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#materiais">
+                <i class="fas fa-boxes"></i> Materiais
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#entrada">
+                <i class="fas fa-arrow-down"></i> Entrada
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#saida">
+                <i class="fas fa-arrow-up"></i> Saída
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#estoque">
+                <i class="fas fa-warehouse"></i> Estoque
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#historico">
+                <i class="fas fa-history"></i> Histórico
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-3">
+        <!-- DASHBOARD EXECUTIVO -->
+        <div class="tab-pane fade show active" id="dashboard">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card dashboard-stat">
+                        <h5>Progresso Geral</h5>
+                        <h2 id="progressoGeral">0%</h2>
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill" id="barProgressoGeral" style="width: 0%; background-color: var(--success-color);">0%</div>
+                        </div>
+                        <small class="text-muted mt-2" id="statusPrazo">🟢 No prazo</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dashboard-stat">
+                        <h5>Dias Restantes</h5>
+                        <h2 id="diasRestantes">0</h2>
+                        <small class="text-muted">até a entrega</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dashboard-stat">
+                        <h5>Valor em Estoque</h5>
+                        <h2 id="valorEstoque">R$ 0</h2>
+                        <small class="text-muted" id="totalItens">0 itens</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dashboard-stat">
+                        <h5>Alertas Ativos</h5>
+                        <h2 id="totalAlertas">0</h2>
+                        <button class="btn btn-sm btn-warning mt-2" onclick="document.querySelector('[data-bs-target=\"#alertas\"]').click()">Ver Alertas</button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </nav>
 
-    <div class="container-fluid mt-3">
-        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
-            <li class="nav-item">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#commandCenter">
-                    <i class="fas fa-tachometer-alt"></i> Command Center
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#materiais">
-                    <i class="fas fa-boxes"></i> Materiais
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#entrada">
-                    <i class="fas fa-arrow-down"></i> Entrada
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#saida">
-                    <i class="fas fa-arrow-up"></i> Saída
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#estoque">
-                    <i class="fas fa-warehouse"></i> Estoque
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#historico">
-                    <i class="fas fa-history"></i> Histórico
-                </button>
-            </li>
-        </ul>
-
-        <div class="tab-content mt-3">
-            <!-- COMMAND CENTER -->
-            <div class="tab-pane fade show active" id="commandCenter">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Obras/PEPs</h5>
-                                <h2 id="totalPEPs">0</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h5 class="card-title">Materiais Cadastrados</h5>
-                                <h2 id="totalMateriais">0</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h5 class="card-title">Movimentações Hoje</h5>
-                                <h2 id="movimentacoesHoje">0</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h5 class="card-title">Valor em Estoque</h5>
-                                <h2 id="valorEstoque">R$ 0,00</h2>
-                            </div>
+            <div class="row mt-3">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">Etapas da Obra - Status Atual</div>
+                        <div class="card-body" id="listaEtapasDashboard">
+                            <p class="text-muted">Nenhuma etapa cadastrada. Vá para "Cronograma" para adicionar.</p>
                         </div>
                     </div>
                 </div>
-                <div class="row mt-4">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">Últimas Movimentações</div>
-                            <div class="card-body">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Data/Hora</th>
-                                            <th>Operação</th>
-                                            <th>Material</th>
-                                            <th>Qtd</th>
-                                            <th>Destino/Origem</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tabelaUltimasMovimentacoes"></tbody>
-                                </table>
-                            </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">Próximos Alertas</div>
+                        <div class="card-body" id="proximosAlertas">
+                            <p class="text-muted">Nenhum alerta pendente</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- MATERIAIS -->
-            <div class="tab-pane fade" id="materiais">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-boxes"></i> Cadastro de Materiais
-                        <button class="btn btn-sm btn-success float-end" onclick="abrirModalNovoMaterial()">
-                            <i class="fas fa-plus"></i> Novo Material
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Descrição</th>
-                                    <th>UN</th>
-                                    <th>Estoque Atual</th>
-                                    <th>Valor Unit.</th>
-                                    <th>Perda Adm.</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaMateriais"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ENTRADA -->
-            <div class="tab-pane fade" id="entrada">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-arrow-down"></i> Recebimento Logístico (Entrada)
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <label>Tipo de Entrada</label>
-                                <select id="tipoEntrada" class="form-control">
-                                    <option value="Compra">Compra / Almoxarifado</option>
-                                    <option value="Devolucao">Devolução de Campo (Obra)</option>
-                                    <option value="Transferencia">Transferência entre Obras</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label>Fornecedor / Origem</label>
-                                <input type="text" id="fornecedorEntrada" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label>Local de Descarga</label>
-                                <select id="localDescarga" class="form-control">
-                                    <option>Almoxarifado Central</option>
-                                    <option>Canteiro Obra 01</option>
-                                    <option>Canteiro Obra 02</option>
-                                </select>
-                            </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">Últimas Movimentações</div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Data/Hora</th>
+                                        <th>Operação</th>
+                                        <th>Material</th>
+                                        <th>Qtd</th>
+                                        <th>Etapa/Destino</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaUltimasMovimentacoes"></tbody>
+                            </table>
                         </div>
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <label>Material</label>
-                                <select id="materialEntrada" class="form-control"></select>
-                            </div>
-                            <div class="col-md-2">
-                                <label>Quantidade</label>
-                                <input type="number" id="qtdEntrada" class="form-control" step="0.01">
-                            </div>
-                            <div class="col-md-2">
-                                <label>Valor Unitário (R$)</label>
-                                <input type="number" id="valorEntrada" class="form-control" step="0.01">
-                            </div>
-                            <div class="col-md-2">
-                                <label>Documento / NF</label>
-                                <input type="text" id="docEntrada" class="form-control">
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-10">
-                                <label>Observações</label>
-                                <input type="text" id="obsEntrada" class="form-control">
-                            </div>
-                            <div class="col-md-2">
-                                <label>&nbsp;</label>
-                                <button class="btn btn-success w-100" onclick="confirmarEntrada()">
-                                    <i class="fas fa-check"></i> Confirmar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SAÍDA -->
-            <div class="tab-pane fade" id="saida">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-arrow-up"></i> Liberação para Campo (Saída)
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <label>Obra / PEP de Destino</label>
-                                <input type="text" id="pepDestino" class="form-control" placeholder="Ex: Obra Res. Flores - Bloco A">
-                            </div>
-                            <div class="col-md-4">
-                                <label>Frente de Serviço</label>
-                                <input type="text" id="frenteServico" class="form-control" placeholder="Ex: Alvenaria 1º Pavimento">
-                            </div>
-                            <div class="col-md-4">
-                                <label>Solicitante / Mestre</label>
-                                <input type="text" id="solicitante" class="form-control">
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <label>Material</label>
-                                <select id="materialSaida" class="form-control"></select>
-                            </div>
-                            <div class="col-md-2">
-                                <label>Quantidade</label>
-                                <input type="number" id="qtdSaida" class="form-control" step="0.01">
-                            </div>
-                            <div class="col-md-2">
-                                <label>Data Necessidade</label>
-                                <input type="date" id="dataNecessidade" class="form-control">
-                            </div>
-                            <div class="col-md-2">
-                                <label>Status</label>
-                                <select id="statusSaida" class="form-control">
-                                    <option>Programado</option>
-                                    <option>Separado</option>
-                                    <option>Conferido</option>
-                                    <option>Expedido</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-10">
-                                <label>Observações</label>
-                                <input type="text" id="obsSaida" class="form-control">
-                            </div>
-                            <div class="col-md-2">
-                                <label>&nbsp;</label>
-                                <button class="btn btn-primary w-100" onclick="efetivarSaida()">
-                                    <i class="fas fa-check"></i> Efetivar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ESTOQUE -->
-            <div class="tab-pane fade" id="estoque">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-warehouse"></i> Balanço Físico Geral
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Material</th>
-                                    <th>Saldo Físico</th>
-                                    <th>Valor Total</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaEstoque"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- HISTÓRICO -->
-            <div class="tab-pane fade" id="historico">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-history"></i> Timeline de Movimentação
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Data/Hora</th>
-                                    <th>Operação</th>
-                                    <th>Material</th>
-                                    <th>Qtd</th>
-                                    <th>Destino/Origem</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaHistorico"></tbody>
-                        </table>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- MODAL NOVO MATERIAL -->
-    <div class="modal fade" id="modalNovoMaterial" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Novo Material no Catálogo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <!-- CRONOGRAMA FÍSICO -->
+        <div class="tab-pane fade" id="cronograma">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-calendar-alt"></i> Cronograma Físico da Obra
+                    <button class="btn btn-sm btn-success float-end" onclick="abrirModalNovaEtapa()">
+                        <i class="fas fa-plus"></i> Nova Etapa
+                    </button>
                 </div>
-                <div class="modal-body">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label><strong>Nome da Obra:</strong></label>
+                            <input type="text" id="nomeObra" class="form-control" placeholder="Ex: Residencial Flores - Bloco A" onchange="salvarInfoObra()">
+                        </div>
+                        <div class="col-md-4">
+                            <label><strong>Data de Início:</strong></label>
+                            <input type="date" id="dataInicioObra" class="form-control" onchange="salvarInfoObra()">
+                        </div>
+                        <div class="col-md-4">
+                            <label><strong>Previsão de Entrega:</strong></label>
+                            <input type="date" id="dataEntregaObra" class="form-control" onchange="salvarInfoObra()">
+                        </div>
+                    </div>
+                    <div id="listaEtapas"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CURVA S -->
+        <div class="tab-pane fade" id="curvaS">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-line"></i> Curva S - Planejado x Realizado
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label><strong>Orçamento Total da Obra (R$):</strong></label>
+                            <input type="number" id="orcamentoTotal" class="form-control" step="0.01" placeholder="0.00" onchange="atualizarCurvaS()">
+                        </div>
+                        <div class="col-md-6">
+                            <label><strong>Período (meses):</strong></label>
+                            <input type="number" id="periodoMeses" class="form-control" placeholder="12" onchange="atualizarCurvaS()">
+                        </div>
+                    </div>
+                    <div class="curva-s-container">
+                        <canvas id="chartCurvaS"></canvas>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>Planejado até hoje</h6>
+                                    <h3 id="planejadoHoje">R$ 0,00</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>Realizado até hoje</h6>
+                                    <h3 id="realizadoHoje">R$ 0,00</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>Desvio</h6>
+                                    <h3 id="desvioCurva">R$ 0,00</h3>
+                                    <small id="percentualDesvio">0%</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DIÁRIO DE OBRA -->
+        <div class="tab-pane fade" id="diario">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-book"></i> Diário de Obra Digital
+                    <button class="btn btn-sm btn-success float-end" onclick="abrirModalNovoDiario()">
+                        <i class="fas fa-plus"></i> Novo Registro
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="listaDiario"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ALERTAS -->
+        <div class="tab-pane fade" id="alertas">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-bell"></i> Central de Alertas Inteligentes
+                    <button class="btn btn-sm btn-primary float-end" onclick="verificarAlertas()">
+                        <i class="fas fa-sync"></i> Atualizar
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="listaAlertas"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MATERIAIS -->
+        <div class="tab-pane fade" id="materiais">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-boxes"></i> Cadastro de Materiais
+                    <button class="btn btn-sm btn-success float-end" onclick="abrirModalNovoMaterial()">
+                        <i class="fas fa-plus"></i> Novo Material
+                    </button>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descrição</th>
+                                <th>UN</th>
+                                <th>Estoque</th>
+                                <th>Valor Unit.</th>
+                                <th>Etapa</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaMateriais"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ENTRADA -->
+        <div class="tab-pane fade" id="entrada">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-arrow-down"></i> Recebimento Logístico (Entrada)
+                </div>
+                <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
-                            <label>Código Identificador</label>
-                            <input type="text" id="novoMaterialCodigo" class="form-control">
+                            <label>Tipo de Entrada</label>
+                            <select id="tipoEntrada" class="form-control">
+                                <option value="Compra">Compra / Almoxarifado</option>
+                                <option value="Devolucao">Devolução de Campo</option>
+                            </select>
                         </div>
-                        <div class="col-md-8">
-                            <label>Descrição</label>
-                            <input type="text" id="novoMaterialDescricao" class="form-control">
+                        <div class="col-md-4">
+                            <label>Fornecedor / Origem</label>
+                            <input type="text" id="fornecedorEntrada" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>Local de Descarga</label>
+                            <select id="localDescarga" class="form-control">
+                                <option>Almoxarifado Central</option>
+                                <option>Canteiro Obra</option>
+                            </select>
                         </div>
                     </div>
                     <div class="row mt-3">
-                        <div class="col-md-3">
-                            <label>Unidade (UN)</label>
-                            <select id="novoMaterialUN" class="form-control">
-                                <option value="KG">Kilo (KG)</option>
-                                <option value="M">Metro Linear (M)</option>
-                                <option value="M2">Metro Quadrado (M²)</option>
-                                <option value="M3">Metro Cúbico (M³)</option>
-                                <option value="PÇ">Peça (PÇ)</option>
-                                <option value="CX">Caixa (CX)</option>
-                                <option value="RL">Rolo (RL)</option>
-                                <option value="SACO">Saco</option>
-                                <option value="TON">Tonelada (TON)</option>
-                            </select>
+                        <div class="col-md-6">
+                            <label>Material</label>
+                            <select id="materialEntrada" class="form-control"></select>
                         </div>
-                        <div class="col-md-3">
-                            <label>Estoque Inicial</label>
-                            <input type="number" id="novoMaterialEstoque" class="form-control" step="0.01" value="0">
+                        <div class="col-md-2">
+                            <label>Quantidade</label>
+                            <input type="number" id="qtdEntrada" class="form-control" step="0.01">
                         </div>
-                        <div class="col-md-3">
-                            <label>Valor Unitário (R$)</label>
-                            <input type="number" id="novoMaterialValor" class="form-control" step="0.01" value="0">
+                        <div class="col-md-2">
+                            <label>Valor Unit. (R$)</label>
+                            <input type="number" id="valorEntrada" class="form-control" step="0.01">
                         </div>
-                        <div class="col-md-3">
-                            <label>Perda Admitida (%)</label>
-                            <input type="number" id="novoMaterialPerda" class="form-control" step="0.1" value="0">
+                        <div class="col-md-2">
+                            <label>Documento</label>
+                            <input type="text" id="docEntrada" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-10">
+                            <label>Observações</label>
+                            <input type="text" id="obsEntrada" class="form-control">
+                        </div>
+                        <div class="col-md-2">
+                            <label>&nbsp;</label>
+                            <button class="btn btn-success w-100" onclick="confirmarEntrada()">
+                                <i class="fas fa-check"></i> Confirmar
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-success" onclick="salvarNovoMaterial()">Salvar</button>
+            </div>
+        </div>
+
+        <!-- SAÍDA -->
+        <div class="tab-pane fade" id="saida">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-arrow-up"></i> Liberação para Campo (Saída)
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label>Obra / PEP</label>
+                            <input type="text" id="pepDestino" class="form-control" placeholder="Ex: Bloco A">
+                        </div>
+                        <div class="col-md-3">
+                            <label>Etapa da Obra</label>
+                            <select id="etapaSaida" class="form-control"></select>
+                        </div>
+                        <div class="col-md-3">
+                            <label>Frente de Serviço</label>
+                            <input type="text" id="frenteServico" class="form-control" placeholder="Ex: 1º Pavimento">
+                        </div>
+                        <div class="col-md-3">
+                            <label>Solicitante</label>
+                            <input type="text" id="solicitante" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label>Material</label>
+                            <select id="materialSaida" class="form-control"></select>
+                        </div>
+                        <div class="col-md-2">
+                            <label>Quantidade</label>
+                            <input type="number" id="qtdSaida" class="form-control" step="0.01">
+                        </div>
+                        <div class="col-md-2">
+                            <label>Data</label>
+                            <input type="date" id="dataSaida" class="form-control">
+                        </div>
+                        <div class="col-md-2">
+                            <label>Status</label>
+                            <select id="statusSaida" class="form-control">
+                                <option>Programado</option>
+                                <option>Separado</option>
+                                <option>Conferido</option>
+                                <option>Expedido</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-10">
+                            <label>Observações</label>
+                            <input type="text" id="obsSaida" class="form-control">
+                        </div>
+                        <div class="col-md-2">
+                            <label>&nbsp;</label>
+                            <button class="btn btn-primary w-100" onclick="efetivarSaida()">
+                                <i class="fas fa-check"></i> Efetivar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ESTOQUE -->
+        <div class="tab-pane fade" id="estoque">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-warehouse"></i> Balanço Físico Geral
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Material</th>
+                                <th>Saldo</th>
+                                <th>Valor Total</th>
+                                <th>Etapa Vinculada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaEstoque"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTÓRICO -->
+        <div class="tab-pane fade" id="historico">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-history"></i> Timeline de Movimentação
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Operação</th>
+                                <th>Material</th>
+                                <th>Qtd</th>
+                                <th>Etapa/Destino</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaHistorico"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // DADOS DO SISTEMA
-        let materiais = [];
-        let historico = [];
-        let expedicoes = [];
+<!-- MODAL NOVA ETAPA -->
+<div class="modal fade" id="modalNovaEtapa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Etapa da Obra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label>Nome da Etapa</label>
+                    <input type="text" id="etapaNome" class="form-control" placeholder="Ex: Fundação, Estrutura, Alvenaria">
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>Data Prevista Início</label>
+                        <input type="date" id="etapaDataInicio" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label>Data Prevista Fim</label>
+                        <input type="date" id="etapaDataFim" class="form-control">
+                    </div>
+                </div>
+                <div class="mb-3 mt-3">
+                    <label>Responsável</label>
+                    <input type="text" id="etapaResponsavel" class="form-control" placeholder="Ex: Mestre João">
+                </div>
+                <div class="mb-3">
+                    <label>Orçamento da Etapa (R$)</label>
+                    <input type="number" id="etapaOrcamento" class="form-control" step="0.01" placeholder="0.00">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="salvarEtapa()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        // INICIALIZAÇÃO
-        document.addEventListener('DOMContentLoaded', function() {
-            carregarDados();
-            atualizarTabelaMateriais();
-            atualizarTabelaEstoque();
-            atualizarTabelaHistorico();
-            atualizarCommandCenter();
-            popularSelectsMateriais();
+<!-- MODAL NOVO MATERIAL -->
+<div class="modal fade" id="modalNovoMaterial" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label>Código</label>
+                        <input type="text" id="novoMaterialCodigo" class="form-control">
+                    </div>
+                    <div class="col-md-8">
+                        <label>Descrição</label>
+                        <input type="text" id="novoMaterialDescricao" class="form-control">
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <label>Unidade</label>
+                        <select id="novoMaterialUN" class="form-control">
+                            <option value="KG">KG</option>
+                            <option value="M">M</option>
+                            <option value="M2">M²</option>
+                            <option value="M3">M³</option>
+                            <option value="PÇ">PÇ</option>
+                            <option value="CX">CX</option>
+                            <option value="SACO">SACO</option>
+                            <option value="TON">TON</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Estoque Inicial</label>
+                        <input type="number" id="novoMaterialEstoque" class="form-control" step="0.01" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label>Valor Unit. (R$)</label>
+                        <input type="number" id="novoMaterialValor" class="form-control" step="0.01" value="0">
+                    </div>
+                </div>
+                <div class="mb-3 mt-3">
+                    <label>Etapa Vinculada</label>
+                    <select id="novoMaterialEtapa" class="form-control">
+                        <option value="">Nenhuma</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="salvarNovoMaterial()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NOVO DIÁRIO -->
+<div class="modal fade" id="modalNovoDiario" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Registro no Diário de Obra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label>Data</label>
+                        <input type="date" id="diarioData" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label>Clima</label>
+                        <select id="diarioClima" class="form-control">
+                            <option>Sol</option>
+                            <option>Nublado</option>
+                            <option>Chuva</option>
+                            <option>Chuva Forte</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Efetivo em Campo</label>
+                        <input type="number" id="diarioEfetivo" class="form-control" placeholder="0">
+                    </div>
+                </div>
+                <div class="mb-3 mt-3">
+                    <label>Atividades Realizadas</label>
+                    <textarea id="diarioAtividades" class="form-control" rows="3" placeholder="Descreva as atividades do dia..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label>Ocorrências / Intercorrências</label>
+                    <textarea id="diarioOcorrencias" class="form-control" rows="2" placeholder="Problemas, atrasos, etc..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="salvarDiario()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ASSISTENTE IA -->
+<div class="modal fade" id="modalIA" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-robot"></i> Assistente IA - Especialista em Obras</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label>Pergunte sobre a obra, cronograma, materiais ou gestão:</label>
+                    <textarea id="perguntaIA" class="form-control" rows="3" placeholder="Ex: Analise o progresso da obra e sugira ações para recuperar atrasos..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="consultarIA()">
+                    <i class="fas fa-paper-plane"></i> Consultar IA
+                </button>
+                <div id="respostaIA" class="mt-3 p-3 bg-light border rounded" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // DADOS DO SISTEMA
+    let infoObra = { nome: '', dataInicio: '', dataEntrega: '' };
+    let etapas = [];
+    let materiais = [];
+    let historico = [];
+    let diario = [];
+    let alertas = [];
+    let chartCurvaS = null;
+
+    // INICIALIZAÇÃO
+    document.addEventListener('DOMContentLoaded', function() {
+        carregarDados();
+        atualizarTudo();
+        document.getElementById('dataSaida').valueAsDate = new Date();
+    });
+
+    // PERSISTÊNCIA
+    function carregarDados() {
+        const dadosSalvos = localStorage.getItem('sistemaGestaoObras');
+        if (dadosSalvos) {
+            const dados = JSON.parse(dadosSalvos);
+            infoObra = dados.infoObra || { nome: '', dataInicio: '', dataEntrega: '' };
+            etapas = dados.etapas || [];
+            materiais = dados.materiais || [];
+            historico = dados.historico || [];
+            diario = dados.diario || [];
+            
+            document.getElementById('nomeObra').value = infoObra.nome;
+            document.getElementById('dataInicioObra').value = infoObra.dataInicio;
+            document.getElementById('dataEntregaObra').value = infoObra.dataEntrega;
+        }
+    }
+
+    function salvarDados() {
+        const dados = {
+            infoObra: infoObra,
+            etapas: etapas,
+            materiais: materiais,
+            historico: historico,
+            diario: diario
+        };
+        localStorage.setItem('sistemaGestaoObras', JSON.stringify(dados));
+    }
+
+    function salvarInfoObra() {
+        infoObra.nome = document.getElementById('nomeObra').value;
+        infoObra.dataInicio = document.getElementById('dataInicioObra').value;
+        infoObra.dataEntrega = document.getElementById('dataEntregaObra').value;
+        salvarDados();
+        atualizarDashboard();
+    }
+
+    // ATUALIZAR TUDO
+    function atualizarTudo() {
+        atualizarDashboard();
+        atualizarCronograma();
+        atualizarTabelaMateriais();
+        atualizarTabelaEstoque();
+        atualizarTabelaHistorico();
+        atualizarDiario();
+        popularSelects();
+        verificarAlertas();
+        atualizarCurvaS();
+    }
+
+    // DASHBOARD
+    function atualizarDashboard() {
+        // Progresso geral
+        const progressoGeral = calcularProgressoGeral();
+        document.getElementById('progressoGeral').textContent = progressoGeral + '%';
+        document.getElementById('barProgressoGeral').style.width = progressoGeral + '%';
+        document.getElementById('barProgressoGeral').textContent = progressoGeral + '%';
+
+        // Dias restantes
+        const diasRestantes = calcularDiasRestantes();
+        document.getElementById('diasRestantes').textContent = diasRestantes;
+
+        // Valor em estoque
+        const valorTotal = materiais.reduce((sum, m) => sum + (m.estoque * m.valor), 0);
+        document.getElementById('valorEstoque').textContent = 'R$ ' + valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('totalItens').textContent = materiais.length + ' itens';
+
+        // Status do prazo
+        const statusPrazo = verificarStatusPrazo();
+        document.getElementById('statusPrazo').innerHTML = statusPrazo;
+
+        // Lista de etapas no dashboard
+        const listaEtapas = document.getElementById('listaEtapasDashboard');
+        if (etapas.length === 0) {
+            listaEtapas.innerHTML = '<p class="text-muted">Nenhuma etapa cadastrada</p>';
+        } else {
+            listaEtapas.innerHTML = etapas.map(etapa => {
+                const progresso = etapa.progresso || 0;
+                const status = calcularStatusEtapa(etapa);
+                const corBarra = status === 'atraso' ? 'var(--danger-color)' : 'var(--success-color)';
+                return `
+                    <div class="etapa-card etapa-${status}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${etapa.nome}</strong>
+                                <small class="text-muted d-block">${etapa.responsavel || 'Sem responsável'}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="status-badge status-${status}">${status === 'atraso' ? '🔴 Atraso' : '🟢 No prazo'}</span>
+                                <div class="progress-bar-custom mt-2" style="width: 200px;">
+                                    <div class="progress-fill" style="width: ${progresso}%; background-color: ${corBarra};">${progresso}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Próximos alertas
+        const proximosAlertas = document.getElementById('proximosAlertas');
+        if (alertas.length === 0) {
+            proximosAlertas.innerHTML = '<p class="text-muted">Nenhum alerta pendente</p>';
+        } else {
+            proximosAlertas.innerHTML = alertas.slice(0, 3).map(a => `
+                <div class="alerta-item alerta-${a.tipo}">
+                    <small>${a.mensagem}</small>
+                </div>
+            `).join('');
+        }
+
+        // Últimas movimentações
+        const tbody = document.getElementById('tabelaUltimasMovimentacoes');
+        tbody.innerHTML = '';
+        const ultimas = historico.slice(-10).reverse();
+        ultimas.forEach(h => {
+            const data = new Date(h.data).toLocaleString('pt-BR');
+            tbody.innerHTML += `
+                <tr>
+                    <td>${data}</td>
+                    <td><span class="badge bg-${h.operacao === 'ENTRADA' ? 'success' : 'primary'}">${h.operacao}</span></td>
+                    <td>${h.material}</td>
+                    <td>${h.qtd.toFixed(2)}</td>
+                    <td>${h.etapa || h.alvo}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function calcularProgressoGeral() {
+        if (etapas.length === 0) return 0;
+        const soma = etapas.reduce((sum, e) => sum + (e.progresso || 0), 0);
+        return Math.round(soma / etapas.length);
+    }
+
+    function calcularDiasRestantes() {
+        if (!infoObra.dataEntrega) return 0;
+        const hoje = new Date();
+        const entrega = new Date(infoObra.dataEntrega);
+        const diff = Math.ceil((entrega - hoje) / (1000 * 60 * 60 * 24));
+        return diff > 0 ? diff : 0;
+    }
+
+    function verificarStatusPrazo() {
+        const atrasadas = etapas.filter(e => calcularStatusEtapa(e) === 'atraso').length;
+        if (atrasadas === 0) return '🟢 No prazo';
+        if (atrasadas <= 2) return '🟡 Atraso leve';
+        return '🔴 Crítico';
+    }
+
+    function calcularStatusEtapa(etapa) {
+        if (!etapa.dataFim) return 'no-prazo';
+        const hoje = new Date();
+        const dataFim = new Date(etapa.dataFim);
+        const progresso = etapa.progresso || 0;
+        
+        if (progresso === 100) return 'concluida';
+        
+        const diasAtraso = Math.ceil((hoje - dataFim) / (1000 * 60 * 60 * 24));
+        if (diasAtraso > 0 && progresso < 100) return 'atraso';
+        
+        return 'no-prazo';
+    }
+
+    // CRONOGRAMA
+    function abrirModalNovaEtapa() {
+        document.getElementById('etapaNome').value = '';
+        document.getElementById('etapaDataInicio').value = '';
+        document.getElementById('etapaDataFim').value = '';
+        document.getElementById('etapaResponsavel').value = '';
+        document.getElementById('etapaOrcamento').value = '';
+        new bootstrap.Modal(document.getElementById('modalNovaEtapa')).show();
+    }
+
+    function salvarEtapa() {
+        const nome = document.getElementById('etapaNome').value;
+        const dataInicio = document.getElementById('etapaDataInicio').value;
+        const dataFim = document.getElementById('etapaDataFim').value;
+        const responsavel = document.getElementById('etapaResponsavel').value;
+        const orcamento = parseFloat(document.getElementById('etapaOrcamento').value) || 0;
+
+        if (!nome) {
+            alert('Informe o nome da etapa!');
+            return;
+        }
+
+        etapas.push({
+            id: Date.now(),
+            nome: nome,
+            dataInicio: dataInicio,
+            dataFim: dataFim,
+            responsavel: responsavel,
+            orcamento: orcamento,
+            progresso: 0,
+            concluida: false
         });
 
-        // PERSISTÊNCIA
-        function carregarDados() {
-            const dadosSalvos = localStorage.getItem('sistemaEstoqueCC');
-            if (dadosSalvos) {
-                const dados = JSON.parse(dadosSalvos);
-                materiais = dados.materiais || [];
-                historico = dados.historico || [];
-                expedicoes = dados.expedicoes || [];
+        salvarDados();
+        atualizarCronograma();
+        atualizarDashboard();
+        popularSelects();
+        bootstrap.Modal.getInstance(document.getElementById('modalNovaEtapa')).hide();
+        alert('Etapa cadastrada com sucesso!');
+    }
+
+    function atualizarCronograma() {
+        const lista = document.getElementById('listaEtapas');
+        if (etapas.length === 0) {
+            lista.innerHTML = '<p class="text-muted">Nenhuma etapa cadastrada</p>';
+            return;
+        }
+
+        lista.innerHTML = etapas.map((etapa, index) => {
+            const status = calcularStatusEtapa(etapa);
+            const corBarra = status === 'atraso' ? 'var(--danger-color)' : 'var(--success-color)';
+            return `
+                <div class="etapa-card etapa-${status}">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6>${etapa.nome}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> ${etapa.dataInicio || 'Sem data'} até ${etapa.dataFim || 'Sem data'}<br>
+                                <i class="fas fa-user"></i> ${etapa.responsavel || 'Sem responsável'}<br>
+                                <i class="fas fa-dollar-sign"></i> R$ ${etapa.orcamento.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <label class="me-2">Progresso:</label>
+                                <input type="range" class="form-range" min="0" max="100" value="${etapa.progresso || 0}" 
+                                       onchange="atualizarProgressoEtapa(${index}, this.value)">
+                                <span class="ms-2">${etapa.progresso || 0}%</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: ${etapa.progresso || 0}%; background-color: ${corBarra};">
+                                    ${etapa.progresso || 0}%
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-danger mt-2" onclick="excluirEtapa(${index})">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function atualizarProgressoEtapa(index, valor) {
+        etapas[index].progresso = parseInt(valor);
+        salvarDados();
+        atualizarCronograma();
+        atualizarDashboard();
+    }
+
+    function excluirEtapa(index) {
+        if (confirm('Excluir esta etapa?')) {
+            etapas.splice(index, 1);
+            salvarDados();
+            atualizarCronograma();
+            atualizarDashboard();
+            popularSelects();
+        }
+    }
+
+    // CURVA S
+    function atualizarCurvaS() {
+        const orcamento = parseFloat(document.getElementById('orcamentoTotal').value) || 0;
+        const meses = parseInt(document.getElementById('periodoMeses').value) || 12;
+
+        if (orcamento === 0 || meses === 0) {
+            document.getElementById('planejadoHoje').textContent = 'R$ 0,00';
+            document.getElementById('realizadoHoje').textContent = 'R$ 0,00';
+            document.getElementById('desvioCurva').textContent = 'R$ 0,00';
+            document.getElementById('percentualDesvio').textContent = '0%';
+            return;
+        }
+
+        // Calcular valores planejados e realizados
+        const labels = [];
+        const dataPlanejado = [];
+        const dataRealizado = [];
+        
+        const hoje = new Date();
+        const dataInicio = infoObra.dataInicio ? new Date(infoObra.dataInicio) : new Date(hoje.getFullYear(), 0, 1);
+        const dataFim = new Date(dataInicio);
+        dataFim.setMonth(dataFim.getMonth() + meses);
+
+        const mesesDecorridos = Math.ceil((hoje - dataInicio) / (1000 * 60 * 60 * 24 * 30));
+        const percentualTempo = Math.min(mesesDecorridos / meses, 1);
+
+        // Curva S planejada (distribuição não-linear típica de obras)
+        for (let i = 0; i <= meses; i++) {
+            const data = new Date(dataInicio);
+            data.setMonth(data.getMonth() + i);
+            labels.push(data.toLocaleDateString('pt-BR', {month: 'short', year: '2-digit'}));
+            
+            // Curva S típica: início lento, meio acelerado, fim lento
+            const t = i / meses;
+            const percentualPlanejado = (3 * t * t - 2 * t * t * t) * 100;
+            dataPlanejado.push((orcamento * percentualPlanejado / 100).toFixed(2));
+        }
+
+        // Curva realizada (baseada no progresso real)
+        const progressoReal = calcularProgressoGeral();
+        for (let i = 0; i <= meses; i++) {
+            if (i <= mesesDecorridos) {
+                const t = i / mesesDecorridos;
+                const percentualRealizado = progressoReal * t;
+                dataRealizado.push((orcamento * percentualRealizado / 100).toFixed(2));
+            } else {
+                dataRealizado.push(null);
             }
         }
 
-        function salvarDados() {
-            const dados = {
-                materiais: materiais,
-                historico: historico,
-                expedicoes: expedicoes
-            };
-            localStorage.setItem('sistemaEstoqueCC', JSON.stringify(dados));
-        }
+        // Atualizar valores
+        const planejadoHoje = orcamento * (3 * percentualTempo * percentualTempo - 2 * percentualTempo * percentualTempo * percentualTempo);
+        const realizadoHoje = orcamento * (progressoReal / 100);
+        const desvio = realizadoHoje - planejadoHoje;
+        const percentualDesvio = planejadoHoje > 0 ? (desvio / planejadoHoje * 100) : 0;
 
-        // MATERIAIS
-        function abrirModalNovoMaterial() {
-            document.getElementById('novoMaterialCodigo').value = '';
-            document.getElementById('novoMaterialDescricao').value = '';
-            document.getElementById('novoMaterialEstoque').value = '0';
-            document.getElementById('novoMaterialValor').value = '0';
-            document.getElementById('novoMaterialPerda').value = '0';
-            new bootstrap.Modal(document.getElementById('modalNovoMaterial')).show();
-        }
+        document.getElementById('planejadoHoje').textContent = 'R$ ' + planejadoHoje.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('realizadoHoje').textContent = 'R$ ' + realizadoHoje.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('desvioCurva').textContent = 'R$ ' + desvio.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('percentualDesvio').textContent = percentualDesvio.toFixed(1) + '%';
 
-        function salvarNovoMaterial() {
-            const codigo = document.getElementById('novoMaterialCodigo').value;
-            const descricao = document.getElementById('novoMaterialDescricao').value;
-            const un = document.getElementById('novoMaterialUN').value;
-            const estoque = parseFloat(document.getElementById('novoMaterialEstoque').value) || 0;
-            const valor = parseFloat(document.getElementById('novoMaterialValor').value) || 0;
-            const perda = parseFloat(document.getElementById('novoMaterialPerda').value) || 0;
-
-            if (!codigo || !descricao) {
-                alert('Preencha código e descrição!');
-                return;
+        // Atualizar gráfico
+        const ctx = document.getElementById('chartCurvaS').getContext('2d');
+        if (chartCurvaS) chartCurvaS.destroy();
+        
+        chartCurvaS = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Planejado',
+                        data: dataPlanejado,
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Realizado',
+                        data: dataRealizado,
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toLocaleString('pt-BR');
+                            }
+                        }
+                    }
+                }
             }
+        });
+    }
 
-            materiais.push({
-                codigo: codigo,
-                descricao: descricao,
-                un: un,
-                estoque: estoque,
-                valor: valor,
-                perda: perda
+    // DIÁRIO DE OBRA
+    function abrirModalNovoDiario() {
+        document.getElementById('diarioData').valueAsDate = new Date();
+        document.getElementById('diarioClima').value = 'Sol';
+        document.getElementById('diarioEfetivo').value = '';
+        document.getElementById('diarioAtividades').value = '';
+        document.getElementById('diarioOcorrencias').value = '';
+        new bootstrap.Modal(document.getElementById('modalNovoDiario')).show();
+    }
+
+    function salvarDiario() {
+        const data = document.getElementById('diarioData').value;
+        const clima = document.getElementById('diarioClima').value;
+        const efetivo = parseInt(document.getElementById('diarioEfetivo').value) || 0;
+        const atividades = document.getElementById('diarioAtividades').value;
+        const ocorrencias = document.getElementById('diarioOcorrencias').value;
+
+        if (!data || !atividades) {
+            alert('Preencha data e atividades!');
+            return;
+        }
+
+        diario.push({
+            id: Date.now(),
+            data: data,
+            clima: clima,
+            efetivo: efetivo,
+            atividades: atividades,
+            ocorrencias: ocorrencias
+        });
+
+        salvarDados();
+        atualizarDiario();
+        bootstrap.Modal.getInstance(document.getElementById('modalNovoDiario')).hide();
+        alert('Registro salvo com sucesso!');
+    }
+
+    function atualizarDiario() {
+        const lista = document.getElementById('listaDiario');
+        if (diario.length === 0) {
+            lista.innerHTML = '<p class="text-muted">Nenhum registro no diário</p>';
+            return;
+        }
+
+        lista.innerHTML = diario.slice().reverse().map(entry => {
+            const data = new Date(entry.data).toLocaleDateString('pt-BR');
+            const iconeClima = entry.clima === 'Sol' ? '☀️' : entry.clima === 'Chuva' ? '🌧️' : '☁️';
+            return `
+                <div class="diario-entry">
+                    <div class="d-flex justify-content-between">
+                        <h6>${data} ${iconeClima} ${entry.clima}</h6>
+                        <button class="btn btn-sm btn-danger" onclick="excluirDiario(${entry.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">Efetivo: ${entry.efetivo} pessoas</small>
+                    <p class="mt-2 mb-1"><strong>Atividades:</strong></p>
+                    <p>${entry.atividades}</p>
+                    ${entry.ocorrencias ? `<p class="mt-2 mb-0"><strong>Ocorrências:</strong> ${entry.ocorrencias}</p>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function excluirDiario(id) {
+        if (confirm('Excluir este registro?')) {
+            diario = diario.filter(d => d.id !== id);
+            salvarDados();
+            atualizarDiario();
+        }
+    }
+
+    // ALERTAS
+    function verificarAlertas() {
+        alertas = [];
+
+        // Alertas de etapas atrasadas
+        etapas.forEach(etapa => {
+            const status = calcularStatusEtapa(etapa);
+            if (status === 'atraso') {
+                alertas.push({
+                    tipo: 'critico',
+                    mensagem: `⚠️ Etapa "${etapa.nome}" está atrasada!`,
+                    prioridade: 1
+                });
+            }
+        });
+
+        // Alertas de materiais em falta
+        materiais.forEach(mat => {
+            if (mat.estoque <= 0) {
+                alertas.push({
+                    tipo: 'critico',
+                    mensagem: `📦 Material "${mat.descricao}" está em falta!`,
+                    prioridade: 2
+                });
+            } else if (mat.estoque < 10) {
+                alertas.push({
+                    tipo: 'atencao',
+                    mensagem: `📦 Estoque baixo: "${mat.descricao}" (${mat.estoque} ${mat.un})`,
+                    prioridade: 3
+                });
+            }
+        });
+
+        // Alertas de prazo
+        const diasRestantes = calcularDiasRestantes();
+        if (diasRestantes > 0 && diasRestantes <= 30) {
+            alertas.push({
+                tipo: 'atencao',
+                mensagem: `⏰ Entrega prevista em ${diasRestantes} dias`,
+                prioridade: 4
+            });
+        }
+
+        // Ordenar por prioridade
+        alertas.sort((a, b) => a.prioridade - b.prioridade);
+
+        // Atualizar interface
+        document.getElementById('totalAlertas').textContent = alertas.length;
+        document.getElementById('badgeAlertas').textContent = alertas.length;
+
+        const lista = document.getElementById('listaAlertas');
+        if (alertas.length === 0) {
+            lista.innerHTML = '<p class="text-muted">✅ Nenhum alerta pendente</p>';
+        } else {
+            lista.innerHTML = alertas.map(a => `
+                <div class="alerta-item alerta-${a.tipo}">
+                    ${a.mensagem}
+                </div>
+            `).join('');
+        }
+    }
+
+    // MATERIAIS
+    function abrirModalNovoMaterial() {
+        document.getElementById('novoMaterialCodigo').value = '';
+        document.getElementById('novoMaterialDescricao').value = '';
+        document.getElementById('novoMaterialEstoque').value = '0';
+        document.getElementById('novoMaterialValor').value = '0';
+        
+        // Popular select de etapas
+        const selectEtapa = document.getElementById('novoMaterialEtapa');
+        selectEtapa.innerHTML = '<option value="">Nenhuma</option>';
+        etapas.forEach(etapa => {
+            selectEtapa.innerHTML += `<option value="${etapa.id}">${etapa.nome}</option>`;
+        });
+        
+        new bootstrap.Modal(document.getElementById('modalNovoMaterial')).show();
+    }
+
+    function salvarNovoMaterial() {
+        const codigo = document.getElementById('novoMaterialCodigo').value;
+        const descricao = document.getElementById('novoMaterialDescricao').value;
+        const un = document.getElementById('novoMaterialUN').value;
+        const estoque = parseFloat(document.getElementById('novoMaterialEstoque').value) || 0;
+        const valor = parseFloat(document.getElementById('novoMaterialValor').value) || 0;
+        const etapaId = document.getElementById('novoMaterialEtapa').value;
+
+        if (!codigo || !descricao) {
+            alert('Preencha código e descrição!');
+            return;
+        }
+
+        const etapa = etapas.find(e => e.id == etapaId);
+        materiais.push({
+            codigo: codigo,
+            descricao: descricao,
+            un: un,
+            estoque: estoque,
+            valor: valor,
+            etapaId: etapaId,
+            etapaNome: etapa ? etapa.nome : ''
+        });
+
+        salvarDados();
+        atualizarTabelaMateriais();
+        atualizarTabelaEstoque();
+        atualizarDashboard();
+        popularSelects();
+        bootstrap.Modal.getInstance(document.getElementById('modalNovoMaterial')).hide();
+        alert('Material cadastrado com sucesso!');
+    }
+
+    function atualizarTabelaMateriais() {
+        const tbody = document.getElementById('tabelaMateriais');
+        tbody.innerHTML = '';
+        materiais.forEach((mat, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${mat.codigo}</td>
+                    <td>${mat.descricao}</td>
+                    <td>${mat.un}</td>
+                    <td>${mat.estoque.toFixed(2)}</td>
+                    <td>R$ ${mat.valor.toFixed(2)}</td>
+                    <td>${mat.etapaNome || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="excluirMaterial(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function excluirMaterial(index) {
+        if (confirm('Excluir este material?')) {
+            materiais.splice(index, 1);
+            salvarDados();
+            atualizarTabelaMateriais();
+            atualizarTabelaEstoque();
+            atualizarDashboard();
+            popularSelects();
+        }
+    }
+
+    // ENTRADA
+    function confirmarEntrada() {
+        const materialCodigo = document.getElementById('materialEntrada').value;
+        const qtd = parseFloat(document.getElementById('qtdEntrada').value);
+        const valor = parseFloat(document.getElementById('valorEntrada').value) || 0;
+        const fornecedor = document.getElementById('fornecedorEntrada').value;
+        const doc = document.getElementById('docEntrada').value;
+        const obs = document.getElementById('obsEntrada').value;
+
+        if (!materialCodigo || !qtd) {
+            alert('Selecione material e informe quantidade!');
+            return;
+        }
+
+        const material = materiais.find(m => m.codigo === materialCodigo);
+        if (material) {
+            material.estoque += qtd;
+            if (valor > 0) material.valor = valor;
+
+            historico.push({
+                data: new Date().toISOString(),
+                operacao: 'ENTRADA',
+                material: material.descricao,
+                codigo: material.codigo,
+                qtd: qtd,
+                alvo: fornecedor || 'Almoxarifado',
+                etapa: material.etapaNome,
+                doc: doc,
+                obs: obs
             });
 
             salvarDados();
             atualizarTabelaMateriais();
             atualizarTabelaEstoque();
-            atualizarCommandCenter();
-            popularSelectsMateriais();
-            bootstrap.Modal.getInstance(document.getElementById('modalNovoMaterial')).hide();
-            alert('Material cadastrado com sucesso!');
+            atualizarTabelaHistorico();
+            atualizarDashboard();
+            verificarAlertas();
+
+            document.getElementById('qtdEntrada').value = '';
+            document.getElementById('valorEntrada').value = '';
+            document.getElementById('docEntrada').value = '';
+            document.getElementById('obsEntrada').value = '';
+            document.getElementById('fornecedorEntrada').value = '';
+
+            alert('Entrada registrada com sucesso!');
+        }
+    }
+
+    // SAÍDA
+    function efetivarSaida() {
+        const materialCodigo = document.getElementById('materialSaida').value;
+        const qtd = parseFloat(document.getElementById('qtdSaida').value);
+        const pep = document.getElementById('pepDestino').value;
+        const etapaId = document.getElementById('etapaSaida').value;
+        const frente = document.getElementById('frenteServico').value;
+        const solicitante = document.getElementById('solicitante').value;
+        const status = document.getElementById('statusSaida').value;
+        const obs = document.getElementById('obsSaida').value;
+
+        if (!materialCodigo || !qtd || !pep) {
+            alert('Preencha material, quantidade e PEP!');
+            return;
         }
 
-        function atualizarTabelaMateriais() {
-            const tbody = document.getElementById('tabelaMateriais');
-            tbody.innerHTML = '';
-            materiais.forEach((mat, index) => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${mat.codigo}</td>
-                        <td>${mat.descricao}</td>
-                        <td>${mat.un}</td>
-                        <td>${mat.estoque.toFixed(2)}</td>
-                        <td>R$ ${mat.valor.toFixed(2)}</td>
-                        <td>${mat.perda}%</td>
-                        <td>
-                            <button class="btn btn-sm btn-danger" onclick="excluirMaterial(${index})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function excluirMaterial(index) {
-            if (confirm('Excluir este material?')) {
-                materiais.splice(index, 1);
-                salvarDados();
-                atualizarTabelaMateriais();
-                atualizarTabelaEstoque();
-                atualizarCommandCenter();
-                popularSelectsMateriais();
-            }
-        }
-
-        // ENTRADA
-        function confirmarEntrada() {
-            const materialCodigo = document.getElementById('materialEntrada').value;
-            const qtd = parseFloat(document.getElementById('qtdEntrada').value);
-            const valor = parseFloat(document.getElementById('valorEntrada').value) || 0;
-            const fornecedor = document.getElementById('fornecedorEntrada').value;
-            const doc = document.getElementById('docEntrada').value;
-            const obs = document.getElementById('obsEntrada').value;
-
-            if (!materialCodigo || !qtd) {
-                alert('Selecione material e informe quantidade!');
+        const material = materiais.find(m => m.codigo === materialCodigo);
+        const etapa = etapas.find(e => e.id == etapaId);
+        
+        if (material) {
+            if (material.estoque < qtd) {
+                alert('Estoque insuficiente! Disponível: ' + material.estoque);
                 return;
             }
 
-            const material = materiais.find(m => m.codigo === materialCodigo);
-            if (material) {
-                material.estoque += qtd;
-                if (valor > 0) material.valor = valor;
+            material.estoque -= qtd;
 
-                historico.push({
-                    data: new Date().toISOString(),
-                    operacao: 'ENTRADA',
-                    material: material.descricao,
-                    codigo: material.codigo,
-                    qtd: qtd,
-                    alvo: fornecedor || 'Almoxarifado',
-                    doc: doc,
-                    obs: obs
+            historico.push({
+                data: new Date().toISOString(),
+                operacao: 'SAÍDA',
+                material: material.descricao,
+                codigo: material.codigo,
+                qtd: qtd,
+                alvo: pep,
+                etapa: etapa ? etapa.nome : material.etapaNome,
+                frente: frente,
+                solicitante: solicitante,
+                status: status,
+                obs: obs
+            });
+
+            salvarDados();
+            atualizarTabelaMateriais();
+            atualizarTabelaEstoque();
+            atualizarTabelaHistorico();
+            atualizarDashboard();
+            verificarAlertas();
+
+            document.getElementById('qtdSaida').value = '';
+            document.getElementById('pepDestino').value = '';
+            document.getElementById('frenteServico').value = '';
+            document.getElementById('solicitante').value = '';
+            document.getElementById('obsSaida').value = '';
+
+            alert('Saída registrada com sucesso!');
+        }
+    }
+
+    // ESTOQUE
+    function atualizarTabelaEstoque() {
+        const tbody = document.getElementById('tabelaEstoque');
+        tbody.innerHTML = '';
+        materiais.forEach(mat => {
+            const valorTotal = mat.estoque * mat.valor;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${mat.codigo}</td>
+                    <td>${mat.descricao}</td>
+                    <td>${mat.estoque.toFixed(2)} ${mat.un}</td>
+                    <td>R$ ${valorTotal.toFixed(2)}</td>
+                    <td>${mat.etapaNome || '-'}</td>
+                </tr>
+            `;
+        });
+    }
+
+    // HISTÓRICO
+    function atualizarTabelaHistorico() {
+        const tbody = document.getElementById('tabelaHistorico');
+        tbody.innerHTML = '';
+        const ultimos = historico.slice(-50).reverse();
+        ultimos.forEach(h => {
+            const data = new Date(h.data).toLocaleString('pt-BR');
+            tbody.innerHTML += `
+                <tr>
+                    <td>${data}</td>
+                    <td><span class="badge bg-${h.operacao === 'ENTRADA' ? 'success' : 'primary'}">${h.operacao}</span></td>
+                    <td>${h.material}</td>
+                    <td>${h.qtd.toFixed(2)}</td>
+                    <td>${h.etapa || h.alvo}</td>
+                </tr>
+            `;
+        });
+    }
+
+    // SELECTS
+    function popularSelects() {
+        // Select de materiais
+        const selectsMateriais = ['materialEntrada', 'materialSaida'];
+        selectsMateriais.forEach(id => {
+            const select = document.getElementById(id);
+            if (select) {
+                select.innerHTML = '<option value="">Selecione...</option>';
+                materiais.forEach(m => {
+                    select.innerHTML += `<option value="${m.codigo}">${m.codigo} - ${m.descricao} (${m.estoque} ${m.un})</option>`;
                 });
-
-                salvarDados();
-                atualizarTabelaMateriais();
-                atualizarTabelaEstoque();
-                atualizarTabelaHistorico();
-                atualizarCommandCenter();
-
-                document.getElementById('qtdEntrada').value = '';
-                document.getElementById('valorEntrada').value = '';
-                document.getElementById('docEntrada').value = '';
-                document.getElementById('obsEntrada').value = '';
-                document.getElementById('fornecedorEntrada').value = '';
-
-                alert('Entrada registrada com sucesso!');
             }
-        }
+        });
 
-        // SAÍDA
-        function efetivarSaida() {
-            const materialCodigo = document.getElementById('materialSaida').value;
-            const qtd = parseFloat(document.getElementById('qtdSaida').value);
-            const pep = document.getElementById('pepDestino').value;
-            const frente = document.getElementById('frenteServico').value;
-            const solicitante = document.getElementById('solicitante').value;
-            const status = document.getElementById('statusSaida').value;
-            const obs = document.getElementById('obsSaida').value;
-
-            if (!materialCodigo || !qtd || !pep) {
-                alert('Preencha material, quantidade e PEP de destino!');
-                return;
-            }
-
-            const material = materiais.find(m => m.codigo === materialCodigo);
-            if (material) {
-                if (material.estoque < qtd) {
-                    alert('Estoque insuficiente! Disponível: ' + material.estoque);
-                    return;
-                }
-
-                material.estoque -= qtd;
-
-                expedicoes.push({
-                    data: new Date().toISOString(),
-                    material: material.descricao,
-                    codigo: material.codigo,
-                    qtd: qtd,
-                    pep: pep,
-                    frente: frente,
-                    solicitante: solicitante,
-                    status: status,
-                    obs: obs
-                });
-
-                historico.push({
-                    data: new Date().toISOString(),
-                    operacao: 'SAÍDA',
-                    material: material.descricao,
-                    codigo: material.codigo,
-                    qtd: qtd,
-                    alvo: pep + (frente ? ' - ' + frente : ''),
-                    obs: obs
-                });
-
-                salvarDados();
-                atualizarTabelaMateriais();
-                atualizarTabelaEstoque();
-                atualizarTabelaHistorico();
-                atualizarCommandCenter();
-
-                document.getElementById('qtdSaida').value = '';
-                document.getElementById('pepDestino').value = '';
-                document.getElementById('frenteServico').value = '';
-                document.getElementById('solicitante').value = '';
-                document.getElementById('obsSaida').value = '';
-
-                alert('Saída registrada com sucesso!');
-            }
-        }
-
-        // ESTOQUE
-        function atualizarTabelaEstoque() {
-            const tbody = document.getElementById('tabelaEstoque');
-            tbody.innerHTML = '';
-            materiais.forEach(mat => {
-                const valorTotal = mat.estoque * mat.valor;
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${mat.codigo}</td>
-                        <td>${mat.descricao}</td>
-                        <td>${mat.estoque.toFixed(2)} ${mat.un}</td>
-                        <td>R$ ${valorTotal.toFixed(2)}</td>
-                    </tr>
-                `;
+        // Select de etapas
+        const selectEtapas = document.getElementById('etapaSaida');
+        if (selectEtapas) {
+            selectEtapas.innerHTML = '<option value="">Selecione...</option>';
+            etapas.forEach(e => {
+                selectEtapas.innerHTML += `<option value="${e.id}">${e.nome}</option>`;
             });
         }
+    }
 
-        // HISTÓRICO
-        function atualizarTabelaHistorico() {
-            const tbody = document.getElementById('tabelaHistorico');
-            tbody.innerHTML = '';
-            const ultimos = historico.slice(-50).reverse();
-            ultimos.forEach(h => {
-                const data = new Date(h.data).toLocaleString('pt-BR');
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${data}</td>
-                        <td><span class="badge bg-${h.operacao === 'ENTRADA' ? 'success' : 'primary'}">${h.operacao}</span></td>
-                        <td>${h.material}</td>
-                        <td>${h.qtd.toFixed(2)}</td>
-                        <td>${h.alvo}</td>
-                    </tr>
-                `;
-            });
+    // EXPORTAR JSON
+    function exportarJSON() {
+        const dados = {
+            infoObra: infoObra,
+            etapas: etapas,
+            materiais: materiais,
+            historico: historico,
+            diario: diario,
+            dataExportacao: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'backup_obra_' + new Date().toISOString().split('T')[0] + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // ASSISTENTE IA
+    function abrirAssistenteIA() {
+        new bootstrap.Modal(document.getElementById('modalIA')).show();
+    }
+
+    function consultarIA() {
+        const pergunta = document.getElementById('perguntaIA').value;
+        if (!pergunta) {
+            alert('Faça uma pergunta!');
+            return;
         }
 
-        // COMMAND CENTER
-        function atualizarCommandCenter() {
-            const pepsUnicos = [...new Set(expedicoes.map(e => e.pep))];
-            document.getElementById('totalPEPs').textContent = pepsUnicos.length;
-            document.getElementById('totalMateriais').textContent = materiais.length;
+        const respostaDiv = document.getElementById('respostaIA');
+        respostaDiv.style.display = 'block';
+        respostaDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando IA...';
 
-            const hoje = new Date().toDateString();
-            const movHoje = historico.filter(h => new Date(h.data).toDateString() === hoje).length;
-            document.getElementById('movimentacoesHoje').textContent = movHoje;
+        // Simulação de resposta (em produção, integraria com API Gemini)
+        setTimeout(() => {
+            const contexto = gerarContextoIA();
+            const resposta = gerarRespostaIA(pergunta, contexto);
+            respostaDiv.innerHTML = resposta;
+        }, 1500);
+    }
 
-            const valorTotal = materiais.reduce((sum, m) => sum + (m.estoque * m.valor), 0);
-            document.getElementById('valorEstoque').textContent = 'R$ ' + valorTotal.toFixed(2);
+    function gerarContextoIA() {
+        return {
+            progressoGeral: calcularProgressoGeral(),
+            diasRestantes: calcularDiasRestantes(),
+            totalEtapas: etapas.length,
+            etapasAtrasadas: etapas.filter(e => calcularStatusEtapa(e) === 'atraso').length,
+            totalMateriais: materiais.length,
+            materiaisEmFalta: materiais.filter(m => m.estoque <= 0).length,
+            valorEstoque: materiais.reduce((sum, m) => sum + (m.estoque * m.valor), 0),
+            totalAlertas: alertas.length
+        };
+    }
 
-            const tbody = document.getElementById('tabelaUltimasMovimentacoes');
-            tbody.innerHTML = '';
-            const ultimas = historico.slice(-10).reverse();
-            ultimas.forEach(h => {
-                const data = new Date(h.data).toLocaleString('pt-BR');
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${data}</td>
-                        <td><span class="badge bg-${h.operacao === 'ENTRADA' ? 'success' : 'primary'}">${h.operacao}</span></td>
-                        <td>${h.material}</td>
-                        <td>${h.qtd.toFixed(2)}</td>
-                        <td>${h.alvo}</td>
-                    </tr>
-                `;
-            });
+    function gerarRespostaIA(pergunta, contexto) {
+        let resposta = '<strong>🤖 Análise da IA:</strong><br><br>';
+        
+        if (contexto.etapasAtrasadas > 0) {
+            resposta += `⚠️ <strong>Atenção:</strong> Você tem ${contexto.etapasAtrasadas} etapa(s) atrasada(s). `;
+            resposta += `Recomendo revisar o cronograma e verificar se há gargalos na mão de obra ou materiais.<br><br>`;
         }
 
-        // SELECTS
-        function popularSelectsMateriais() {
-            const selects = ['materialEntrada', 'materialSaida'];
-            selects.forEach(id => {
-                const select = document.getElementById(id);
-                if (select) {
-                    select.innerHTML = '<option value="">Selecione...</option>';
-                    materiais.forEach(m => {
-                        select.innerHTML += `<option value="${m.codigo}">${m.codigo} - ${m.descricao} (Disp: ${m.estoque})</option>`;
-                    });
-                }
-            });
-        }
-
-        // EXPORTAR JSON
-        function exportarJSON() {
-            const dados = {
-                materiais: materiais,
-                historico: historico,
-                expedicoes: expedicoes,
-                dataExportacao: new Date().toISOString()
-            };
-            const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'backup_estoque_' + new Date().toISOString().split('T')[0] + '.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // ASSISTENTE IA (placeholder)
-        function abrirAssistenteIA() {
-            alert('Assistente IA - Em desenvolvimento\n\nConfigure sua API key do Gemini para ativar esta funcionalidade.');
-        }
-
-        // RELATÓRIO
-        function gerarRelatorio() {
-            alert('Relatório completo em desenvolvimento.\n\nUse "Exportar JSON" para backup dos dados.');
-        }
-    </script>
-</body>
-</html>
+        if (contexto.materiaisEmFalta > 0) {
+            resposta += `📦 <strong>Alerta de Estoque:</strong> ${contexto.materiaisEmFalta} material(is) em falta. `;
+            resposta += `Program
