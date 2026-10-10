@@ -1,525 +1,1392 @@
-// ===== FICHA DE EPI =====
-let catalogoEPI = [];
-let fichasEPI = [];
-let canvasColabCtx = null;
-let canvasRespCtx = null;
-let desenhandoColab = false;
-let desenhandoResp = false;
-
-function inicializarCatalogoEPI() {
-    // Catálogo padrão de EPIs conforme NR-6
-    if (catalogoEPI.length === 0) {
-        catalogoEPI = [
-            { id: 1, nome: 'Capacete de Segurança com Jugular', ca: '', fabricante: '', validadeCA: '', periodicidade: '12 meses', estoque: 0 },
-            { id: 2, nome: 'Protetor Auricular (Plug)', ca: '', fabricante: '', validadeCA: '', periodicidade: '6 meses', estoque: 0 },
-            { id: 3, nome: 'Protetor Auricular (Abafador)', ca: '', fabricante: '', validadeCA: '', periodicidade: '12 meses', estoque: 0 },
-            { id: 4, nome: 'Óculos de Segurança Incolor', ca: '', fabricante: '', validadeCA: '', periodicidade: '12 meses', estoque: 0 },
-            { id: 5, nome: 'Óculos de Segurança para Solda', ca: '', fabricante: '', validadeCA: '', periodicidade: '12 meses', estoque: 0 },
-            { id: 6, nome: 'Máscara Respiratória PFF2 (N95)', ca: '', fabricante: '', validadeCA: '', periodicidade: '3 meses', estoque: 0 },
-            { id: 7, nome: 'Luva de Procedimento (Látex)', ca: '', fabricante: '', validadeCA: '', periodicidade: '3 meses', estoque: 0 },
-            { id: 8, nome: 'Luva de Raspa de Couro (Solda)', ca: '', fabricante: '', validadeCA: '', periodicidade: '6 meses', estoque: 0 },
-            { id: 9, nome: 'Luva de Vaqueta (Geral)', ca: '', fabricante: '', validadeCA: '', periodicidade: '6 meses', estoque: 0 },
-            { id: 10, nome: 'Botina de Segurança com Biqueira', ca: '', fabricante: '', validadeCA: '', periodicidade: '12 meses', estoque: 0 },
-            { id: 11, nome: 'Botina de Segurança Dielétrica', ca: '', fabricante: '', validadeCA: '', periodicidade: '12 meses', estoque: 0 },
-            { id: 12, nome: 'Cinto de Segurança Tipo Paraquedista', ca: '', fabricante: '', validadeCA: '', periodicidade: '12 meses', estoque: 0 },
-            { id: 13, nome: 'Protetor Facial (Face Shield)', ca: '', fabricante: '', validadeCA: '', periodicidade: '12 meses', estoque: 0 },
-            { id: 14, nome: 'Avental de Raspa (Solda)', ca: '', fabricante: '', validadeCA: '', periodicidade: '12 meses', estoque: 0 },
-            { id: 15, nome: 'Perneira de Segurança', ca: '', fabricante: '', validadeCA: '', periodicidade: '12 meses', estoque: 0 }
-        ];
-    }
+<writeToFile>
+<path>sistema_obras_pablo_leandro.html</path>
+<content><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Gestão de Obras - Pablo Leandro</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;font-size:.9rem}
+.navbar{background:#2c3e50!important}
+.card{box-shadow:0 2px 8px rgba(0,0,0,.08);border:none;border-radius:10px;margin-bottom:15px}
+.card-header{background:#fff;border-bottom:2px solid #e9ecef;font-weight:600;padding:.75rem 1rem}
+.stat-card{text-align:center;padding:20px}
+.stat-card h2{font-size:2.2rem;font-weight:bold;margin:10px 0}
+.stat-card h5{color:#6c757d;font-size:.9rem}
+.progress-barra{height:28px;background:#e9ecef;border-radius:14px;overflow:hidden}
+.progress-fill{height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;transition:width .4s}
+.etapa-box{border-left:5px solid #3498db;padding:12px;margin-bottom:10px;background:#fff;border-radius:6px}
+.etapa-concluida{border-left-color:#27ae60}
+.etapa-atraso{border-left-color:#e74c3c}
+.alerta-box{padding:10px 15px;margin-bottom:8px;border-radius:6px;border-left:4px solid}
+.alerta-critico{background:#fde8e8;border-color:#e74c3c;color:#721c24}
+.alerta-atencao{background:#fff8e1;border-color:#f39c12;color:#856404}
+.diario-box{border-left:4px solid #3498db;padding:15px;margin-bottom:15px;background:#fff;border-radius:6px}
+.tab-content{padding-top:15px}
+.nav-tabs .nav-link{font-weight:500;font-size:.85rem}
+.badge-status{padding:4px 10px;border-radius:12px;font-size:.75rem}
+.powerbi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-bottom:20px}
+.kpi-card{background:#fff;border-radius:8px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid #3498db;transition:transform .2s}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.kpi-card.success{border-left-color:#27ae60}
+.kpi-card.warning{border-left-color:#f39c12}
+.kpi-card.danger{border-left-color:#e74c3c}
+.kpi-card.info{border-left-color:#17a2b8}
+.kpi-label{font-size:.8rem;color:#6c757d;text-transform:uppercase;font-weight:600;letter-spacing:.5px}
+.kpi-value{font-size:1.8rem;font-weight:bold;margin:8px 0;color:#2c3e50}
+.kpi-sub{font-size:.78rem;color:#6c757d}
+.chart-container{background:#fff;border-radius:8px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:15px}
+.chart-title{font-size:.95rem;font-weight:600;color:#2c3e50;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e9ecef}
+.etapa-card-clickable{background:#fff;border-radius:8px;padding:14px;margin-bottom:10px;cursor:pointer;border-left:5px solid #3498db;transition:all .2s;box-shadow:0 2px 4px rgba(0,0,0,.05)}
+.etapa-card-clickable:hover{transform:translateX(5px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.etapa-card-clickable.concluida{border-left-color:#27ae60}
+.etapa-card-clickable.atraso{border-left-color:#e74c3c}
+.semaforo{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px}
+.semaforo.verde{background:#27ae60}
+.semaforo.amarelo{background:#f39c12}
+.semaforo.vermelho{background:#e74c3c}
+.ranking-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #e9ecef}
+.ranking-bar{height:8px;background:#e9ecef;border-radius:4px;overflow:hidden;margin-top:5px}
+.ranking-fill{height:100%;background:linear-gradient(90deg,#3498db,#2c3e50);border-radius:4px}
+.epi-card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:15px}
+.epi-header{background:linear-gradient(135deg,#2c3e50,#3498db);color:#fff;padding:15px;border-radius:8px 8px 0 0;margin:-20px -20px 20px -20px}
+.epi-field{margin-bottom:12px}
+.epi-field label{font-weight:600;font-size:.85rem;color:#2c3e50;display:block;margin-bottom:4px}
+.termo-responsabilidade{background:#f8f9fa;border:2px solid #2c3e50;padding:20px;border-radius:8px;margin:20px 0;font-size:.9rem;line-height:1.6}
+.termo-responsabilidade h6{color:#2c3e50;border-bottom:2px solid #3498db;padding-bottom:8px;margin-bottom:12px}
+.canvas-assinatura{border:2px dashed #3498db;border-radius:8px;background:#fff;cursor:crosshair;width:100%;height:120px;touch-action:none}
+.canvas-container{text-align:center;margin:10px 0}
+.canvas-container small{color:#6c757d;display:block;margin-top:5px}
+.btn-limpar-canvas{background:#e74c3c;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:.8rem;margin-top:5px}
+.alert-ca-vencendo{background:#fff3cd;border-left:4px solid #f39c12;padding:10px;border-radius:4px;margin:5px 0}
+.alert-ca-vencido{background:#f8d7da;border-left:4px solid #e74c3c;padding:10px;border-radius:4px;margin:5px 0}
+.badge-ca{background:#27ae60;color:#fff;padding:2px 8px;border-radius:12px;font-size:.75rem}
+.badge-ca-vencendo{background:#f39c12;color:#fff;padding:2px 8px;border-radius:12px;font-size:.75rem}
+.badge-ca-vencido{background:#e74c3c;color:#fff;padding:2px 8px;border-radius:12px;font-size:.75rem}
+.ficha-impressao{background:#fff;padding:30px;border:1px solid #ddd}
+.ficha-impressao .assinatura-line{border-top:1px solid #000;margin-top:50px;padding-top:5px;text-align:center;font-size:.85rem}
+@media print{body *{visibility:hidden}#fichaImpressao,#fichaImpressao *{visibility:visible}#fichaImpressao{position:absolute;left:0;top:0;width:100%}}
+</style>
+</head>
+<body>
+<nav class="navbar navbar-dark">
+<div class="container-fluid">
+<a class="navbar-brand" href="#"><i class="fas fa-hard-hat"></i> Gestão de Obras - Pablo Leandro</a>
+<div>
+<button class="btn btn-outline-light btn-sm me-2" onclick="exportarJSON()"><i class="fas fa-download"></i> Backup</button>
+<button class="btn btn-outline-light btn-sm" onclick="document.getElementById('modalImportar').style.display='flex'"><i class="fas fa-upload"></i> Importar</button>
+</div>
+</div>
+</nav>
+<div class="container-fluid mt-3">
+<ul class="nav nav-tabs" id="mainTabs">
+<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cronograma"><i class="fas fa-calendar"></i> Cronograma</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#curvaS"><i class="fas fa-chart-line"></i> Curva S</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#diario"><i class="fas fa-book"></i> Diário</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#alertas"><i class="fas fa-bell"></i> Alertas <span class="badge bg-danger" id="badgeAlertas">0</span></button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#materiais"><i class="fas fa-boxes"></i> Materiais</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#entrada"><i class="fas fa-arrow-down"></i> Entrada</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#saida"><i class="fas fa-arrow-up"></i> Saída</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#devolucao"><i class="fas fa-undo"></i> Devolução</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#estoque"><i class="fas fa-warehouse"></i> Estoque</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#residuos"><i class="fas fa-trash"></i> Resíduos</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#epi"><i class="fas fa-hard-hat"></i> Ficha EPI</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#historico"><i class="fas fa-history"></i> Histórico</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#analytics"><i class="fas fa-chart-pie"></i> Analytics</button></li>
+</ul>
+<div class="tab-content">
+<div class="tab-pane fade show active" id="dashboard">
+<div class="row">
+<div class="col-md-3"><div class="card stat-card"><h5>Progresso Geral</h5><h2 id="progGeral">0%</h2><div class="progress-barra"><div class="progress-fill" id="barProg" style="width:0%;background:#27ae60">0%</div></div><small id="statusPrazo" class="text-success">No prazo</small></div></div>
+<div class="col-md-3"><div class="card stat-card"><h5>Dias Restantes</h5><h2 id="diasRest">0</h2><small>até a entrega</small></div></div>
+<div class="col-md-3"><div class="card stat-card"><h5>Valor em Estoque</h5><h2 id="valEstoque">R$ 0</h2><small id="totalItens">0 itens</small></div></div>
+<div class="col-md-3"><div class="card stat-card"><h5>Alertas Ativos</h5><h2 id="totAlertas">0</h2><button class="btn btn-sm btn-warning mt-2" onclick="document.querySelector('[data-bs-target=&quot;#alertas&quot;]').click()">Ver Alertas</button></div></div>
+</div>
+<div class="row mt-3">
+<div class="col-md-8"><div class="card"><div class="card-header">Etapas da Obra</div><div class="card-body" id="listaEtapasDash"><p class="text-muted">Nenhuma etapa. Vá em "Cronograma" para adicionar.</p></div></div></div>
+<div class="col-md-4"><div class="card"><div class="card-header">Próximos Alertas</div><div class="card-body" id="proxAlertas"><p class="text-muted">Nenhum alerta</p></div></div></div>
+</div>
+<div class="row mt-3">
+<div class="col-12"><div class="card"><div class="card-header">Últimas Movimentações</div><div class="card-body"><table class="table table-sm"><thead><tr><th>Data</th><th>Tipo</th><th>Material</th><th>Qtd</th><th>Destino</th></tr></thead><tbody id="tabUltMov"></tbody></table></div></div></div>
+</div>
+</div>
+<div class="tab-pane fade" id="cronograma">
+<div class="card">
+<div class="card-header d-flex justify-content-between align-items-center">
+<span><i class="fas fa-calendar"></i> Cronograma Físico</span>
+<button class="btn btn-sm btn-success" onclick="abrirModalEtapa()"><i class="fas fa-plus"></i> Nova Etapa</button>
+</div>
+<div class="card-body">
+<div class="row mb-3">
+<div class="col-md-4"><label>Nome da Obra</label><input type="text" id="nomeObra" class="form-control" placeholder="Ex: Residencial Flores" onchange="salvarObra()"></div>
+<div class="col-md-4"><label>Data Início</label><input type="date" id="dataInicio" class="form-control" onchange="salvarObra()"></div>
+<div class="col-md-4"><label>Data Entrega</label><input type="date" id="dataEntrega" class="form-control" onchange="salvarObra()"></div>
+</div>
+<div id="listaEtapas"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="curvaS">
+<div class="card">
+<div class="card-header"><i class="fas fa-chart-line"></i> Curva S - Planejado x Realizado</div>
+<div class="card-body">
+<div class="row mb-3">
+<div class="col-md-6"><label>Orçamento Total (R$)</label><input type="number" id="orcTotal" class="form-control" step="0.01" onchange="atualizarCurvaS()"></div>
+<div class="col-md-6"><label>Período (meses)</label><input type="number" id="periodoMes" class="form-control" onchange="atualizarCurvaS()"></div>
+</div>
+<div style="height:350px"><canvas id="chartCurvaS"></canvas></div>
+<div class="row mt-3">
+<div class="col-md-4"><div class="card bg-light"><div class="card-body text-center"><h6>Planejado</h6><h4 id="planHoje">R$ 0</h4></div></div></div>
+<div class="col-md-4"><div class="card bg-light"><div class="card-body text-center"><h6>Realizado</h6><h4 id="realHoje">R$ 0</h4></div></div></div>
+<div class="col-md-4"><div class="card bg-light"><div class="card-body text-center"><h6>Desvio</h6><h4 id="desvioVal">R$ 0</h4><small id="desvioPct">0%</small></div></div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="diario">
+<div class="card">
+<div class="card-header d-flex justify-content-between align-items-center">
+<span><i class="fas fa-book"></i> Diário de Obra</span>
+<button class="btn btn-sm btn-success" onclick="abrirModalDiario()"><i class="fas fa-plus"></i> Novo Registro</button>
+</div>
+<div class="card-body" id="listaDiario"></div>
+</div>
+</div>
+<div class="tab-pane fade" id="alertas">
+<div class="card">
+<div class="card-header d-flex justify-content-between align-items-center">
+<span><i class="fas fa-bell"></i> Central de Alertas</span>
+<button class="btn btn-sm btn-primary" onclick="verificarAlertas()"><i class="fas fa-sync"></i> Atualizar</button>
+</div>
+<div class="card-body" id="listaAlertas"></div>
+</div>
+</div>
+<div class="tab-pane fade" id="materiais">
+<div class="card">
+<div class="card-header d-flex justify-content-between align-items-center">
+<span><i class="fas fa-boxes"></i> Materiais</span>
+<button class="btn btn-sm btn-success" onclick="abrirModalMaterial()"><i class="fas fa-plus"></i> Novo Material</button>
+</div>
+<div class="card-body">
+<table class="table table-hover"><thead><tr><th>Código</th><th>Descrição</th><th>UN</th><th>Estoque</th><th>Valor</th><th>Perda</th><th>Etapa</th><th>Ações</th></tr></thead><tbody id="tabMateriais"></tbody></table>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="entrada">
+<div class="card">
+<div class="card-header"><i class="fas fa-arrow-down"></i> Entrada de Material</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-3"><label>Tipo</label><select id="tipoEnt" class="form-control"><option>Compra</option><option>Devolução</option><option>Transferência</option></select></div>
+<div class="col-md-3"><label>Fornecedor</label><input type="text" id="fornEnt" class="form-control"></div>
+<div class="col-md-3"><label>Documento/NF</label><input type="text" id="docEnt" class="form-control"></div>
+<div class="col-md-3"><label>Material</label><select id="matEnt" class="form-control"></select></div>
+</div>
+<div class="row mt-3">
+<div class="col-md-3"><label>Quantidade</label><input type="number" id="qtdEnt" class="form-control" step="0.01"></div>
+<div class="col-md-3"><label>Valor Unit. (R$)</label><input type="number" id="valEnt" class="form-control" step="0.01"></div>
+<div class="col-md-6"><label>Observações</label><input type="text" id="obsEnt" class="form-control"></div>
+</div>
+<button class="btn btn-success mt-3" onclick="confirmarEntrada()"><i class="fas fa-check"></i> Confirmar Entrada</button>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="saida">
+<div class="card">
+<div class="card-header"><i class="fas fa-arrow-up"></i> Saída para Obra</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-3"><label>Obra/PEP</label><input type="text" id="pepSaida" class="form-control" placeholder="Ex: Bloco A"></div>
+<div class="col-md-3"><label>Etapa</label><select id="etapaSaida" class="form-control"></select></div>
+<div class="col-md-3"><label>Frente de Serviço</label><input type="text" id="frenteSaida" class="form-control" placeholder="Ex: 1º Pav"></div>
+<div class="col-md-3"><label>Solicitante</label><input type="text" id="solicSaida" class="form-control"></div>
+</div>
+<div class="row mt-3">
+<div class="col-md-4"><label>Material</label><select id="matSaida" class="form-control"></select></div>
+<div class="col-md-3"><label>Quantidade</label><input type="number" id="qtdSaida" class="form-control" step="0.01"></div>
+<div class="col-md-3"><label>Status</label><select id="statusSaida" class="form-control"><option>Programado</option><option>Separado</option><option>Conferido</option><option>Expedido</option></select></div>
+<div class="col-md-2"><label>&nbsp;</label><button class="btn btn-primary w-100" onclick="efetivarSaida()"><i class="fas fa-check"></i> Efetivar</button></div>
+</div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="devolucao">
+<div class="card">
+<div class="card-header"><i class="fas fa-undo"></i> Devolução de Sobra</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-3"><label>Obra/PEP Origem</label><input type="text" id="pepDev" class="form-control"></div>
+<div class="col-md-3"><label>Material</label><select id="matDev" class="form-control"></select></div>
+<div class="col-md-2"><label>Quantidade</label><input type="number" id="qtdDev" class="form-control" step="0.01"></div>
+<div class="col-md-2"><label>Condição</label><select id="condDev" class="form-control"><option>Sobra Limpa</option><option>Reaproveitável</option><option>Perda Total</option></select></div>
+<div class="col-md-2"><label>Motivo</label><input type="text" id="motDev" class="form-control"></div>
+</div>
+<button class="btn btn-warning mt-3" onclick="processarDevolucao()"><i class="fas fa-check"></i> Processar Devolução</button>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="estoque">
+<div class="card">
+<div class="card-header"><i class="fas fa-warehouse"></i> Balanço de Estoque</div>
+<div class="card-body">
+<table class="table table-hover"><thead><tr><th>Código</th><th>Material</th><th>Saldo</th><th>Valor Total</th><th>Etapa</th></tr></thead><tbody id="tabEstoque"></tbody></table>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="residuos">
+<div class="card">
+<div class="card-header"><i class="fas fa-trash"></i> Gestão de Resíduos e Perdas (MTR)</div>
+<div class="card-body">
+<div class="row mb-3">
+<div class="col-md-3"><div class="card bg-light"><div class="card-body text-center"><h6>MTRs</h6><h4 id="totMTR">0</h4></div></div></div>
+<div class="col-md-3"><div class="card bg-light"><div class="card-body text-center"><h6>KG Total</h6><h4 id="totKG">0</h4></div></div></div>
+<div class="col-md-3"><div class="card bg-light"><div class="card-body text-center"><h6>Classe I</h6><h4 id="totClasse1">0</h4></div></div></div>
+<div class="col-md-3"><div class="card bg-light"><div class="card-body text-center"><h6>Classe II</h6><h4 id="totClasse2">0</h4></div></div></div>
+</div>
+<div class="row">
+<div class="col-md-2"><label>Nº MTR</label><input type="text" id="numMTR" class="form-control"></div>
+<div class="col-md-2"><label>Peso (KG)</label><input type="number" id="pesoMTR" class="form-control" step="0.01"></div>
+<div class="col-md-2"><label>Classe</label><select id="classeMTR" class="form-control"><option value="II_B">II B (Inerte)</option><option value="II_A">II A (Não Inerte)</option><option value="I">I (Perigoso)</option></select></div>
+<div class="col-md-3"><label>Origem/Obra</label><input type="text" id="origMTR" class="form-control"></div>
+<div class="col-md-3"><label>Destinação</label><select id="destMTR" class="form-control"><option>Aterro</option><option>Reciclagem</option><option>Reuso</option><option>Empresa Especializada</option></select></div>
+</div>
+<div class="row mt-2">
+<div class="col-md-12"><label>Observações</label><input type="text" id="obsMTR" class="form-control"></div>
+</div>
+<button class="btn btn-danger mt-3" onclick="registrarResiduo()"><i class="fas fa-plus"></i> Registrar Resíduo</button>
+<table class="table table-sm mt-4"><thead><tr><th>Data</th><th>MTR</th><th>Classe</th><th>Peso</th><th>Origem</th><th>Destinação</th><th>Ações</th></tr></thead><tbody id="tabResiduos"></tbody></table>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="epi">
+<div class="card">
+<div class="card-header d-flex justify-content-between align-items-center">
+<span><i class="fas fa-hard-hat"></i> Ficha de Entrega de EPI (NR-6 / ISO 45001)</span>
+<div>
+<button class="btn btn-sm btn-success me-2" onclick="abrirModalNovoEPI()"><i class="fas fa-plus"></i> Nova Ficha</button>
+<button class="btn btn-sm btn-info" onclick="abrirModalCatalogoEPI()"><i class="fas fa-boxes"></i> Catálogo EPI</button>
+</div>
+</div>
+<div class="card-body">
+<div class="powerbi-grid">
+<div class="kpi-card info"><div class="kpi-label">Fichas Emitidas</div><div class="kpi-value" id="kpiFichasEPI">0</div><div class="kpi-sub">no total</div></div>
+<div class="kpi-card warning"><div class="kpi-label">CA Vencendo (30d)</div><div class="kpi-value" id="kpiCAVencendo">0</div><div class="kpi-sub">requer atenção</div></div>
+<div class="kpi-card danger"><div class="kpi-label">CA Vencidos</div><div class="kpi-value" id="kpiCAVencido">0</div><div class="kpi-sub">bloquear uso</div></div>
+<div class="kpi-card success"><div class="kpi-label">Trocas no Mês</div><div class="kpi-value" id="kpiTrocasMes">0</div><div class="kpi-sub">substituições</div></div>
+</div>
+<div class="row mb-3">
+<div class="col-md-4"><label>Filtrar por Colaborador</label><select id="filtroColabEPI" class="form-control" onchange="filtrarFichasEPI()"><option value="">Todos</option></select></div>
+<div class="col-md-4"><label>Filtrar por EPI</label><select id="filtroEPI" class="form-control" onchange="filtrarFichasEPI()"><option value="">Todos</option></select></div>
+<div class="col-md-4"><label>&nbsp;</label><button class="btn btn-primary w-100" onclick="exportarRelatorioEPI()"><i class="fas fa-file-export"></i> Exportar Relatório</button></div>
+</div>
+<div id="listaFichasEPI"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="historico">
+<div class="card">
+<div class="card-header"><i class="fas fa-history"></i> Histórico de Movimentações</div>
+<div class="card-body">
+<table class="table table-sm"><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Material</th><th>Qtd</th><th>Destino/Origem</th><th>Etapa</th></tr></thead><tbody id="tabHistorico"></tbody></table>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="analytics">
+<div class="card">
+<div class="card-header d-flex justify-content-between align-items-center">
+<span><i class="fas fa-chart-pie"></i> Analytics Power BI por Etapa/PEP</span>
+<button class="btn btn-sm btn-primary" onclick="atualizarAnalytics()"><i class="fas fa-sync"></i> Atualizar</button>
+</div>
+<div class="card-body">
+<div class="powerbi-grid" id="kpiGerais"></div>
+<div class="chart-container">
+<div class="chart-title"><i class="fas fa-list"></i> Selecione uma Etapa/PEP para ver o Dashboard Completo</div>
+<div id="listaEtapasAnalytics"></div>
+</div>
+<div class="row">
+<div class="col-md-6"><div class="chart-container"><div class="chart-title"><i class="fas fa-chart-bar"></i> Consumo de Materiais por Etapa</div><canvas id="chartConsumoEtapa" height="250"></canvas></div></div>
+<div class="col-md-6"><div class="chart-container"><div class="chart-title"><i class="fas fa-chart-pie"></i> Distribuição de Status</div><canvas id="chartStatusDistrib" height="250"></canvas></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="modalEtapa" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header"><h5>Nova Etapa</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div class="mb-3"><label>Nome da Etapa</label><input type="text" id="etpNome" class="form-control" placeholder="Ex: Fundação, Alvenaria"></div>
+<div class="row">
+<div class="col-md-6"><label>Data Início</label><input type="date" id="etpInicio" class="form-control"></div>
+<div class="col-md-6"><label>Data Fim</label><input type="date" id="etpFim" class="form-control"></div>
+</div>
+<div class="mb-3 mt-3"><label>Responsável</label><input type="text" id="etpResp" class="form-control"></div>
+<div class="mb-3"><label>Orçamento (R$)</label><input type="number" id="etpOrc" class="form-control" step="0.01"></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button class="btn btn-success" onclick="salvarEtapa()">Salvar</button>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="modalMaterial" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header"><h5>Novo Material</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div class="row">
+<div class="col-md-4"><label>Código</label><input type="text" id="matCod" class="form-control"></div>
+<div class="col-md-8"><label>Descrição</label><input type="text" id="matDesc" class="form-control"></div>
+</div>
+<div class="row mt-3">
+<div class="col-md-3"><label>Unidade</label><select id="matUN" class="form-control"><option>KG</option><option>M</option><option>M2</option><option>M3</option><option>PÇ</option><option>CX</option><option>SACO</option><option>TON</option></select></div>
+<div class="col-md-3"><label>Estoque</label><input type="number" id="matEst" class="form-control" step="0.01" value="0"></div>
+<div class="col-md-3"><label>Valor Unit.</label><input type="number" id="matVal" class="form-control" step="0.01" value="0"></div>
+<div class="col-md-3"><label>Perda (%)</label><input type="number" id="matPerda" class="form-control" step="0.1" value="0"></div>
+</div>
+<div class="mt-3"><label>Etapa Vinculada</label><select id="matEtp" class="form-control"></select></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button class="btn btn-success" onclick="salvarMaterial()">Salvar</button>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="modalDiario" tabindex="-1">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+<div class="modal-header"><h5>Novo Registro Diário</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div class="row">
+<div class="col-md-4"><label>Data</label><input type="date" id="diaData" class="form-control"></div>
+<div class="col-md-4"><label>Clima</label><select id="diaClima" class="form-control"><option>Sol</option><option>Nublado</option><option>Chuva</option></select></div>
+<div class="col-md-4"><label>Efetivo (pessoas)</label><input type="number" id="diaEfet" class="form-control"></div>
+</div>
+<div class="mb-3 mt-3"><label>Atividades Realizadas</label><textarea id="diaAtiv" class="form-control" rows="3"></textarea></div>
+<div class="mb-3"><label>Ocorrências</label><textarea id="diaOcor" class="form-control" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button class="btn btn-success" onclick="salvarDiario()">Salvar</button>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="modalNovaFichaEPI" tabindex="-1">
+<div class="modal-dialog modal-xl">
+<div class="modal-content">
+<div class="modal-header bg-primary text-white">
+<h5 class="modal-title"><i class="fas fa-hard-hat"></i> Ficha de Entrega de EPI</h5>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<div class="epi-card">
+<div class="epi-header"><h6 class="mb-0"><i class="fas fa-user"></i> Dados do Colaborador</h6></div>
+<div class="row">
+<div class="col-md-4 epi-field"><label>Nome Completo *</label><input type="text" id="epiColabNome" class="form-control"></div>
+<div class="col-md-3 epi-field"><label>CPF</label><input type="text" id="epiColabCPF" class="form-control" placeholder="000.000.000-00"></div>
+<div class="col-md-3 epi-field"><label>Matrícula</label><input type="text" id="epiColabMat" class="form-control"></div>
+<div class="col-md-2 epi-field"><label>Cargo</label><input type="text" id="epiColabCargo" class="form-control"></div>
+</div>
+<div class="row">
+<div class="col-md-4 epi-field"><label>Setor/Obra</label><input type="text" id="epiColabSetor" class="form-control"></div>
+<div class="col-md-4 epi-field"><label>Função</label><input type="text" id="epiColabFuncao" class="form-control"></div>
+<div class="col-md-4 epi-field"><label>Data de Admissão</label><input type="date" id="epiColabAdmissao" class="form-control"></div>
+</div>
+</div>
+<div class="epi-card">
+<div class="epi-header"><h6 class="mb-0"><i class="fas fa-shield-alt"></i> Dados do EPI</h6></div>
+<div class="row">
+<div class="col-md-4 epi-field">
+<label>EPI (do Catálogo) *</label>
+<select id="epiItem" class="form-control" onchange="preencherDadosEPI()">
+<option value="">Selecione...</option>
+</select>
+</div>
+<div class="col-md-2 epi-field"><label>CA (Certificado de Aprovação) *</label><input type="text" id="epiCA" class="form-control"></div>
+<div class="col-md-2 epi-field"><label>Validade do CA *</label><input type="date" id="epiCAValidade" class="form-control"></div>
+<div class="col-md-2 epi-field"><label>Fabricante</label><input type="text" id="epiFabricante" class="form-control"></div>
+<div class="col-md-2 epi-field"><label>Quantidade</label><input type="number" id="epiQtd" class="form-control" value="1" min="1"></div>
+</div>
+<div class="row">
+<div class="col-md-4 epi-field"><label>Descrição Completa do EPI</label><textarea id="epiDescricao" class="form-control" rows="2"></textarea></div>
+<div class="col-md-4 epi-field">
+<label>Motivo da Entrega *</label>
+<select id="epiMotivo" class="form-control">
+<option>Primeira Entrega</option>
+<option>Substituição por Desgaste Natural</option>
+<option>Substituição por Perda</option>
+<option>Substituição por Dano</option>
+<option>Substituição por Vencimento</option>
+<option>Reposição por Solicitação</option>
+</select>
+</div>
+<div class="col-md-2 epi-field"><label>Periodicidade de Troca</label><select id="epiPeriodicidade" class="form-control"><option>3 meses</option><option>6 meses</option><option>12 meses</option><option>24 meses</option><option>Sob demanda</option></select></div>
+<div class="col-md-2 epi-field"><label>Próxima Troca Prevista</label><input type="date" id="epiProximaTroca" class="form-control"></div>
+</div>
+</div>
+<div class="termo-responsabilidade">
+<h6><i class="fas fa-file-contract"></i> TERMO DE RESPONSABILIDADE E RECEBIMENTO DE EPI</h6>
+<p>Declaro para os devidos fins que recebi da empresa o(s) Equipamento(s) de Proteção Individual (EPI) acima descrito(s), em perfeitas condições de uso, comprometendo-me a:</p>
+<ol>
+<li>Utilizar o EPI apenas para a finalidade a que se destina;</li>
+<li>Responsabilizar-me pela guarda e conservação do EPI;</li>
+<li>Comunicar imediatamente ao responsável qualquer alteração que o torne impróprio para uso;</li>
+<li>Devolver o EPI quando solicitado ou ao término do vínculo empregatício;</li>
+<li>Cientifico-me de que a não utilização do EPI constitui falta grave, nos termos do art. 158 da CLT.</li>
+</ol>
+<p class="mb-0">Estou ciente de que o não uso do EPI pode acarretar penalidades disciplinares, conforme NR-6 e legislação trabalhista vigente.</p>
+</div>
+<div class="row">
+<div class="col-md-6">
+<div class="epi-field">
+<label><i class="fas fa-signature"></i> Assinatura do Colaborador *</label>
+<div class="canvas-container">
+<canvas id="canvasAssinaturaColab" class="canvas-assinatura"></canvas>
+<button type="button" class="btn-limpar-canvas" onclick="limparCanvas('canvasAssinaturaColab')">Limpar Assinatura</button>
+<small>Assine com o mouse ou dedo</small>
+</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="epi-field">
+<label><i class="fas fa-signature"></i> Assinatura do Responsável pela Entrega *</label>
+<div class="canvas-container">
+<canvas id="canvasAssinaturaResp" class="canvas-assinatura"></canvas>
+<button type="button" class="btn-limpar-canvas" onclick="limparCanvas('canvasAssinaturaResp')">Limpar Assinatura</button>
+<small>Responsável técnico / SESMT / Supervisor</small>
+</div>
+<input type="text" id="nomeResponsavel" class="form-control mt-2" placeholder="Nome do responsável">
+</div>
+</div>
+</div>
+<div class="epi-field">
+<label>Observações</label>
+<textarea id="epiObs" class="form-control" rows="2"></textarea>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button class="btn btn-primary" onclick="visualizarFichaEPI()"><i class="fas fa-eye"></i> Visualizar</button>
+<button class="btn btn-success" onclick="salvarFichaEPI()"><i class="fas fa-save"></i> Salvar Ficha</button>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="modalCatalogoEPI" tabindex="-1">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+<div class="modal-header bg-info text-white">
+<h5 class="modal-title"><i class="fas fa-boxes"></i> Catálogo de EPIs</h5>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<div class="row mb-3">
+<div class="col-md-4"><label>Nome do EPI</label><input type="text" id="catEPINome" class="form-control" placeholder="Ex: Capacete de Segurança"></div>
+<div class="col-md-3"><label>CA Padrão</label><input type="text" id="catEPICA" class="form-control"></div>
+<div class="col-md-3"><label>Fabricante</label><input type="text" id="catEPIFab" class="form-control"></div>
+<div class="col-md-2"><label>Validade CA</label><input type="date" id="catEPIVal" class="form-control"></div>
+</div>
+<div class="row mb-3">
+<div class="col-md-4"><label>Periodicidade Padrão</label><select id="catEPIPer" class="form-control"><option>3 meses</option><option>6 meses</option><option>12 meses</option><option>24 meses</option></select></div>
+<div class="col-md-4"><label>Estoque Atual</label><input type="number" id="catEPIEst" class="form-control" value="0"></div>
+<div class="col-md-4"><label>&nbsp;</label><button class="btn btn-success w-100" onclick="adicionarEPICatalogo()"><i class="fas fa-plus"></i> Adicionar ao Catálogo</button></div>
+</div>
+<table class="table table-sm"><thead><tr><th>EPI</th><th>CA</th><th>Fabricante</th><th>Validade CA</th><th>Periodicidade</th><th>Estoque</th><th>Ações</th></tr></thead><tbody id="tabCatalogoEPI"></tbody></table>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="modalVisualizarFicha" tabindex="-1">
+<div class="modal-dialog modal-xl">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"><i class="fas fa-print"></i> Ficha de EPI - Visualização</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<div id="fichaImpressao" class="ficha-impressao"></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+<button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Imprimir</button>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="modalDashboardEtapa" tabindex="-1">
+<div class="modal-dialog modal-xl">
+<div class="modal-content">
+<div class="modal-header bg-primary text-white">
+<h5 class="modal-title"><i class="fas fa-chart-line"></i> Dashboard: <span id="tituloDashboardEtapa">-</span></h5>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<div class="powerbi-grid" id="kpiEtapa"></div>
+<div class="row">
+<div class="col-md-6"><div class="chart-container"><div class="chart-title"><i class="fas fa-chart-line"></i> Curva de Avanço</div><canvas id="chartAvancoEtapa" height="200"></canvas></div></div>
+<div class="col-md-6"><div class="chart-container"><div class="chart-title"><i class="fas fa-chart-pie"></i> Consumo de Materiais</div><canvas id="chartMateriaisEtapa" height="200"></canvas></div></div>
+</div>
+<div class="row">
+<div class="col-md-6"><div class="chart-container"><div class="chart-title"><i class="fas fa-trophy"></i> Top 5 Materiais Consumidos</div><div id="rankingMateriaisEtapa"></div></div></div>
+<div class="col-md-6"><div class="chart-container"><div class="chart-title"><i class="fas fa-history"></i> Últimas Movimentações</div><div id="ultimasMovEtapa" style="max-height:300px;overflow-y:auto"></div></div></div>
+</div>
+<div class="chart-container">
+<div class="chart-title"><i class="fas fa-traffic-light"></i> Semáforo de Performance</div>
+<div id="semaforoEtapa" class="row"></div>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+<button class="btn btn-primary" onclick="exportarDashboardEtapa()"><i class="fas fa-file-export"></i> Exportar</button>
+</div>
+</div>
+</div>
+</div>
+<div id="modalImportar" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;justify-content:center;align-items:center">
+<div class="modal-content" style="max-width:500px;width:90%;background:#fff;border-radius:10px">
+<div class="modal-header"><h5><i class="fas fa-upload"></i> Importar Backup</h5><button class="btn-close" onclick="document.getElementById('modalImportar').style.display='none'"></button></div>
+<div class="modal-body">
+<input type="file" id="fileImport" class="form-control" accept=".json">
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="document.getElementById('modalImportar').style.display='none'">Cancelar</button>
+<button class="btn btn-success" onclick="importarJSON()">Importar</button>
+</div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+var obra={nome:'',inicio:'',entrega:''};
+var etapas=[];
+var materiais=[];
+var historico=[];
+var diario=[];
+var residuos=[];
+var alertas=[];
+var catalogoEPI=[];
+var fichasEPI=[];
+var chartS=null,chartConsumoEtapa=null,chartStatusDistrib=null,chartAvancoEtapa=null,chartMateriaisEtapa=null;
+var etapaAtualDashboard=null;
+var canvasColabCtx=null,canvasRespCtx=null;
+var desenhandoColab=false,desenhandoResp=false;
+document.addEventListener('DOMContentLoaded',function(){carregar();atualizarTudo()});
+function carregar(){
+var d=localStorage.getItem('sistemaObras');
+if(d){
+var obj=JSON.parse(d);
+obra=obj.obra||obra;
+etapas=obj.etapas||[];
+materiais=obj.materiais||[];
+historico=obj.historico||[];
+diario=obj.diario||[];
+residuos=obj.residuos||[];
+catalogoEPI=obj.catalogoEPI||[];
+fichasEPI=obj.fichasEPI||[];
+document.getElementById('nomeObra').value=obra.nome||'';
+document.getElementById('dataInicio').value=obra.inicio||'';
+document.getElementById('dataEntrega').value=obra.entrega||'';
 }
-
-function abrirModalCatalogoEPI() {
-    atualizarTabelaCatalogoEPI();
-    new bootstrap.Modal(document.getElementById('modalCatalogoEPI')).show();
+if(catalogoEPI.length===0){inicializarCatalogoEPI()}
 }
-
-function adicionarEPICatalogo() {
-    const nome = document.getElementById('catEPINome').value;
-    if (!nome) { alert('Informe o nome do EPI!'); return; }
-    catalogoEPI.push({
-        id: Date.now(),
-        nome: nome,
-        ca: document.getElementById('catEPICA').value,
-        fabricante: document.getElementById('catEPIFab').value,
-        validadeCA: document.getElementById('catEPIVal').value,
-        periodicidade: document.getElementById('catEPIPer').value,
-        estoque: parseInt(document.getElementById('catEPIEst').value) || 0
-    });
-    salvar();
-    atualizarTabelaCatalogoEPI();
-    document.getElementById('catEPINome').value = '';
-    document.getElementById('catEPICA').value = '';
-    document.getElementById('catEPIFab').value = '';
-    document.getElementById('catEPIVal').value = '';
-    document.getElementById('catEPIEst').value = '0';
-    alert('EPI adicionado ao catálogo!');
+function salvar(){
+localStorage.setItem('sistemaObras',JSON.stringify({obra:obra,etapas:etapas,materiais:materiais,historico:historico,diario:diario,residuos:residuos,catalogoEPI:catalogoEPI,fichasEPI:fichasEPI}));
 }
-
-function atualizarTabelaCatalogoEPI() {
-    const tb = document.getElementById('tabCatalogoEPI');
-    tb.innerHTML = catalogoEPI.map((e, i) => {
-        const stCA = statusCA(e.validadeCA);
-        const badge = stCA === 'vencido' ? 'badge-ca-vencido' : stCA === 'vencendo' ? 'badge-ca-vencendo' : 'badge-ca';
-        return `<tr>
-            <td><strong>${e.nome}</strong></td>
-            <td><span class="${badge}">${e.ca || '-'}</span></td>
-            <td>${e.fabricante || '-'}</td>
-            <td>${e.validadeCA ? new Date(e.validadeCA).toLocaleDateString('pt-BR') : '-'}</td>
-            <td>${e.periodicidade}</td>
-            <td>${e.estoque}</td>
-            <td><button class="btn btn-sm btn-danger" onclick="excluirEPICatalogo(${i})"><i class="fas fa-trash"></i></button></td>
-        </tr>`;
-    }).join('');
+function salvarObra(){
+obra.nome=document.getElementById('nomeObra').value;
+obra.inicio=document.getElementById('dataInicio').value;
+obra.entrega=document.getElementById('dataEntrega').value;
+salvar();
+atualizarTudo();
 }
-
-function excluirEPICatalogo(i) {
-    if (confirm('Excluir EPI do catálogo?')) {
-        catalogoEPI.splice(i, 1);
-        salvar();
-        atualizarTabelaCatalogoEPI();
-    }
+function atualizarTudo(){
+atualizarDashboard();
+atualizarCronograma();
+atualizarMateriais();
+atualizarEstoque();
+atualizarHistorico();
+atualizarDiario();
+atualizarResiduos();
+popularSelects();
+verificarAlertas();
+atualizarCurvaS();
+atualizarAnalytics();
+atualizarFichasEPI();
 }
-
-function statusCA(validadeCA) {
-    if (!validadeCA) return 'ok';
-    const hoje = new Date();
-    const val = new Date(validadeCA);
-    const diff = Math.ceil((val - hoje) / 86400000);
-    if (diff < 0) return 'vencido';
-    if (diff <= 30) return 'vencendo';
-    return 'ok';
+function atualizarDashboard(){
+var prog=calcProgresso();
+document.getElementById('progGeral').textContent=prog+'%';
+var bar=document.getElementById('barProg');
+bar.style.width=prog+'%';
+bar.textContent=prog+'%';
+bar.style.background=prog===100?'#27ae60':'#3498db';
+var dias=calcDiasRest();
+document.getElementById('diasRest').textContent=dias;
+var val=materiais.reduce(function(s,m){return s+(m.estoque*m.valor)},0);
+document.getElementById('valEstoque').textContent='R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2});
+document.getElementById('totalItens').textContent=materiais.length+' itens';
+var atrasadas=etapas.filter(function(e){return statusEtapa(e)==='atraso'}).length;
+var sp=document.getElementById('statusPrazo');
+if(atrasadas===0){sp.textContent='No prazo';sp.className='text-success'}
+else if(atrasadas<=2){sp.textContent='Atraso leve';sp.className='text-warning'}
+else{sp.textContent='Crítico';sp.className='text-danger'}
+var ld=document.getElementById('listaEtapasDash');
+if(etapas.length===0){ld.innerHTML='<p class="text-muted">Nenhuma etapa</p>'}
+else{
+var html='';
+etapas.forEach(function(e){
+var st=statusEtapa(e);
+var cor=st==='atraso'?'#e74c3c':st==='concluida'?'#27ae60':'#3498db';
+html+='<div class="etapa-box etapa-'+st+'"><div class="d-flex justify-content-between"><div><strong>'+e.nome+'</strong><br><small class="text-muted">'+(e.resp||'-')+'</small></div><div style="width:200px"><span class="badge-status" style="background:'+cor+';color:#fff">'+(e.progresso||0)+'%</span><div class="progress-barra mt-1"><div class="progress-fill" style="width:'+(e.progresso||0)+'%;background:'+cor+'">'+(e.progresso||0)+'%</div></div></div></div></div>';
+});
+ld.innerHTML=html;
 }
-
-function abrirModalNovoEPI() {
-    // Limpar campos
-    ['epiColabNome','epiColabCPF','epiColabMat','epiColabCargo','epiColabSetor','epiColabFuncao','epiColabAdmissao',
-     'epiCA','epiCAValidade','epiFabricante','epiDescricao','epiProximaTroca','epiObs','nomeResponsavel'].forEach(id => {
-        document.getElementById(id).value = '';
-    });
-    document.getElementById('epiQtd').value = '1';
-    document.getElementById('epiItem').value = '';
-    document.getElementById('epiMotivo').value = 'Primeira Entrega';
-    document.getElementById('epiPeriodicidade').value = '12 meses';
-
-    // Popular select de EPIs
-    const sel = document.getElementById('epiItem');
-    sel.innerHTML = '<option value="">Selecione...</option>' + catalogoEPI.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');
-
-    // Popular filtro de colaboradores (a partir das fichas existentes)
-    const colabs = [...new Set(fichasEPI.map(f => f.colab.nome))];
-    // Resetar canvas
-    limparCanvas('canvasAssinaturaColab');
-    limparCanvas('canvasAssinaturaResp');
-
-    new bootstrap.Modal(document.getElementById('modalNovaFichaEPI')).show();
-    setTimeout(inicializarCanvas, 300);
+var pa=document.getElementById('proxAlertas');
+if(alertas.length===0){pa.innerHTML='<p class="text-muted">Nenhum alerta</p>'}
+else{
+var ah='';
+alertas.slice(0,3).forEach(function(a){ah+='<div class="alerta-box alerta-'+a.tipo+'">'+a.msg+'</div>'});
+pa.innerHTML=ah;
 }
-
-function preencherDadosEPI() {
-    const id = parseInt(document.getElementById('epiItem').value);
-    const epi = catalogoEPI.find(e => e.id === id);
-    if (epi) {
-        document.getElementById('epiCA').value = epi.ca || '';
-        document.getElementById('epiCAValidade').value = epi.validadeCA || '';
-        document.getElementById('epiFabricante').value = epi.fabricante || '';
-        document.getElementById('epiDescricao').value = epi.nome;
-        document.getElementById('epiPeriodicidade').value = epi.periodicidade || '12 meses';
-        // Calcular próxima troca
-        if (epi.periodicidade && epi.periodicidade !== 'Sob demanda') {
-            const meses = parseInt(epi.periodicidade);
-            const data = new Date();
-            data.setMonth(data.getMonth() + meses);
-            document.getElementById('epiProximaTroca').value = data.toISOString().split('T')[0];
-        }
-    }
+var tb=document.getElementById('tabUltMov');
+tb.innerHTML='';
+historico.slice(-10).reverse().forEach(function(h){
+tb.innerHTML+='<tr><td>'+new Date(h.data).toLocaleString('pt-BR')+'</td><td><span class="badge bg-'+(h.tipo==='ENTRADA'?'success':'primary')+'">'+h.tipo+'</span></td><td>'+h.material+'</td><td>'+h.qtd.toFixed(2)+'</td><td>'+(h.destino||'')+'</td></tr>';
+});
 }
-
-// ===== CANVAS DE ASSINATURA =====
-function inicializarCanvas() {
-    const canvasColab = document.getElementById('canvasAssinaturaColab');
-    const canvasResp = document.getElementById('canvasAssinaturaResp');
-    
-    if (canvasColab && !canvasColabCtx) {
-        canvasColab.width = canvasColab.offsetWidth;
-        canvasColab.height = 120;
-        canvasColabCtx = canvasColab.getContext('2d');
-        canvasColabCtx.strokeStyle = '#000';
-        canvasColabCtx.lineWidth = 2;
-        canvasColabCtx.lineCap = 'round';
-        
-        canvasColab.addEventListener('mousedown', (e) => iniciarDesenho(e, 'colab'));
-        canvasColab.addEventListener('mousemove', (e) => desenhar(e, 'colab'));
-        canvasColab.addEventListener('mouseup', () => pararDesenho('colab'));
-        canvasColab.addEventListener('mouseout', () => pararDesenho('colab'));
-        canvasColab.addEventListener('touchstart', (e) => { e.preventDefault(); iniciarDesenhoTouch(e, 'colab'); });
-        canvasColab.addEventListener('touchmove', (e) => { e.preventDefault(); desenharTouch(e, 'colab'); });
-        canvasColab.addEventListener('touchend', () => pararDesenho('colab'));
-    }
-    
-    if (canvasResp && !canvasRespCtx) {
-        canvasResp.width = canvasResp.offsetWidth;
-        canvasResp.height = 120;
-        canvasRespCtx = canvasResp.getContext('2d');
-        canvasRespCtx.strokeStyle = '#000';
-        canvasRespCtx.lineWidth = 2;
-        canvasRespCtx.lineCap = 'round';
-        
-        canvasResp.addEventListener('mousedown', (e) => iniciarDesenho(e, 'resp'));
-        canvasResp.addEventListener('mousemove', (e) => desenhar(e, 'resp'));
-        canvasResp.addEventListener('mouseup', () => pararDesenho('resp'));
-        canvasResp.addEventListener('mouseout', () => pararDesenho('resp'));
-        canvasResp.addEventListener('touchstart', (e) => { e.preventDefault(); iniciarDesenhoTouch(e, 'resp'); });
-        canvasResp.addEventListener('touchmove', (e) => { e.preventDefault(); desenharTouch(e, 'resp'); });
-        canvasResp.addEventListener('touchend', () => pararDesenho('resp'));
-    }
+function calcProgresso(){if(etapas.length===0)return 0;return Math.round(etapas.reduce(function(s,e){return s+(e.progresso||0)},0)/etapas.length)}
+function calcDiasRest(){if(!obra.entrega)return 0;var d=Math.ceil((new Date(obra.entrega)-new Date())/86400000);return d>0?d:0}
+function statusEtapa(e){if((e.progresso||0)>=100)return'concluida';if(e.fim&&new Date(e.fim)<new Date())return'atraso';return'normal'}
+function abrirModalEtapa(){
+document.getElementById('etpNome').value='';
+document.getElementById('etpInicio').value='';
+document.getElementById('etpFim').value='';
+document.getElementById('etpResp').value='';
+document.getElementById('etpOrc').value='';
+new bootstrap.Modal(document.getElementById('modalEtapa')).show();
 }
-
-function iniciarDesenho(e, tipo) {
-    desenhandoColab = tipo === 'colab';
-    desenhandoResp = tipo === 'resp';
-    const canvas = tipo === 'colab' ? document.getElementById('canvasAssinaturaColab') : document.getElementById('canvasAssinaturaResp');
-    const ctx = tipo === 'colab' ? canvasColabCtx : canvasRespCtx;
-    const rect = canvas.getBoundingClientRect();
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+function salvarEtapa(){
+var nome=document.getElementById('etpNome').value;
+if(!nome){alert('Informe o nome!');return}
+etapas.push({id:Date.now(),nome:nome,inicio:document.getElementById('etpInicio').value,fim:document.getElementById('etpFim').value,resp:document.getElementById('etpResp').value,orc:parseFloat(document.getElementById('etpOrc').value)||0,progresso:0});
+salvar();
+atualizarTudo();
+bootstrap.Modal.getInstance(document.getElementById('modalEtapa')).hide();
 }
-
-function desenhar(e, tipo) {
-    if (tipo === 'colab' && !desenhandoColab) return;
-    if (tipo === 'resp' && !desenhandoResp) return;
-    const canvas = tipo === 'colab' ? document.getElementById('canvasAssinaturaColab') : document.getElementById('canvasAssinaturaResp');
-    const ctx = tipo === 'colab' ? canvasColabCtx : canvasRespCtx;
-    const rect = canvas.getBoundingClientRect();
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-    ctx.stroke();
+function atualizarCronograma(){
+var l=document.getElementById('listaEtapas');
+if(etapas.length===0){l.innerHTML='<p class="text-muted">Nenhuma etapa</p>';return}
+var html='';
+etapas.forEach(function(e,i){
+var st=statusEtapa(e);
+var cor=st==='atraso'?'#e74c3c':st==='concluida'?'#27ae60':'#3498db';
+html+='<div class="etapa-box etapa-'+st+'"><div class="row align-items-center"><div class="col-md-8"><h6 class="mb-1">'+e.nome+'</h6><small class="text-muted"><i class="fas fa-calendar"></i> '+(e.inicio||'?')+' até '+(e.fim||'?')+' | <i class="fas fa-user"></i> '+(e.resp||'-')+' | <i class="fas fa-dollar-sign"></i> R$ '+e.orc.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</small></div><div class="col-md-4"><div class="d-flex align-items-center"><input type="range" class="form-range me-2" min="0" max="100" value="'+(e.progresso||0)+'" oninput="mudarProg('+i+',this.value)"><span class="fw-bold">'+(e.progresso||0)+'%</span></div><div class="progress-barra"><div class="progress-fill" style="width:'+(e.progresso||0)+'%;background:'+cor+'">'+(e.progresso||0)+'%</div></div><button class="btn btn-sm btn-danger mt-2" onclick="excluirEtapa('+i+')"><i class="fas fa-trash"></i></button></div></div></div>';
+});
+l.innerHTML=html;
 }
-
-function pararDesenho(tipo) {
-    if (tipo === 'colab') desenhandoColab = false;
-    else desenhandoResp = false;
+function mudarProg(i,v){etapas[i].progresso=parseInt(v);salvar();atualizarTudo()}
+function excluirEtapa(i){if(confirm('Excluir etapa?')){etapas.splice(i,1);salvar();atualizarTudo()}}
+function atualizarCurvaS(){
+var orc=parseFloat(document.getElementById('orcTotal').value)||0;
+var mes=parseInt(document.getElementById('periodoMes').value)||12;
+if(orc===0||mes===0)return;
+var labels=[],plan=[],real=[];
+var hoje=new Date();
+var ini=obra.inicio?new Date(obra.inicio):new Date(hoje.getFullYear(),0,1);
+var mesesPass=Math.max(0,Math.min(mes,Math.ceil((hoje-ini)/(86400000*30))));
+var pctTempo=mesesPass/mes;
+var progReal=calcProgresso()/100;
+for(var i=0;i<=mes;i++){
+var d=new Date(ini);
+d.setMonth(d.getMonth()+i);
+labels.push(d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}));
+var t=i/mes;
+var pctPlan=(3*t*t-2*t*t*t);
+plan.push((orc*pctPlan).toFixed(2));
+real.push(i<=mesesPass?(orc*progReal*(i/mesesPass)).toFixed(2):null);
 }
-
-function iniciarDesenhoTouch(e, tipo) {
-    const touch = e.touches[0];
-    const mouseEvent = new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY });
-    iniciarDesenho(mouseEvent, tipo);
+var planHoje=orc*(3*pctTempo*pctTempo-2*pctTempo*pctTempo*pctTempo);
+var realHoje=orc*progReal;
+var desvio=realHoje-planHoje;
+var pctDesvio=planHoje>0?(desvio/planHoje*100):0;
+document.getElementById('planHoje').textContent='R$ '+planHoje.toLocaleString('pt-BR',{minimumFractionDigits:2});
+document.getElementById('realHoje').textContent='R$ '+realHoje.toLocaleString('pt-BR',{minimumFractionDigits:2});
+document.getElementById('desvioVal').textContent='R$ '+desvio.toLocaleString('pt-BR',{minimumFractionDigits:2});
+document.getElementById('desvioPct').textContent=pctDesvio.toFixed(1)+'%';
+document.getElementById('desvioVal').className=desvio>=0?'text-success':'text-danger';
+var ctx=document.getElementById('chartCurvaS').getContext('2d');
+if(chartS)chartS.destroy();
+chartS=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:'Planejado',data:plan,borderColor:'#3498db',backgroundColor:'rgba(52,152,219,0.1)',tension:.4,fill:true},{label:'Realizado',data:real,borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.1)',tension:.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return'R$ '+v.toLocaleString('pt-BR')}}}}}});
 }
-
-function desenharTouch(e, tipo) {
-    const touch = e.touches[0];
-    const mouseEvent = new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY });
-    desenhar(mouseEvent, tipo);
+function abrirModalDiario(){
+document.getElementById('diaData').valueAsDate=new Date();
+document.getElementById('diaClima').value='Sol';
+document.getElementById('diaEfet').value='';
+document.getElementById('diaAtiv').value='';
+document.getElementById('diaOcor').value='';
+new bootstrap.Modal(document.getElementById('modalDiario')).show();
 }
-
-function limparCanvas(id) {
-    const canvas = document.getElementById(id);
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function salvarDiario(){
+var data=document.getElementById('diaData').value;
+var ativ=document.getElementById('diaAtiv').value;
+if(!data||!ativ){alert('Preencha data e atividades!');return}
+diario.push({id:Date.now(),data:data,clima:document.getElementById('diaClima').value,efet:parseInt(document.getElementById('diaEfet').value)||0,ativ:ativ,ocor:document.getElementById('diaOcor').value});
+salvar();
+atualizarDiario();
+bootstrap.Modal.getInstance(document.getElementById('modalDiario')).hide();
 }
-
-function canvasEstaVazio(id) {
-    const canvas = document.getElementById(id);
-    const ctx = canvas.getContext('2d');
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    for (let i = 3; i < data.length; i += 4) {
-        if (data[i] !== 0) return false;
-    }
-    return true;
+function atualizarDiario(){
+var l=document.getElementById('listaDiario');
+if(diario.length===0){l.innerHTML='<p class="text-muted">Nenhum registro</p>';return}
+var html='';
+diario.slice().reverse().forEach(function(d){
+var ic=d.clima==='Sol'?'☀️':d.clima==='Chuva'?'🌧️':'☁️';
+html+='<div class="diario-box"><div class="d-flex justify-content-between"><h6>'+new Date(d.data).toLocaleDateString('pt-BR')+' '+ic+' '+d.clima+'</h6><button class="btn btn-sm btn-danger" onclick="excluirDiario('+d.id+')"><i class="fas fa-trash"></i></button></div><small class="text-muted">Efetivo: '+d.efet+' pessoas</small><p class="mt-2 mb-1"><strong>Atividades:</strong> '+d.ativ+'</p>'+(d.ocor?'<p><strong>Ocorrências:</strong> '+d.ocor+'</p>':'')+'</div>';
+});
+l.innerHTML=html;
 }
-
-// ===== SALVAR FICHA EPI =====
-function salvarFichaEPI() {
-    const colabNome = document.getElementById('epiColabNome').value;
-    const epiItem = document.getElementById('epiItem').value;
-    const ca = document.getElementById('epiCA').value;
-    
-    if (!colabNome || !epiItem || !ca) {
-        alert('Preencha nome do colaborador, EPI e CA!');
-        return;
-    }
-    if (canvasEstaVazio('canvasAssinaturaColab') || canvasEstaVazio('canvasAssinaturaResp')) {
-        alert('As duas assinaturas são obrigatórias!');
-        return;
-    }
-    if (!document.getElementById('nomeResponsavel').value) {
-        alert('Informe o nome do responsável!');
-        return;
-    }
-
-    const epi = catalogoEPI.find(e => e.id == epiItem);
-    const ficha = {
-        id: Date.now(),
-        data: new Date().toISOString(),
-        colab: {
-            nome: colabNome,
-            cpf: document.getElementById('epiColabCPF').value,
-            matricula: document.getElementById('epiColabMat').value,
-            cargo: document.getElementById('epiColabCargo').value,
-            setor: document.getElementById('epiColabSetor').value,
-            funcao: document.getElementById('epiColabFuncao').value,
-            admissao: document.getElementById('epiColabAdmissao').value
-        },
-        epi: {
-            id: epiItem,
-            nome: epi ? epi.nome : document.getElementById('epiDescricao').value,
-            ca: ca,
-            validadeCA: document.getElementById('epiCAValidade').value,
-            fabricante: document.getElementById('epiFabricante').value,
-            descricao: document.getElementById('epiDescricao').value
-        },
-        qtd: parseInt(document.getElementById('epiQtd').value) || 1,
-        motivo: document.getElementById('epiMotivo').value,
-        periodicidade: document.getElementById('epiPeriodicidade').value,
-        proximaTroca: document.getElementById('epiProximaTroca').value,
-        responsavel: document.getElementById('nomeResponsavel').value,
-        obs: document.getElementById('epiObs').value,
-        assinaturaColab: document.getElementById('canvasAssinaturaColab').toDataURL(),
-        assinaturaResp: document.getElementById('canvasAssinaturaResp').toDataURL()
-    };
-
-    fichasEPI.push(ficha);
-    
-    // Baixa no estoque do catálogo
-    if (epi) {
-        epi.estoque = Math.max(0, epi.estoque - ficha.qtd);
-    }
-
-    // Histórico
-    historico.push({
-        data: new Date().toISOString(),
-        tipo: 'ENTREGA EPI',
-        material: ficha.epi.nome,
-        codigo: ficha.epi.ca,
-        qtd: ficha.qtd,
-        destino: ficha.colab.nome + ' - ' + ficha.colab.setor,
-        etapa: 'EPI',
-        obs: ficha.motivo
-    });
-
-    salvar();
-    atualizarTudo();
-    bootstrap.Modal.getInstance(document.getElementById('modalNovaFichaEPI')).hide();
-    alert('Ficha de EPI salva com sucesso!');
+function excluirDiario(id){if(confirm('Excluir?')){diario=diario.filter(function(d){return d.id!==id});salvar();atualizarDiario()}}
+function verificarAlertas(){
+alertas=[];
+etapas.forEach(function(e){if(statusEtapa(e)==='atraso')alertas.push({tipo:'critico',msg:'Etapa "'+e.nome+'" ATRASADA!',pri:1})});
+materiais.forEach(function(m){if(m.estoque<=0)alertas.push({tipo:'critico',msg:'Material "'+m.descricao+'" EM FALTA!',pri:2});else if(m.estoque<5)alertas.push({tipo:'atencao',msg:'Estoque baixo: "'+m.descricao+'" ('+m.estoque+' '+m.un+')',pri:3})});
+catalogoEPI.forEach(function(e){var st=statusCA(e.validadeCA);if(st==='vencido')alertas.push({tipo:'critico',msg:'CA VENCIDO: '+e.nome,pri:1});else if(st==='vencendo')alertas.push({tipo:'atencao',msg:'CA vencendo: '+e.nome,pri:3});if(e.estoque<=0)alertas.push({tipo:'atencao',msg:'EPI sem estoque: '+e.nome,pri:4})});
+var dr=calcDiasRest();
+if(dr>0&&dr<=30)alertas.push({tipo:'atencao',msg:'Entrega em '+dr+' dias',pri:4});
+if(dr<=0&&obra.entrega)alertas.push({tipo:'critico',msg:'PRAZO DE ENTREGA VENCIDO!',pri:0});
+alertas.sort(function(a,b){return a.pri-b.pri});
+document.getElementById('totAlertas').textContent=alertas.length;
+document.getElementById('badgeAlertas').textContent=alertas.length;
+var l=document.getElementById('listaAlertas');
+if(alertas.length===0){l.innerHTML='<p class="text-success"><i class="fas fa-check-circle"></i> Nenhum alerta! Tudo em ordem.</p>'}
+else{
+var ah='';
+alertas.forEach(function(a){ah+='<div class="alerta-box alerta-'+a.tipo+'">'+a.msg+'</div>'});
+l.innerHTML=ah;
 }
-
-// ===== LISTAR FICHAS =====
-function atualizarFichasEPI() {
-    const container = document.getElementById('listaFichasEPI');
-    if (!container) return;
-    
-    // KPIs
-    document.getElementById('kpiFichasEPI').textContent = fichasEPI.length;
-    document.getElementById('kpiCAVencendo').textContent = catalogoEPI.filter(e => statusCA(e.validadeCA) === 'vencendo').length;
-    document.getElementById('kpiCAVencido').textContent = catalogoEPI.filter(e => statusCA(e.validadeCA) === 'vencido').length;
-    
-    const mesAtual = new Date().getMonth();
-    const anoAtual = new Date().getFullYear();
-    const trocasMes = fichasEPI.filter(f => {
-        const d = new Date(f.data);
-        return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && f.motivo !== 'Primeira Entrega';
-    }).length;
-    document.getElementById('kpiTrocasMes').textContent = trocasMes;
-
-    // Popular filtros
-    const colabs = [...new Set(fichasEPI.map(f => f.colab.nome))];
-    const epIs = [...new Set(fichasEPI.map(f => f.epi.nome))];
-    const selColab = document.getElementById('filtroColabEPI');
-    const selEPI = document.getElementById('filtroEPI');
-    if (selColab) selColab.innerHTML = '<option value="">Todos</option>' + colabs.map(c => `<option>${c}</option>`).join('');
-    if (selEPI) selEPI.innerHTML = '<option value="">Todos</option>' + epIs.map(e => `<option>${e}</option>`).join('');
-
-    filtrarFichasEPI();
 }
-
-function filtrarFichasEPI() {
-    const colab = document.getElementById('filtroColabEPI').value;
-    const epi = document.getElementById('filtroEPI').value;
-    
-    let filtradas = fichasEPI.slice();
-    if (colab) filtradas = filtradas.filter(f => f.colab.nome === colab);
-    if (epi) filtradas = filtradas.filter(f => f.epi.nome === epi);
-    
-    const container = document.getElementById('listaFichasEPI');
-    if (filtradas.length === 0) {
-        container.innerHTML = '<p class="text-muted text-center py-4">Nenhuma ficha de EPI registrada</p>';
-        return;
-    }
-    
-    container.innerHTML = filtradas.slice().reverse().map(f => {
-        const stCA = statusCA(f.epi.validadeCA);
-        const badge = stCA === 'vencido' ? 'badge-ca-vencido' : stCA === 'vencendo' ? 'badge-ca-vencendo' : 'badge-ca';
-        const alertaCA = stCA === 'vencido' ? '<div class="alert-ca-vencido">⚠️ CA VENCIDO - Substituir EPI imediatamente</div>' : 
-                         stCA === 'vencendo' ? '<div class="alert-ca-vencendo">⚠️ CA vencendo em breve</div>' : '';
-        return `
-            <div class="epi-card">
-                <div class="row">
-                    <div class="col-md-8">
-                        <h6><i class="fas fa-user"></i> ${f.colab.nome} <small class="text-muted">- ${f.colab.cargo || ''} ${f.colab.setor ? '(' + f.colab.setor + ')' : ''}</small></h6>
-                        <small class="text-muted">CPF: ${f.colab.cpf || '-'} | Matrícula: ${f.colab.matricula || '-'}</small>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <small class="text-muted">Entrega em</small>
-                        <br><strong>${new Date(f.data).toLocaleDateString('pt-BR')}</strong>
-                    </div>
-                </div>
-                <hr>
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong><i class="fas fa-shield-alt"></i> EPI:</strong> ${f.epi.nome}
-                        <br><small>CA: <span class="${badge}">${f.epi.ca}</span> | Fabricante: ${f.epi.fabricante || '-'}</small>
-                        <br><small>Validade CA: ${f.epi.validadeCA ? new Date(f.epi.validadeCA).toLocaleDateString('pt-BR') : '-'}</small>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Motivo:</strong> ${f.motivo}
-                        <br><small>Qtd: ${f.qtd} | Periodicidade: ${f.periodicidade}</small>
-                        <br><small>Próxima troca: ${f.proximaTroca ? new Date(f.proximaTroca).toLocaleDateString('pt-BR') : '-'}</small>
-                    </div>
-                </div>
-                ${alertaCA}
-                <div class="mt-2 text-end">
-                    <button class="btn btn-sm btn-primary" onclick="visualizarFichaEPIExistente(${f.id})"><i class="fas fa-eye"></i> Visualizar/Imprimir</button>
-                    <button class="btn btn-sm btn-danger" onclick="excluirFichaEPI(${f.id})"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-        `;
-    }).join('');
+function abrirModalMaterial(){
+document.getElementById('matCod').value='';
+document.getElementById('matDesc').value='';
+document.getElementById('matEst').value='0';
+document.getElementById('matVal').value='0';
+document.getElementById('matPerda').value='0';
+var sel=document.getElementById('matEtp');
+sel.innerHTML='<option value="">Nenhuma</option>'+etapas.map(function(e){return'<option value="'+e.id+'">'+e.nome+'</option>'}).join('');
+new bootstrap.Modal(document.getElementById('modalMaterial')).show();
 }
-
-function excluirFichaEPI(id) {
-    if (confirm('Excluir esta ficha de EPI?')) {
-        fichasEPI = fichasEPI.filter(f => f.id !== id);
-        salvar();
-        atualizarFichasEPI();
-    }
+function salvarMaterial(){
+var cod=document.getElementById('matCod').value;
+var desc=document.getElementById('matDesc').value;
+if(!cod||!desc){alert('Preencha código e descrição!');return}
+var etpId=document.getElementById('matEtp').value;
+var etp=etapas.find(function(e){return e.id==etpId});
+materiais.push({codigo:cod,descricao:desc,un:document.getElementById('matUN').value,estoque:parseFloat(document.getElementById('matEst').value)||0,valor:parseFloat(document.getElementById('matVal').value)||0,perda:parseFloat(document.getElementById('matPerda').value)||0,etapaId:etpId,etapaNome:etp?etp.nome:''});
+salvar();
+atualizarTudo();
+bootstrap.Modal.getInstance(document.getElementById('modalMaterial')).hide();
 }
-
-// ===== VISUALIZAR FICHA =====
-function visualizarFichaEPI() {
-    const colabNome = document.getElementById('epiColabNome').value;
-    const epiItem = document.getElementById('epiItem').value;
-    if (!colabNome || !epiItem) { alert('Preencha os dados antes de visualizar!'); return; }
-    
-    const epi = catalogoEPI.find(e => e.id == epiItem);
-    const fichaTemp = {
-        colab: {
-            nome: colabNome,
-            cpf: document.getElementById('epiColabCPF').value,
-            matricula: document.getElementById('epiColabMat').value,
-            cargo: document.getElementById('epiColabCargo').value,
-            setor: document.getElementById('epiColabSetor').value,
-            funcao: document.getElementById('epiColabFuncao').value,
-            admissao: document.getElementById('epiColabAdmissao').value
-        },
-        epi: {
-            nome: epi ? epi.nome : document.getElementById('epiDescricao').value,
-            ca: document.getElementById('epiCA').value,
-            validadeCA: document.getElementById('epiCAValidade').value,
-            fabricante: document.getElementById('epiFabricante').value,
-            descricao: document.getElementById('epiDescricao').value
-        },
-        qtd: parseInt(document.getElementById('epiQtd').value) || 1,
-        motivo: document.getElementById('epiMotivo').value,
-        periodicidade: document.getElementById('epiPeriodicidade').value,
-        proximaTroca: document.getElementById('epiProximaTroca').value,
-        responsavel: document.getElementById('nomeResponsavel').value,
-        obs: document.getElementById('epiObs').value,
-        data: new Date().toISOString(),
-        assinaturaColab: document.getElementById('canvasAssinaturaColab').toDataURL(),
-        assinaturaResp: document.getElementById('canvasAssinaturaResp').toDataURL()
-    };
-    
-    renderizarFichaImpressao(fichaTemp);
-    new bootstrap.Modal(document.getElementById('modalVisualizarFicha')).show();
+function atualizarMateriais(){
+var tb=document.getElementById('tabMateriais');
+tb.innerHTML=materiais.map(function(m,i){return'<tr><td>'+m.codigo+'</td><td>'+m.descricao+'</td><td>'+m.un+'</td><td>'+m.estoque.toFixed(2)+'</td><td>R$ '+m.valor.toFixed(2)+'</td><td>'+m.perda+'%</td><td>'+(m.etapaNome||'-')+'</td><td><button class="btn btn-sm btn-danger" onclick="excluirMat('+i+')"><i class="fas fa-trash"></i></button></td></tr>'}).join('');
 }
-
-function visualizarFichaEPIExistente(id) {
-    const ficha = fichasEPI.find(f => f.id === id);
-    if (ficha) {
-        renderizarFichaImpressao(ficha);
-        new bootstrap.Modal(document.getElementById('modalVisualizarFicha')).show();
-    }
+function excluirMat(i){if(confirm('Excluir material?')){materiais.splice(i,1);salvar();atualizarTudo()}}
+function confirmarEntrada(){
+var cod=document.getElementById('matEnt').value;
+var qtd=parseFloat(document.getElementById('qtdEnt').value);
+if(!cod||!qtd){alert('Selecione material e quantidade!');return}
+var mat=materiais.find(function(m){return m.codigo===cod});
+if(mat){
+mat.estoque+=qtd;
+var val=parseFloat(document.getElementById('valEnt').value);
+if(val>0)mat.valor=val;
+historico.push({data:new Date().toISOString(),tipo:'ENTRADA',material:mat.descricao,codigo:mat.codigo,qtd:qtd,destino:document.getElementById('fornEnt').value||'Almoxarifado',doc:document.getElementById('docEnt').value,obs:document.getElementById('obsEnt').value});
+salvar();
+atualizarTudo();
+document.getElementById('qtdEnt').value='';
+document.getElementById('valEnt').value='';
+document.getElementById('docEnt').value='';
+document.getElementById('obsEnt').value='';
+document.getElementById('fornEnt').value='';
+alert('Entrada registrada!');
 }
-
-function renderizarFichaImpressao(f) {
-    const html = `
-        <div style="text-align:center; border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 20px;">
-            <h3>FICHA DE ENTREGA DE EPI</h3>
-            <h5>Conforme NR-6 e ISO 45001</h5>
-            <p style="margin:0">Data de Emissão: <strong>${new Date(f.data).toLocaleDateString('pt-BR')} ${new Date(f.data).toLocaleTimeString('pt-BR')}</strong></p>
-        </div>
-        
-        <div style="border: 1px solid #000; padding: 15px; margin-bottom: 15px;">
-            <h6 style="background:#2c3e50; color:white; padding: 5px 10px; margin: -15px -15px 15px -15px;">DADOS DO COLABORADOR</h6>
-            <table style="width:100%; font-size: 0.9rem;">
-                <tr><td style="width:50%; padding: 5px;"><strong>Nome:</strong> ${f.colab.nome}</td><td style="padding: 5px;"><strong>CPF:</strong> ${f.colab.cpf || '-'}</td></tr>
-                <tr><td style="padding: 5px;"><strong>Matrícula:</strong> ${f.colab.matricula || '-'}</td><td style="padding: 5px;"><strong>Cargo:</strong> ${f.colab.cargo || '-'}</td></tr>
-                <tr><td style="padding: 5px;"><strong>Setor/Obra:</strong> ${f.colab.setor || '-'}</td><td style="padding: 5px;"><strong>Função:</strong> ${f.colab.funcao || '-'}</td></tr>
-                <tr><td style="padding: 5px;"><strong>Admissão:</strong> ${f.colab.admissao ? new Date(f.colab.admissao).toLocaleDateString('pt-BR') : '-'}</td><td></td></tr>
-            </table>
-        </div>
-        
-        <div style="border: 1px solid #000; padding: 15px; margin-bottom: 15px;">
-            <h6 style="background:#3498db; color:white; padding: 5px 10px; margin: -15px -15px 15px -15px;">DADOS DO EPI</h6>
-            <table style="width:100%; font-size: 0.9rem;">
-                <tr><td style="width:50%; padding: 5px;"><strong>EPI:</strong> ${f.epi.nome}</td><td style="padding: 5px;"><strong>CA:</strong> ${f.epi.ca}</td></tr>
-                <tr><td style="padding: 5px;"><strong>Fabricante:</strong> ${f.epi.fabricante || '-'}</td><td style="padding: 5px;"><strong>Validade CA:</strong> ${f.epi.validadeCA ? new Date(f.epi.validadeCA).toLocaleDateString('pt-BR') : '-'}</td></tr>
-                <tr><td style="padding: 5px;"><strong>Quantidade:</strong> ${f.qtd}</td><td style="padding: 5px;"><strong>Periodicidade:</strong> ${f.periodicidade}</td></tr>
-                <tr><td style="padding: 5px;"><strong>Motivo:</strong> ${f.motivo}</td><td style="padding: 5px;"><strong>Próxima Troca:</strong> ${f.proximaTroca ? new Date(f.proximaTroca).toLocaleDateString('pt-BR') : '-'}</td></tr>
-            </table>
-        </div>
-        
-        <div style="border: 2px solid #000; padding: 15px; margin-bottom: 15px; background: #f8f9fa;">
-            <h6 style="margin-top:0;">TERMO DE RESPONSABILIDADE</h6>
-            <p style="font-size: 0.85rem; text-align: justify;">
-                Declaro para os devidos fins que recebi da empresa o(s) Equipamento(s) de Proteção Individual (EPI) acima descrito(s), 
-                em perfeitas condições de uso, comprometendo-me a: (1) Utilizar o EPI apenas para a finalidade a que se destina; 
-                (2) Responsabilizar-me pela guarda e conservação; (3) Comunicar imediatamente qualquer alteração que o torne impróprio; 
-                (4) Devolver quando solicitado ou ao término do vínculo; (5) Cientifico-me de que o não uso constitui falta grave (art. 158 CLT).
-            </p>
-        </div>
-        
-        ${f.obs ? `<div style="border: 1px solid #000; padding: 10px; margin-bottom: 15px;"><strong>Observações:</strong> ${f.obs}</div>` : ''}
-        
-        <div style="margin-top: 50px;">
-            <table style="width:100%;">
-                <tr>
-                    <td style="width:50%; text-align:center; padding: 20px;">
-                        ${f.assinaturaColab && !canvasEstaVazioData(f.assinaturaColab) ? `<img src="${f.assinaturaColab}" style="max-height:80px; max-width:100%;">` : '_________________________________'}
-                        <div class="assinatura-line"><strong>${f.colab.nome}</strong><br>Colaborador<br>CPF: ${f.colab.cpf || '-'}</div>
-                    </td>
-                    <td style="width:50%; text-align:center; padding: 20px;">
-                        ${f.assinaturaResp && !canvasEstaVazioData(f.assinaturaResp) ? `<img src="${f.assinaturaResp}" style="max-height:80px; max-width:100%;">` : '_________________________________'}
-                        <div class="assinatura-line"><strong>${f.responsavel || '-'}</strong><br>Responsável pela Entrega<br>SESMT / Supervisor</div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        
-        <div style="margin-top: 30px; font-size: 0.75rem; color: #666; text-align: center; border-top: 1px solid #ccc; padding-top: 10px;">
-            Documento gerado eletronicamente em ${new Date().toLocaleString('pt-BR')} | Conforme NR-6 e ISO 45001 | Este documento tem validade legal
-        </div>
-    `;
-    document.getElementById('fichaImpressao').innerHTML = html;
 }
-
-function canvasEstaVazioData(dataURL) {
-    // Verificação simples
-    return !dataURL || dataURL.length < 1000;
+function efetivarSaida(){
+var cod=document.getElementById('matSaida').value;
+var qtd=parseFloat(document.getElementById('qtdSaida').value);
+var pep=document.getElementById('pepSaida').value;
+if(!cod||!qtd||!pep){alert('Preencha material, quantidade e PEP!');return}
+var mat=materiais.find(function(m){return m.codigo===cod});
+var etp=etapas.find(function(e){return e.id==document.getElementById('etapaSaida').value});
+if(mat){
+if(mat.estoque<qtd){alert('Estoque insuficiente! Disponível: '+mat.estoque);return}
+mat.estoque-=qtd;
+historico.push({data:new Date().toISOString(),tipo:'SAÍDA',material:mat.descricao,codigo:mat.codigo,qtd:qtd,destino:pep,etapa:etp?etp.nome:'',frente:document.getElementById('frenteSaida').value,solicitante:document.getElementById('solicSaida').value,status:document.getElementById('statusSaida').value});
+salvar();
+atualizarTudo();
+document.getElementById('qtdSaida').value='';
+document.getElementById('pepSaida').value='';
+document.getElementById('frenteSaida').value='';
+document.getElementById('solicSaida').value='';
+alert('Saída registrada!');
 }
-
-function exportarRelatorioEPI() {
-    const dados = {
-        fichas: fichasEPI,
-        catalogo: catalogoEPI,
-        exportado: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'relatorio_epi_' + new Date().toISOString().split('T')[0] + '.json';
-    a.click();
 }
-
-// Integrar EPI na função salvar e carregar existente
-// Adicione 'catalogoEPI' e 'fichasEPI' nas funções salvar() e carregar() existentes
+function processarDevolucao(){
+var cod=document.getElementById('matDev').value;
+var qtd=parseFloat(document.getElementById('qtdDev').value);
+var pep=document.getElementById('pepDev').value;
+var cond=document.getElementById('condDev').value;
+if(!cod||!qtd){alert('Preencha material e quantidade!');return}
+var mat=materiais.find(function(m){return m.codigo===cod});
+if(mat){
+mat.estoque+=qtd;
+historico.push({data:new Date().toISOString(),tipo:'DEVOLUÇÃO',material:mat.descricao,codigo:mat.codigo,qtd:qtd,destino:pep||'Almoxarifado',condicao:cond,motivo:document.getElementById('motDev').value});
+salvar();
+atualizarTudo();
+document.getElementById('qtdDev').value='';
+document.getElementById('pepDev').value='';
+document.getElementById('motDev').value='';
+alert('Devolução registrada!');
+}
+}
+function atualizarEstoque(){
+var tb=document.getElementById('tabEstoque');
+tb.innerHTML=materiais.map(function(m){return'<tr><td>'+m.codigo+'</td><td>'+m.descricao+'</td><td>'+m.estoque.toFixed(2)+' '+m.un+'</td><td>R$ '+(m.estoque*m.valor).toFixed(2)+'</td><td>'+(m.etapaNome||'-')+'</td></tr>'}).join('');
+}
+function registrarResiduo(){
+var num=document.getElementById('numMTR').value;
+var peso=parseFloat(document.getElementById('pesoMTR').value);
+if(!num||!peso){alert('Preencha MTR e peso!');return}
+residuos.push({id:Date.now(),data:new Date().toISOString(),num:num,peso:peso,classe:document.getElementById('classeMTR').value,origem:document.getElementById('origMTR').value,destinacao:document.getElementById('destMTR').value,obs:document.getElementById('obsMTR').value});
+salvar();
+atualizarResiduos();
+document.getElementById('numMTR').value='';
+document.getElementById('pesoMTR').value='';
+document.getElementById('origMTR').value='';
+document.getElementById('obsMTR').value='';
+alert('Resíduo registrado!');
+}
+function atualizarResiduos(){
+var tb=document.getElementById('tabResiduos');
+tb.innerHTML=residuos.map(function(r){return'<tr><td>'+new Date(r.data).toLocaleString('pt-BR')+'</td><td>'+r.num+'</td><td>'+r.classe+'</td><td>'+r.peso.toFixed(2)+' KG</td><td>'+(r.origem||'-')+'</td><td>'+r.destinacao+'</td><td><button class="btn btn-sm btn-danger" onclick="excluirResiduo('+r.id+')"><i class="fas fa-trash"></i></button></td></tr>'}).join('');
+document.getElementById('totMTR').textContent=residuos.length;
+document.getElementById('totKG').textContent=residuos.reduce(function(s,r){return s+r.peso},0).toFixed(2)+' KG';
+document.getElementById('totClasse1').textContent=residuos.filter(function(r){return r.classe==='I'}).length;
+document.getElementById('totClasse2').textContent=residuos.filter(function(r){return r.classe!=='I'}).length;
+}
+function excluirResiduo(id){if(confirm('Excluir?')){residuos=residuos.filter(function(r){return r.id!==id});salvar();atualizarResiduos()}}
+function atualizarHistorico(){
+var tb=document.getElementById('tabHistorico');
+tb.innerHTML=historico.slice().reverse().map(function(h){return'<tr><td>'+new Date(h.data).toLocaleString('pt-BR')+'</td><td><span class="badge bg-'+(h.tipo==='ENTRADA'?'success':h.tipo==='DEVOLUÇÃO'?'warning':'primary')+'">'+h.tipo+'</span></td><td>'+h.material+'</td><td>'+h.qtd.toFixed(2)+'</td><td>'+(h.destino||'')+'</td><td>'+(h.etapa||'-')+'</td></tr>'}).join('');
+}
+function popularSelects(){
+['matEnt','matSaida','matDev'].forEach(function(id){
+var s=document.getElementById(id);
+s.innerHTML='<option value="">Selecione...</option>'+materiais.map(function(m){return'<option value="'+m.codigo+'">'+m.codigo+' - '+m.descricao+' ('+m.estoque+' '+m.un+')</option>'}).join('');
+});
+var se=document.getElementById('etapaSaida');
+se.innerHTML='<option value="">Selecione...</option>'+etapas.map(function(e){return'<option value="'+e.id+'">'+e.nome+'</option>'}).join('');
+}
+function exportarJSON(){
+var d={obra:obra,etapas:etapas,materiais:materiais,historico:historico,diario:diario,residuos:residuos,catalogoEPI:catalogoEPI,fichasEPI:fichasEPI,exportado:new Date().toISOString()};
+var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+var a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download='backup_obra_'+new Date().toISOString().split('T')[0]+'.json';
+a.click();
+}
+function importarJSON(){
+var f=document.getElementById('fileImport').files[0];
+if(!f){alert('Selecione um arquivo!');return}
+var r=new FileReader();
+r.onload=function(e){
+try{
+var d=JSON.parse(e.target.result);
+obra=d.obra||obra;
+etapas=d.etapas||[];
+materiais=d.materiais||[];
+historico=d.historico||[];
+diario=d.diario||[];
+residuos=d.residuos||[];
+catalogoEPI=d.catalogoEPI||[];
+fichasEPI=d.fichasEPI||[];
+salvar();
+atualizarTudo();
+document.getElementById('modalImportar').style.display='none';
+alert('Importado com sucesso!');
+}catch(err){alert('Erro ao importar: '+err.message)}
+};
+r.readAsText(f);
+}
+function atualizarAnalytics(){renderizarKPIsGerais();renderizarListaEtapas();renderizarGraficoConsumoEtapa();renderizarGraficoStatusDistrib()}
+function renderizarKPIsGerais(){
+var totalEtapas=etapas.length;
+var concluidas=etapas.filter(function(e){return(e.progresso||0)>=100}).length;
+var atrasadas=etapas.filter(function(e){return statusEtapa(e)==='atraso'}).length;
+var progressoMedio=calcProgresso();
+var valorEstoque=materiais.reduce(function(s,m){return s+(m.estoque*m.valor)},0);
+var totalMov=historico.length;
+var kpis=[
+{label:'Total Etapas/PEPs',value:totalEtapas,sub:'cadastradas',tipo:'info',trend:null},
+{label:'Concluídas',value:concluidas,sub:totalEtapas>0?Math.round(concluidas/totalEtapas*100)+'% do total':'-',tipo:'success',trend:'up'},
+{label:'Em Atraso',value:atrasadas,sub:'requer atenção',tipo:atrasadas>0?'danger':'success',trend:atrasadas>0?'down':'up'},
+{label:'Progresso Médio',value:progressoMedio+'%',sub:'geral da obra',tipo:progressoMedio>=70?'success':progressoMedio>=40?'warning':'danger',trend:'up'},
+{label:'Valor em Estoque',value:'R$ '+valorEstoque.toLocaleString('pt-BR',{minimumFractionDigits:2}),sub:materiais.length+' itens',tipo:'info',trend:null},
+{label:'Movimentações',value:totalMov,sub:'registradas',tipo:'info',trend:'up'}
+];
+var html='';
+kpis.forEach(function(k){
+html+='<div class="kpi-card '+k.tipo+'"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.value+'</div><div class="kpi-sub">'+k.sub+(k.trend?'<span class="kpi-trend '+k.trend+'">'+(k.trend==='up'?'↑':'↓')+'</span>':'')+'</div></div>';
+});
+document.getElementById('kpiGerais').innerHTML=html;
+}
+function renderizarListaEtapas(){
+var c=document.getElementById('listaEtapasAnalytics');
+if(etapas.length===0){c.innerHTML='<p class="text-muted text-center py-4">Nenhuma etapa/PEP cadastrada.</p>';return}
+var html='';
+etapas.forEach(function(e,i){
+var st=statusEtapa(e);
+var corS=st==='concluida'?'verde':st==='atraso'?'vermelho':'amarelo';
+var cons=calcConsumoEtapa(e.id);
+html+='<div class="etapa-card-clickable '+st+'" onclick="abrirDashboardEtapa('+i+')"><div class="row align-items-center"><div class="col-md-1"><span class="semaforo '+corS+'"></span></div><div class="col-md-4"><strong>'+e.nome+'</strong><br><small class="text-muted">'+(e.resp||'Sem responsável')+'</small></div><div class="col-md-3"><small class="text-muted">Progresso</small><div class="progress" style="height:8px"><div class="progress-bar bg-'+(st==='atraso'?'danger':st==='concluida'?'success':'primary')+'" style="width:'+(e.progresso||0)+'%"></div></div><small class="fw-bold">'+(e.progresso||0)+'%</small></div><div class="col-md-2"><small class="text-muted">Consumido</small><br><strong>R$ '+cons.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</strong></div><div class="col-md-2 text-end"><small class="text-muted">Clique para</small><br><span class="badge bg-primary">Ver Dashboard</span></div></div></div>';
+});
+c.innerHTML=html;
+}
+function calcConsumoEtapa(etapaId){
+var e=etapas.find(function(x){return x.id===etapaId});
+if(!e)return 0;
+var saidas=historico.filter(function(h){return h.tipo==='SAÍDA'&&h.etapa===e.nome});
+return saidas.reduce(function(s,h){return s+(h.qtd*((materiais.find(function(m){return m.codigo===h.codigo})||{}).valor||0))},0);
+}
+function renderizarGraficoConsumoEtapa(){
+var ctx=document.getElementById('chartConsumoEtapa').getContext('2d');
+if(chartConsumoEtapa)chartConsumoEtapa.destroy();
+chartConsumoEtapa=new Chart(ctx,{type:'bar',data:{labels:etapas.map(function(e){return e.nome}),datasets:[{label:'Consumo (R$)',data:etapas.map(function(e){return calcConsumoEtapa(e.id)}),backgroundColor:'rgba(52,152,219,0.7)',borderColor:'#3498db',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return'R$ '+v.toLocaleString('pt-BR')}}}}}});
+}
+function renderizarGraficoStatusDistrib(){
+var ctx=document.getElementById('chartStatusDistrib').getContext('2d');
+if(chartStatusDistrib)chartStatusDistrib.destroy();
+var concluidas=etapas.filter(function(e){return(e.progresso||0)>=100}).length;
+var atrasadas=etapas.filter(function(e){return statusEtapa(e)==='atraso'}).length;
+var emAndamento=etapas.length-concluidas-atrasadas;
+chartStatusDistrib=new Chart(ctx,{type:'doughnut',data:{labels:['Concluídas','Em Andamento','Atrasadas'],datasets:[{data:[concluidas,emAndamento,atrasadas],backgroundColor:['#27ae60','#3498db','#e74c3c'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+}
+function abrirDashboardEtapa(i){
+etapaAtualDashboard=etapas[i];
+document.getElementById('tituloDashboardEtapa').textContent=etapaAtualDashboard.nome;
+renderizarKPIsEtapa();
+renderizarGraficoAvancoEtapa();
+renderizarGraficoMateriaisEtapa();
+renderizarRankingMateriaisEtapa();
+renderizarUltimasMovEtapa();
+renderizarSemaforoEtapa();
+new bootstrap.Modal(document.getElementById('modalDashboardEtapa')).show();
+}
+function renderizarKPIsEtapa(){
+var e=etapaAtualDashboard;
+var cons=calcConsumoEtapa(e.id);
+var orc=e.orc||0;
+var desvio=orc>0?((cons-orc)/orc*100):0;
+var dias=e.fim?Math.ceil((new Date(e.fim)-new Date())/86400000):0;
+var saidas=historico.filter(function(h){return h.tipo==='SAÍDA'&&h.etapa===e.nome}).length;
+var kpis=[
+{label:'Progresso',value:(e.progresso||0)+'%',sub:'concluído',tipo:(e.progresso||0)>=70?'success':(e.progresso||0)>=40?'warning':'danger'},
+{label:'Orçamento',value:'R$ '+orc.toLocaleString('pt-BR',{minimumFractionDigits:2}),sub:'planejado',tipo:'info'},
+{label:'Consumido',value:'R$ '+cons.toLocaleString('pt-BR',{minimumFractionDigits:2}),sub:'realizado',tipo:desvio>10?'danger':desvio>0?'warning':'success'},
+{label:'Desvio',value:desvio.toFixed(1)+'%',sub:desvio>0?'acima do orçamento':'dentro do orçamento',tipo:desvio>10?'danger':desvio>0?'warning':'success'},
+{label:'Dias Restantes',value:dias>0?dias:0,sub:dias<=7&&dias>0?'prazo crítico!':'até entrega',tipo:dias<=7&&dias>0?'danger':'info'},
+{label:'Movimentações',value:saidas,sub:'saídas registradas',tipo:'info'}
+];
+var html='';
+kpis.forEach(function(k){html+='<div class="kpi-card '+k.tipo+'"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.value+'</div><div class="kpi-sub">'+k.sub+'</div></div>'});
+document.getElementById('kpiEtapa').innerHTML=html;
+}
+function renderizarGraficoAvancoEtapa(){
+var ctx=document.getElementById('chartAvancoEtapa').getContext('2d');
+if(chartAvancoEtapa)chartAvancoEtapa.destroy();
+var e=etapaAtualDashboard;
+var diasTotais=e.inicio&&e.fim?Math.ceil((new Date(e.fim)-new Date(e.inicio))/86400000):30;
+var diasPassados=e.inicio?Math.ceil((new Date()-new Date(e.inicio))/86400000):0;
+var labels=[],plan=[],real=[];
+for(var i=0;i<=Math.min(diasTotais,30);i++){
+labels.push('Dia '+i);
+plan.push((i/diasTotais)*100);
+real.push(i<=diasPassados?(e.progresso||0)*(i/diasPassados):null);
+}
+chartAvancoEtapa=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:'Planejado',data:plan,borderColor:'#3498db',backgroundColor:'rgba(52,152,219,0.1)',tension:.4},{label:'Real',data:real,borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.1)',tension:.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:function(v){return v+'%'}}}}}});
+}
+function renderizarGraficoMateriaisEtapa(){
+var ctx=document.getElementById('chartMateriaisEtapa').getContext('2d');
+if(chartMateriaisEtapa)chartMateriaisEtapa.destroy();
+var e=etapaAtualDashboard;
+var saidas=historico.filter(function(h){return h.tipo==='SAÍDA'&&h.etapa===e.nome});
+var cons={};
+saidas.forEach(function(h){
+var mat=materiais.find(function(m){return m.codigo===h.codigo});
+if(mat){var v=h.qtd*mat.valor;cons[mat.descricao]=(cons[mat.descricao]||0)+v}
+});
+var labels=Object.keys(cons);
+var data=Object.values(cons);
+var cores=['#3498db','#27ae60','#f39c12','#e74c3c','#9b59b6','#1abc9c','#34495e','#e67e22'];
+chartMateriaisEtapa=new Chart(ctx,{type:'pie',data:{labels:labels.length>0?labels:['Sem dados'],datasets:[{data:data.length>0?data:[1],backgroundColor:cores}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right'}}}});
+}
+function renderizarRankingMateriaisEtapa(){
+var e=etapaAtualDashboard;
+var saidas=historico.filter(function(h){return h.tipo==='SAÍDA'&&h.etapa===e.nome});
+var cons={};
+saidas.forEach(function(h){
+var mat=materiais.find(function(m){return m.codigo===h.codigo});
+if(mat){cons[mat.descricao]=(cons[mat.descricao]||0)+h.qtd}
+});
+var ord=Object.entries(cons).sort(function(a,b){return b[1]-a[1]}).slice(0,5);
+var max=ord.length>0?ord[0][1]:1;
+if(ord.length===0){document.getElementById('rankingMateriaisEtapa').innerHTML='<p class="text-muted text-center">Nenhum material consumido</p>';return}
+var html='';
+ord.forEach(function(it,i){
+html+='<div class="ranking-item"><div style="flex:1"><div class="d-flex justify-content-between"><strong>#'+(i+1)+' '+it[0]+'</strong><span>'+it[1].toFixed(2)+'</span></div><div class="ranking-bar"><div class="ranking-fill" style="width:'+(it[1]/max*100)+'%"></div></div></div></div>';
+});
+document.getElementById('rankingMateriaisEtapa').innerHTML=html;
+}
+function renderizarUltimasMovEtapa(){
+var e=etapaAtualDashboard;
+var movs=historico.filter(function(h){return h.etapa===e.nome}).slice(-10).reverse();
+if(movs.length===0){document.getElementById('ultimasMovEtapa').innerHTML='<p class="text-muted text-center">Nenhuma movimentação</p>';return}
+var html='';
+movs.forEach(function(h){
+html+='<div class="ranking-item"><div><span class="badge bg-'+(h.tipo==='ENTRADA'?'success':'primary')+'">'+h.tipo+'</span><strong>'+h.material+'</strong><br><small class="text-muted">'+new Date(h.data).toLocaleString('pt-BR')+'</small></div><div class="text-end"><strong>'+h.qtd.toFixed(2)+'</strong><br><small class="text-muted">'+(h.frente||'-')+'</small></div></div>';
+});
+document.getElementById('ultimasMovEtapa').innerHTML=html;
+}
+function renderizarSemaforoEtapa(){
+var e=etapaAtualDashboard;
+var prog=e.progresso||0;
+var dias=e.fim?Math.ceil((new Date(e.fim)-new Date())/86400000):999;
+var cons=calcConsumoEtapa(e.id);
+var orc=e.orc||0;
+var desvio=orc>0?((cons-orc)/orc*100):0;
+var ind=[
+{label:'Progresso',valor:prog>=70?'verde':prog>=40?'amarelo':'vermelho',desc:prog+'% concluído'},
+{label:'Prazo',valor:dias>15?'verde':dias>7?'amarelo':'vermelho',desc:dias+' dias restantes'},
+{label:'Orçamento',valor:desvio<=0?'verde':desvio<=10?'amarelo':'vermelho',desc:desvio.toFixed(1)+'% de desvio'},
+{label:'Produtividade',valor:prog>=50?'verde':prog>=25?'amarelo':'vermelho',desc:'baseado no tempo decorrido'}
+];
+var html='';
+ind.forEach(function(i){
+html+='<div class="col-md-3 text-center"><span class="semaforo '+i.valor+'" style="width:20px;height:20px"></span><div class="fw-bold mt-2">'+i.label+'</div><small class="text-muted">'+i.desc+'</small></div>';
+});
+document.getElementById('semaforoEtapa').innerHTML=html;
+}
+function exportarDashboardEtapa(){
+if(!etapaAtualDashboard)return;
+var e=etapaAtualDashboard;
+var movs=historico.filter(function(h){return h.etapa===e.nome});
+var d={etapa:e,movimentacoes:movs,exportado:new Date().toISOString()};
+var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+var a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download='dashboard_'+e.nome.replace(/\s+/g,'_')+'_'+new Date().toISOString().split('T')[0]+'.json';
+a.click();
+}
+function inicializarCatalogoEPI(){
+if(catalogoEPI.length===0){
+catalogoEPI=[
+{id:1,nome:'Capacete de Segurança com Jugular',ca:'',fabricante:'',validadeCA:'',periodicidade:'12 meses',estoque:0},
+{id:2,nome:'Protetor Auricular (Plug)',ca:'',fabricante:'',validadeCA:'',periodicidade:'6 meses',estoque:0},
+{id:3,nome:'Protetor Auricular (Abafador)',ca:'',fabricante:'',validadeCA:'',periodicidade:'12 meses',estoque:0},
+{id:4,nome:'Óculos de Segurança Incolor',ca:'',fabricante:'',validadeCA:'',periodicidade:'12 meses',estoque:0},
+{id:5,nome:'Óculos de Segurança para Solda',ca:'',fabricante:'',validadeCA:'',periodicidade:'12 meses',estoque:0},
+{id:6,nome:'Máscara Respiratória PFF2 (N95)',ca:'',fabricante:'',validadeCA:'',periodicidade:'3 meses',estoque:0},
+{id:7,nome:'Luva de Procedimento (Látex)',ca:'',fabricante:'',validadeCA:'',periodicidade:'3 meses',estoque:0},
+{id:8,nome:'Luva de Raspa de Couro (Solda)',ca:'',fabricante:'',validadeCA:'',periodicidade:'6 meses',estoque:0},
+{id:9,nome:'Luva de Vaqueta (Geral)',ca:'',fabricante:'',validadeCA:'',periodicidade:'6 meses',estoque:0},
+{id:10,nome:'Botina de Segurança com Biqueira',ca:'',fabricante:'',validadeCA:'',periodicidade:'12 meses',estoque:0},
+{id:11,nome:'Botina de Segurança Dielétrica',ca:'',fabricante:'',validadeCA:'',periodicidade:'12 meses',estoque:0},
+{id:12,nome:'Cinto de Segurança Tipo Paraquedista',ca:'',fabricante:'',validadeCA:'',periodicidade:'12 meses',estoque:0},
+{id:13,nome:'Protetor Facial (Face Shield)',ca:'',fabricante:'',validadeCA:'',periodicidade:'12 meses',estoque:0},
+{id:14,nome:'Avental de Raspa (Solda)',ca:'',fabricante:'',validadeCA:'',periodicidade:'12 meses',estoque:0},
+{id:15,nome:'Perneira de Segurança',ca:'',fabricante:'',validadeCA:'',periodicidade:'12 meses',estoque:0}
+];
+}
+}
+function abrirModalCatalogoEPI(){atualizarTabelaCatalogoEPI();new bootstrap.Modal(document.getElementById('modalCatalogoEPI')).show()}
+function adicionarEPICatalogo(){
+var nome=document.getElementById('catEPINome').value;
+if(!nome){alert('Informe o nome do EPI!');return}
+catalogoEPI.push({id:Date.now(),nome:nome,ca:document.getElementById('catEPICA').value,fabricante:document.getElementById('catEPIFab').value,validadeCA:document.getElementById('catEPIVal').value,periodicidade:document.getElementById('catEPIPer').value,estoque:parseInt(document.getElementById('catEPIEst').value)||0});
+salvar();
+atualizarTabelaCatalogoEPI();
+document.getElementById('catEPINome').value='';
+document.getElementById('catEPICA').value='';
+document.getElementById('catEPIFab').value='';
+document.getElementById('catEPIVal').value='';
+document.getElementById('catEPIEst').value='0';
+alert('EPI adicionado ao catálogo!');
+}
+function atualizarTabelaCatalogoEPI(){
+var tb=document.getElementById('tabCatalogoEPI');
+tb.innerHTML=catalogoEPI.map(function(e,i){
+var stCA=statusCA(e.validadeCA);
+var badge=stCA==='vencido'?'badge-ca-vencido':stCA==='vencendo'?'badge-ca-vencendo':'badge-ca';
+return'<tr><td><strong>'+e.nome+'</strong></td><td><span class="'+badge+'">'+(e.ca||'-')+'</span></td><td>'+(e.fabricante||'-')+'</td><td>'+(e.validadeCA?new Date(e.validadeCA).toLocaleDateString('pt-BR'):'-')+'</td><td>'+e.periodicidade+'</td><td>'+e.estoque+'</td><td><button class="btn btn-sm btn-danger" onclick="excluirEPICatalogo('+i+')"><i class="fas fa-trash"></i></button></td></tr>';
+}).join('');
+}
+function excluirEPICatalogo(i){if(confirm('Excluir EPI do catálogo?')){catalogoEPI.splice(i,1);salvar();atualizarTabelaCatalogoEPI()}}
+function statusCA(validadeCA){
+if(!validadeCA)return'ok';
+var hoje=new Date();
+var val=new Date(validadeCA);
+var diff=Math.ceil((val-hoje)/86400000);
+if(diff<0)return'vencido';
+if(diff<=30)return'vencendo';
+return'ok';
+}
+function abrirModalNovoEPI(){
+document.getElementById('epiColabNome').value='';
+document.getElementById('epiColabCPF').value='';
+document.getElementById('epiColabMat').value='';
+document.getElementById('epiColabCargo').value='';
+document.getElementById('epiColabSetor').value='';
+document.getElementById('epiColabFuncao').value='';
+document.getElementById('epiColabAdmissao').value='';
+document.getElementById('epiCA').value='';
+document.getElementById('epiCAValidade').value='';
+document.getElementById('epiFabricante').value='';
+document.getElementById('epiDescricao').value='';
+document.getElementById('epiProximaTroca').value='';
+document.getElementById('epiObs').value='';
+document.getElementById('nomeResponsavel').value='';
+document.getElementById('epiQtd').value='1';
+document.getElementById('epiItem').value='';
+document.getElementById('epiMotivo').value='Primeira Entrega';
+document.getElementById('epiPeriodicidade').value='12 meses';
+var sel=document.getElementById('epiItem');
+sel.innerHTML='<option value="">Selecione...</option>'+catalogoEPI.map(function(e){return'<option value="'+e.id+'">'+e.nome+'</option>'}).join('');
+limparCanvas('canvasAssinaturaColab');
+limparCanvas('canvasAssinaturaResp');
+new bootstrap.Modal(document.getElementById('modalNovaFichaEPI')).show();
+setTimeout(inicializarCanvas,300);
+}
+function preencherDadosEPI(){
+var id=parseInt(document.getElementById('epiItem').value);
+var epi=catalogoEPI.find(function(e){return e.id===id});
+if(epi){
+document.getElementById('epiCA').value=epi.ca||'';
+document.getElementById('epiCAValidade').value=epi.validadeCA||'';
+document.getElementById('epiFabricante').value=epi.fabricante||'';
+document.getElementById('epiDescricao').value=epi.nome;
+document.getElementById('epiPeriodicidade').value=epi.periodicidade||'12 meses';
+if(epi.periodicidade&&epi.periodicidade!=='Sob demanda'){
+var meses=parseInt(epi.periodicidade);
+var data=new Date();
+data.setMonth(data.getMonth()+meses);
+document.getElementById('epiProximaTroca').value=data.toISOString().split('T')[0];
+}
+}
+}
+function inicializarCanvas(){
+var canvasColab=document.getElementById('canvasAssinaturaColab');
+var canvasResp=document.getElementById('canvasAssinaturaResp');
+if(canvasColab&&!canvasColabCtx){
+canvasColab.width=canvasColab.offsetWidth;
+canvasColab.height=120;
+canvasColabCtx=canvasColab.getContext('2d');
+canvasColabCtx.strokeStyle='#000';
+canvasColabCtx.lineWidth=2;
+canvasColabCtx.lineCap='round';
+canvasColab.addEventListener('mousedown',function(e){iniciarDesenho(e,'colab')});
+canvasColab.addEventListener('mousemove',function(e){desenhar(e,'colab')});
+canvasColab.addEventListener('mouseup',function(){pararDesenho('colab')});
+canvasColab.addEventListener('mouseout',function(){pararDesenho('colab')});
+canvasColab.addEventListener('touchstart',function(e){e.preventDefault();iniciarDesenhoTouch(e,'colab')});
+canvasColab.addEventListener('touchmove',function(e){e.preventDefault();desenharTouch(e,'colab')});
+canvasColab.addEventListener('touchend',function(){pararDesenho('colab')});
+}
+if(canvasResp&&!canvasRespCtx){
+canvasResp.width=canvasResp.offsetWidth;
+canvasResp.height=120;
+canvasRespCtx=canvasResp.getContext('2d');
+canvasRespCtx.strokeStyle='#000';
+canvasRespCtx.lineWidth=2;
+canvasRespCtx.lineCap='round';
+canvasResp.addEventListener('mousedown',function(e){iniciarDesenho(e,'resp')});
+canvasResp.addEventListener('mousemove',function(e){desenhar(e,'resp')});
+canvasResp.addEventListener('mouseup',function(){pararDesenho('resp')});
+canvasResp.addEventListener('mouseout',function(){pararDesenho('resp')});
+canvasResp.addEventListener('touchstart',function(e){e.preventDefault();iniciarDesenhoTouch(e,'resp')});
+canvasResp.addEventListener('touchmove',function(e){e.preventDefault();desenharTouch(e,'resp')});
+canvasResp.addEventListener('touchend',function(){pararDesenho('resp')});
+}
+}
+function iniciarDesenho(e,tipo){
+desenhandoColab=tipo==='colab';
+desenhandoResp=tipo==='resp';
+var canvas=tipo==='colab'?document.getElementById('canvasAssinaturaColab'):document.getElementById('canvasAssinaturaResp');
+var ctx=tipo==='colab'?canvasColabCtx:canvasRespCtx;
+var rect=canvas.getBoundingClientRect();
+ctx.beginPath();
+ctx.moveTo(e.clientX-rect.left,e.clientY-rect.top);
+}
+function desenhar(e,tipo){
+if(tipo==='colab'&&!desenhandoColab)return;
+if(tipo==='resp'&&!desenhandoResp)return;
+var canvas=tipo==='colab'?document.getElementById('canvasAssinaturaColab'):document.getElementById('canvasAssinaturaResp');
+var ctx=tipo==='colab'?canvasColabCtx:canvasRespCtx;
+var rect=canvas.getBoundingClientRect();
+ctx.lineTo(e.clientX-rect.left,e.clientY-rect.top);
+ctx.stroke();
+}
+function pararDesenho(tipo){
+if(tipo==='colab')desenhandoColab=false;
+else desenhandoResp=false;
+}
+function iniciarDesenhoTouch(e,tipo){
+var touch=e.touches[0];
+var mouseEvent=new MouseEvent('mousedown',{clientX:touch.clientX,clientY:touch.clientY});
+iniciarDesenho(mouseEvent,tipo);
+}
+function desenharTouch(e,tipo){
+var touch=e.touches[0];
+var mouseEvent=new MouseEvent('mousemove',{clientX:touch.clientX,clientY:touch.clientY});
+desenhar(mouseEvent,tipo);
+}
+function limparCanvas(id){
+var canvas=document.getElementById(id);
+var ctx=canvas.getContext('2d');
+ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+function canvasEstaVazio(id){
+var canvas=document.getElementById(id);
+var ctx=canvas.getContext('2d');
+var data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+for(var i=3;i<data.length;i+=4){if(data[i]!==0)return false}
+return true;
+}
+function salvarFichaEPI(){
+var colabNome=document.getElementById('epiColabNome').value;
+var epiItem=document.getElementById('epiItem').value;
+var ca=document.getElementById('epiCA').value;
+if(!colabNome||!epiItem||!ca){alert('Preencha nome do colaborador, EPI e CA!');return}
+if(canvasEstaVazio('canvasAssinaturaColab')||canvasEstaVazio('canvasAssinaturaResp')){alert('As duas assinaturas são obrigatórias!');return}
+if(!document.getElementById('nomeResponsavel').value){alert('Informe o nome do responsável!');return}
+var epi=catalogoEPI.find(function(e){return e.id==epiItem});
+var ficha={
+id:Date.now(),
+data:new Date().toISOString(),
+colab:{nome:colabNome,cpf:document.getElementById('epiColabCPF').value,matricula:document.getElementById('epiColabMat').value,cargo:document.getElementById('epiColabCargo').value,setor:document.getElementById('epiColabSetor').value,funcao:document.getElementById('epiColabFuncao').value,admissao:document.getElementById('epiColabAdmissao').value},
+epi:{id:epiItem,nome:epi?epi.nome:document.getElementById('epiDescricao').value,ca:ca,validadeCA:document.getElementById('epiCAValidade').value,fabricante:document.getElementById('epiFabricante').value,descricao:document.getElementById('epiDescricao').value},
+qtd:parseInt(document.getElementById('epiQtd').value)||1,
+motivo:document.getElementById('epiMotivo').value,
+periodicidade:document.getElementById('epiPeriodicidade').value,
+proximaTroca:document.getElementById('epiProximaTroca').value,
+responsavel:document.getElementById('nomeResponsavel').value,
+obs:document.getElementById('epiObs').value,
+assinaturaColab:document.getElementById('canvasAssinaturaColab').toDataURL(),
+assinaturaResp:document.getElementById('canvasAssinaturaResp').toDataURL()
+};
+fichasEPI.push(ficha);
+if(epi){epi.estoque=Math.max(0,epi.estoque-ficha.qtd)}
+historico.push({data:new Date().toISOString(),tipo:'ENTREGA EPI',material:ficha.epi.nome,codigo:ficha.epi.ca,qtd:ficha.qtd,destino:ficha.colab.nome+' - '+ficha.colab.setor,etapa:'EPI',obs:ficha.motivo});
+salvar();
+atualizarTudo();
+bootstrap.Modal.getInstance(document.getElementById('modalNovaFichaEPI')).hide();
+alert('Ficha de EPI salva com sucesso!');
+}
+function atualizarFichasEPI(){
+var container=document.getElementById('listaFichasEPI');
+if(!container)return;
+document.getElementById('kpiFichasEPI').textContent=fichasEPI.length;
+document.getElementById('kpiCAVencendo').textContent=catalogoEPI.filter(function(e){return statusCA(e.validadeCA)==='vencendo'}).length;
+document.getElementById('kpiCAVencido').textContent=catalogoEPI.filter(function(e){return statusCA(e.validadeCA)==='vencido'}).length;
+var mesAtual=new Date().getMonth();
+var anoAtual=new Date().getFullYear();
+var trocasMes=fichasEPI.filter(function(f){var d=new Date(f.data);return d.getMonth()===mesAtual&&d.getFullYear()===anoAtual&&f.motivo!=='Primeira Entrega'}).length;
+document.getElementById('kpiTrocasMes').textContent=trocasMes;
+var colabs=[...new Set(fichasEPI.map(function(f){return f.colab.nome}))];
+var epIs=[...new Set(fichasEPI.map(function(f){return f.epi.nome}))];
+var selColab=document.getElementById('filtroColabEPI');
+var selEPI=document.getElementById('filtroEPI');
+if(selColab)selColab.innerHTML='<option value="">Todos</option>'+colabs.map(function(c){return'<option>'+c+'</option>'}).join('');
+if(selEPI)selEPI.innerHTML='<option value="">Todos</option>'+epIs.map(function(e){return'<option>'+e+'</option>'}).join('');
+filtrarFichasEPI();
+}
+function filtrarFichasEPI(){
+var colab=document.getElementById('filtroColabEPI').value;
+var epi=document.getElementById('filtroEPI').value;
+var filtradas=fichasEPI.slice();
+if(colab)filtradas=filtradas.filter(function(f){return f.colab.nome===colab});
+if(epi)filtradas=filtradas.filter(function(f){return f.epi.nome===epi});
+var container=document.getElementById('listaFichasEPI');
+if(filtradas.length===0){container.innerHTML='<p class="text-muted text-center py-4">Nenhuma ficha de EPI registrada</p>';return}
+var html='';
+filtradas.slice().reverse().forEach(function(f){
+var stCA=statusCA(f.epi.validadeCA);
+var badge=stCA==='vencido'?'badge-ca-vencido':stCA==='vencendo'?'badge-ca-vencendo':'badge-ca';
+var alertaCA=stCA==='vencido'?'<div class="alert-ca-vencido">CA VENCIDO - Substituir EPI imediatamente</div>':stCA==='vencendo'?'<div class="alert-ca-vencendo">CA vencendo em breve</div>':'';
+html+='<div class="epi-card"><div class="row"><div class="col-md-8"><h6><i class="fas fa-user"></i> '+f.colab.nome+' <small class="text-muted">- '+(f.colab.cargo||'')+' '+(f.colab.setor?'('+f.colab.setor+')':'')+'</small></h6><small class="text-muted">CPF: '+(f.colab.cpf||'-')+' | Matrícula: '+(f.colab.matricula||'-')+'</small></div><div class="col-md-4 text-end"><small class="text-muted">Entrega em</small><br><strong>'+new Date(f.data).toLocaleDateString('pt-BR')+'</strong></div></div><hr><div class="row"><div class="col-md-6"><strong><i class="fas fa-shield-alt"></i> EPI:</strong> '+f.epi.nome+'<br><small>CA: <span class="'+badge+'">'+f.epi.ca+'</span> | Fabricante: '+(f.epi.fabricante||'-')+'</small><br><small>Validade CA: '+(f.epi.validadeCA?new Date(f.epi.validadeCA).toLocaleDateString('pt-BR'):'-')+'</small></div><div class="col-md-6"><strong>Motivo:</strong> '+f.motivo+'<br><small>Qtd: '+f.qtd+' | Periodicidade: '+f.periodicidade+'</small><br><small>Próxima troca: '+(f.proximaTroca?new Date(f.proximaTroca).toLocaleDateString('pt-BR'):'-')+'</small></div></div>'+alertaCA+'<div class="mt-2 text-end"><button class="btn btn-sm btn-primary" onclick="visualizarFichaEPIExistente('+f.id+')"><i class="fas fa-eye"></i> Visualizar/Imprimir</button> <button class="btn btn-sm btn-danger" onclick="excluirFichaEPI('+f.id+')"><i class="fas fa-trash"></i></button></div></div>';
+});
+container.innerHTML=html;
+}
+function excluirFichaEPI(id){if(confirm('Excluir esta ficha de EPI?')){fichasEPI=fichasEPI.filter(function(f){return f.id!==id});salvar();atualizarFichasEPI()}}
+function visualizarFichaEPI(){
+var colabNome=document.getElementById('epiColabNome').value;
+var epiItem=document.getElementById('epiItem').value;
+if(!colabNome||!epiItem){alert('Preencha os dados antes de visualizar!');return}
+var epi=catalogoEPI.find(function(e){return e.id==epiItem});
+var fichaTemp={
+colab:{nome:colabNome,cpf:document.getElementById('epiColabCPF').value,matricula:document.getElementById('epiColabMat').value,cargo:document.getElementById('epiColabCargo').value,setor:document.getElementById('epiColabSetor').value,funcao:document.getElementById('epiColabFuncao').value,admissao:document.getElementById('epiColabAdmissao').value},
+epi:{nome:epi?epi.nome:document.getElementById('epiDescricao').value,ca:document.getElementById('epiCA').value,validadeCA:document.getElementById('epiCAValidade').value,fabricante:document.getElementById('epiFabricante').value,descricao:document.getElementById('epiDescricao').value},
+qtd:parseInt(document.getElementById('epiQtd').value)||1,
+motivo:document.getElementById('epiMotivo').value,
+periodicidade:document.getElementById('epiPeriodicidade').value,
+proximaTroca:document.getElementById('epiProximaTroca').value,
+responsavel:document.getElementById('nomeResponsavel').value,
+obs:document.getElementById('epiObs').value,
+data:new Date().toISOString(),
+assinaturaColab:document.getElementById('canvasAssinaturaColab').toDataURL(),
+assinaturaResp:document.getElementById('canvasAssinaturaResp').toDataURL()
+};
+renderizarFichaImpressao(fichaTemp);
+new bootstrap.Modal(document.getElementById('modalVisualizarFicha')).show();
+}
+function visualizarFichaEPIExistente(id){
+var ficha=fichasEPI.find(function(f){return f.id===id});
+if(ficha){renderizarFichaImpressao(ficha);new bootstrap.Modal(document.getElementById('modalVisualizarFicha')).show()}
+}
+function canvasEstaVazioData(dataURL){return!dataURL||dataURL.length<1000}
+function renderizarFichaImpressao(f){
+var html='<div style="text-align:center;border-bottom:3px double #000;padding-bottom:15px;margin-bottom:20px"><h3>FICHA DE ENTREGA DE EPI</h3><h5>Conforme NR-6 e ISO 45001</h5><p style="margin:0">Data de Emissão: <strong>'+new Date(f.data).toLocaleDateString('pt-BR')+' '+new Date(f.data).toLocaleTimeString('pt-BR')+'</strong></p></div>';
+html+='<div style="border:1px solid #000;padding:15px;margin-bottom:15px"><h6 style="background:#2c3e50;color:#fff;padding:5px 10px;margin:-15px -15px 15px -15px">DADOS DO COLABORADOR</h6><table style="width:100%;font-size:.9rem"><tr><td style="width:50%;padding:5px"><strong>Nome:</strong> '+f.colab.nome+'</td><td style="padding:5px"><strong>CPF:</strong> '+(f.colab.cpf||'-')+'</td></tr><tr><td style="padding:5px"><strong>Matrícula:</strong> '+(f.colab.matricula||'-')+'</td><td style="padding:5px"><strong>Cargo:</strong> '+(f.colab.cargo||'-')+'</td></tr><tr><td style="padding:5px"><strong>Setor/Obra:</strong> '+(f.colab.setor||'-')+'</td><td style="padding:5px"><strong>Função:</strong> '+(f.colab.funcao||'-')+'</td></tr><tr><td style="padding:5px"><strong>Admissão:</strong> '+(f.colab.admissao?new Date(f.colab.admissao).toLocaleDateString('pt-BR'):'-')+'</td><td></td></tr></table></div>';
+html+='<div style="border:1px solid #000;padding:15px;margin-bottom:15px"><h6 style="background:#3498db;color:#fff;padding:5px 10px;margin:-15px -15px 15px -15px">DADOS DO EPI</h6><table style="width:100%;font-size:.9rem"><tr><td style="width:50%;padding:5px"><strong>EPI:</strong> '+f.epi.nome+'</td><td style="padding:5px"><strong>CA:</strong> '+f.epi.ca+'</td></tr><tr><td style="padding:5px"><strong>Fabricante:</strong> '+(f.epi.fabricante||'-')+'</td><td style="padding:5px"><strong>Validade CA:</strong> '+(f.epi.validadeCA?new Date(f.epi.validadeCA).toLocaleDateString('pt-BR'):'-')+'</td></tr><tr><td style="padding:5px"><strong>Quantidade:</strong> '+f.qtd+'</td><td style="padding:5px"><strong>Periodicidade:</strong> '+f.periodicidade+'</td></tr><tr><td style="padding:5px"><strong>Motivo:</strong> '+f.motivo+'</td><td style="padding:5px"><strong>Próxima Troca:</strong> '+(f.proximaTroca?new Date(f.proximaTroca).toLocaleDateString('pt-BR'):'-')+'</td></tr></table></div>';
+html+='<div style="border:2px solid #000;padding:15px;margin-bottom:15px;background:#f8f9fa"><h6 style="margin-top:0">TERMO DE RESPONSABILIDADE</h6><p style="font-size:.85rem;text-align:justify">Declaro para os devidos fins que recebi da empresa o(s) Equipamento(s) de Proteção Individual (EPI) acima descrito(s), em perfeitas condições de uso, comprometendo-me a: (1) Utilizar o EPI apenas para a finalidade a que se destina; (2) Responsabilizar-me pela guarda e conservação; (3) Comunicar imediatamente qualquer alteração que o torne impróprio; (4) Devolver quando solicitado ou ao término do vínculo; (5) Cientifico-me de que o não uso constitui falta grave (art. 158 CLT).</p></div>';
+if(f.obs)html+='<div style="border:1px solid #000;padding:10px;margin-bottom:15px"><strong>Observações:</strong> '+f.obs+'</div>';
+html+='<div style="margin-top:50px"><table style="width:100%"><tr><td style="width:50%;text-align:center;padding:20px">'+(f.assinaturaColab&&!canvasEstaVazioData(f.assinaturaColab)?'<img src="'+f.assinaturaColab+'" style="max-height:80px;max-width:100%">':'_________________________________')+'<div class="assinatura-line"><strong>'+f.colab.nome+'</strong><br>Colaborador<br>CPF: '+(f.colab.cpf||'-')+'</div></td><td style="width:50%;text-align:center;padding:20px">'+(f.assinaturaResp&&!canvasEstaVazioData(f.assinaturaResp)?'<img src="'+f.assinaturaResp+'" style="max-height:80px;max-width:100%">':'_________________________________')+'<div class="assinatura-line"><strong>'+(f.responsavel||'-')+'</strong><br>Responsável pela Entrega<br>SESMT / Supervisor</div></td></tr></table></div>';
+html+='<div style="margin-top:30px;font-size:.75rem;color:#666;text-align:center;border-top:1px solid #ccc;padding-top:10px">Documento gerado eletronicamente em '+new Date().toLocaleString('pt-BR')+' | Conforme NR-6 e ISO 45001 | Este documento tem validade legal</div>';
+document.getElementById('fichaImpressao').innerHTML=html;
+}
+function exportarRelatorioEPI(){
+var dados={fichas:fichasEPI,catalogo:catalogoEPI,exportado:new Date().toISOString()};
+var blob=new Blob([JSON.stringify(dados,null,2)],{type:'application/json'});
+var a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download='relatorio_epi_'+new Date().toISOString().split('T')[0]+'.json';
+a.click();
+}
+document.addEventListener('keydown',function(e){
+if(e.altKey&&e.key==='d'){e.preventDefault();document.querySelector('[data-bs-target="#dashboard"]').click()}
+if(e.altKey&&e.key==='c'){e.preventDefault();document.querySelector('[data-bs-target="#cronograma"]').click()}
+if(e.altKey&&e.key==='a'){e.preventDefault();document.querySelector('[data-bs-target="#analytics"]').click()}
+});
+</script>
+</body>
+</html>
+</content>
+</writeToFile>
